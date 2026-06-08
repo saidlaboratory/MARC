@@ -122,9 +122,11 @@ button.ctl.primary:hover{background:#ffc056;color:#1a1306}
 .phase .chev{font-family:var(--mono);color:var(--faint);transition:.3s}
 .phase.open .chev{transform:rotate(90deg);color:var(--amber)}
 .phase .body{max-height:0;overflow:hidden;transition:max-height .45s ease}
+.phase.open .body{overflow:visible}
 .phase .inner{padding:4px 26px 26px 96px}
 .tasklist{list-style:none;display:flex;flex-direction:column;gap:11px}
 .tasklist li{display:flex;align-items:center;gap:13px;padding:13px 16px;background:var(--ink);border:1px solid var(--line);border-radius:10px}
+.tasklist li .task-row{display:flex;align-items:center;gap:13px;width:100%}
 .tasklist li .tx{flex:1;font-size:14.5px}
 .who{display:inline-flex;gap:5px}
 .av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#0c0e13}
@@ -154,24 +156,12 @@ button.ctl.primary:hover{background:#ffc056;color:#1a1306}
 .tcard .tdetails .tbox.done{border-left-color:var(--green)}
 .tcard .tdetails .tbox.push{border-left-color:var(--cyan)}
 .tcard .tdetails .tbox.parallel{border-left-color:var(--amber)}
-.tasklist li .tdetails .tbox.parallel{border-left-color:var(--amber)}
 .tcard .tdetails b{color:var(--text);font-weight:600}
 .tcard .tdetails code{font-family:var(--mono);font-size:11.5px;color:var(--amber);background:rgba(0,0,0,.25);padding:1px 5px;border-radius:4px}
-.tasklist li .tdetails .tl{margin:0 0 6px}
-.tasklist li .tdetails .tsteps{margin:8px 0 10px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
-.tasklist li .tdetails .tsteps li{line-height:1.45}
-.tasklist li .tdetails .tbox{margin:8px 0 0;padding:9px 12px;border-radius:8px;border-left:2px solid var(--line2);background:var(--ink);font-size:12px}
-.tasklist li .tdetails .tbox.done{border-left-color:var(--green)}
-.tasklist li .tdetails .tbox.push{border-left-color:var(--cyan)}
-.tasklist li .tdetails code{font-family:var(--mono);font-size:11px;color:var(--amber)}
-.tasklist li .tdetails b{color:var(--text);font-weight:600}
 .tcard .foot{display:flex;justify-content:space-between;align-items:center}
-.tasklist li{align-items:flex-start;flex-direction:column;gap:8px}
-.tasklist li .task-row{display:flex;align-items:center;gap:13px;width:100%}
-.tasklist li .tdetails{width:100%;padding-left:2px;font-size:13px;color:var(--dim);line-height:1.45}
 
-#roadmap{padding-bottom:32px}
-#team{padding-top:32px;padding-bottom:160px}
+#roadmap{padding-bottom:0}
+#team{padding-top:48px;padding-bottom:160px}
 footer{margin-top:72px;padding:60px 0 80px;border-top:1px solid var(--line);text-align:center}
 footer .mono{font-size:12px;color:var(--faint);letter-spacing:.1em}
 footer h3{font-size:26px;margin-bottom:10px}
@@ -478,7 +468,7 @@ footer p{color:var(--dim);max-width:54ch;margin:0 auto}
     <div class="gnote">✦ Week 7 is submission week — abstract registered Jul 20, full paper in by Jul 27.<br>P3 is deliberately scoped to early, promising results; the full structure-diffusion build and everything in P4 is future work, after submission. Dates follow the AAAI-27 CFP listing — deadlines are track-specific, so confirm them on the official call for papers.</div>
   </div>
 
-  <div class="phases reveal" id="phases"></div>
+  <div class="phases" id="phases"></div>
 </section>
 
 <!-- 04 TEAM -->
@@ -875,18 +865,27 @@ const phasesEl=document.getElementById('phases');
 Object.keys(phaseMeta).forEach((code,idx)=>{
   const [name,desc,dates]=phaseMeta[code];
   const items=tasks.filter(t=>t.p===code);
-  const li=items.map(t=>`<li><div class="task-row"><span class="tx">${t.t}</span>${t.m?'<span class="mbadge">MATH</span>':''}<span class="who">${t.o.map(o=>`<span class="av ${o}" title="${o}">${initial(o)}</span>`).join('')}</span></div><div class="tdetails">${t.d}</div></li>`).join('');
+  const li=items.map(t=>`<li><div class="task-row"><span class="tx">${t.t}</span>${t.m?'<span class="mbadge">MATH</span>':''}<span class="who">${t.o.map(o=>`<span class="av ${o}" title="${o}">${initial(o)}</span>`).join('')}</span></div></li>`).join('');
   const scoped = code==='P3'?'<span class="scoped">PRELIMINARY</span>':code==='P4'?'<span class="scoped">FUTURE WORK</span>':'';
   const el=document.createElement('div');
-  el.className='phase'+(idx===0?' open':'');
+  el.className='phase';
   el.innerHTML=`<div class="top"><div class="code">${code}</div><div class="pt"><h3>${name}${scoped}</h3><span>${desc}</span></div><div class="pdate">${dates}</div><div class="chev mono">▸</div></div><div class="body"><ul class="tasklist inner">${li}</ul></div>`;
   phasesEl.appendChild(el);
   const body=el.querySelector('.body');
+  const setBodyHeight=(open)=>{
+    if(open){
+      body.style.maxHeight='none';
+      const h=body.scrollHeight;
+      body.style.maxHeight='0';
+      requestAnimationFrame(()=>{body.style.maxHeight=h+'px';});
+    }else{
+      body.style.maxHeight='0';
+    }
+  };
   el.querySelector('.top').onclick=()=>{
     const open=el.classList.toggle('open');
-    body.style.maxHeight=open?body.scrollHeight+80+'px':0;
+    setBodyHeight(open);
   };
-  if(idx===0) requestAnimationFrame(()=>{body.style.maxHeight=body.scrollHeight+80+'px';});
 });
 
 /* render task board + filters */
