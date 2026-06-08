@@ -153,6 +153,8 @@ button.ctl.primary:hover{background:#ffc056;color:#1a1306}
 .tcard .tdetails .tbox{margin:10px 0 0;padding:10px 13px;border-radius:8px;border-left:2px solid var(--line2);background:var(--ink);font-size:12.5px;line-height:1.5}
 .tcard .tdetails .tbox.done{border-left-color:var(--green)}
 .tcard .tdetails .tbox.push{border-left-color:var(--cyan)}
+.tcard .tdetails .tbox.parallel{border-left-color:var(--amber)}
+.tasklist li .tdetails .tbox.parallel{border-left-color:var(--amber)}
 .tcard .tdetails b{color:var(--text);font-weight:600}
 .tcard .tdetails code{font-family:var(--mono);font-size:11.5px;color:var(--amber);background:rgba(0,0,0,.25);padding:1px 5px;border-radius:4px}
 .tasklist li .tdetails .tl{margin:0 0 6px}
@@ -467,10 +469,10 @@ footer p{color:var(--dim);max-width:54ch;margin:0 auto}
       <div class="ghead"><div></div><div class="wk">
         <span>Wk 1<br>Jun 8–14</span><span>Wk 2<br>Jun 15–21</span><span>Wk 3<br>Jun 22–28</span><span>Wk 4<br>Jun 29–Jul 5</span><span>Wk 5<br>Jul 6–12</span><span>Wk 6<br>Jul 13–19</span><span class="sub">Wk 7<br>Jul 20–27 ✦</span>
       </div></div>
-      <div class="grow"><div class="gl">Infrastructure &amp; data<small>Akash · Sparsh</small></div><div class="gtrack"><div class="bar b-cyan" style="grid-column:1/3">P0 · schema, generator, checker</div></div></div>
-      <div class="grow"><div class="gl">Core modeling<small>Davin · Quang</small></div><div class="gtrack"><div class="bar b-amber" style="grid-column:2/4">P1 · diffusion + GNN denoiser</div></div></div>
-      <div class="grow"><div class="gl">Training &amp; evaluation<small>Quang · Sparsh</small></div><div class="gtrack"><div class="bar b-rose" style="grid-column:3/6">P2 · checker RLVR + derive-not-recall</div></div></div>
-      <div class="grow"><div class="gl">Structure diffusion<small>Davin · Quang</small></div><div class="gtrack"><div class="bar b-line" style="grid-column:5/7">P3 · preliminary only</div></div></div>
+      <div class="grow"><div class="gl">Infrastructure<small>everyone · parallel tracks</small></div><div class="gtrack"><div class="bar b-cyan" style="grid-column:1/3">P0 · schema · CAS · diffusion · eval · model stub</div></div></div>
+      <div class="grow"><div class="gl">Core modeling<small>Davin · Quang · Akash · Sparsh</small></div><div class="gtrack"><div class="bar b-amber" style="grid-column:2/4">P1 · solve loop · denoiser · data loader · baseline eval</div></div></div>
+      <div class="grow"><div class="gl">Training &amp; evaluation<small>everyone · parallel tracks</small></div><div class="gtrack"><div class="bar b-rose" style="grid-column:3/6">P2 · GRPO · rewards · paper eval · CoT baseline</div></div></div>
+      <div class="grow"><div class="gl">Structure diffusion<small>everyone · parallel tracks</small></div><div class="gtrack"><div class="bar b-line" style="grid-column:5/7">P3 · structure proto · toys · H2 eval</div></div></div>
       <div class="grow"><div class="gl">Paper writing<small>everyone</small></div><div class="gtrack"><div class="bar b-green" style="grid-column:4/8">draft → figures → polish → submit</div></div></div>
     </div>
     <div class="gnote">✦ Week 7 is submission week — abstract registered Jul 20, full paper in by Jul 27.<br>P3 is deliberately scoped to early, promising results; the full structure-diffusion build and everything in P4 is future work, after submission. Dates follow the AAAI-27 CFP listing — deadlines are track-specific, so confirm them on the official call for papers.</div>
@@ -493,7 +495,7 @@ footer p{color:var(--dim);max-width:54ch;margin:0 auto}
     <span class="pp"><span class="av Akash">A</span> Akash</span>
     <span class="pp"><span class="av Sparsh">S</span> Sparsh</span>
   </div>
-  <div class="note reveal"><b>Track split.</b> <span class="mono" style="color:var(--amber)">Davin &amp; Quang</span> take the harder math track — the diffusion formulation, the GNN denoiser, the RLVR objective, and the hardest piece, structure diffusion. <span class="mono" style="color:var(--cyan)">Akash &amp; Sparsh</span> own the constraint-graph infrastructure, the problem generator, the checker, and the evaluation harness that makes "derive, not recall" measurable.</div>
+  <div class="note reveal"><b>Parallel by design.</b> Tasks within a phase run on separate tracks — use stubs and the shared <code>marc/data/examples/two_equations.json</code> contract so nobody blocks anyone. Integration happens at the end of each phase, not at the start. <span class="mono" style="color:var(--amber)">Davin &amp; Quang</span> = modeling/diffusion. <span class="mono" style="color:var(--cyan)">Akash &amp; Sparsh</span> = data/eval/checker.</div>
   <div class="filters reveal" id="filters"></div>
   <div class="board" id="board"></div>
 </section>
@@ -574,221 +576,290 @@ let dash=0; setInterval(()=>{ dash=(dash-1); document.querySelectorAll('.flow').
 
 /* ---------- roadmap + task data ---------- */
 const tasks=[
- {t:'Constraint-graph schema & data structures',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Define how we represent a math problem as a graph — the data format every other module will import.</p>
-<p class="tl"><b>Where:</b> Create folder <code>marc/graph/</code> inside this GitHub repo. Right now the repo only has docs (<code>README.md</code>, <code>TECHNICAL_GUIDE.md</code>, <code>index.html</code>). The entire Python package starts with you scaffolding <code>marc/</code>.</p>
-<p class="tl"><b>Depends on:</b> Nothing — this is the first code task. Coordinate with the team so only one person creates the initial <code>marc/pyproject.toml</code> (or <code>requirements.txt</code>) + <code>marc/__init__.py</code>.</p>
+ {t:'[P0-A] Repo scaffold + graph schema',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Create the shared data contract every other track imports.</p>
+<p class="tl"><b>Where:</b> <code>marc/</code> package root — scaffold + <code>marc/graph/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. While you work, Davin builds diffusion math on raw tensors, Quang builds GNN layers on mock graphs, Sparsh builds metric functions on fake result arrays. They do <em>not</em> wait for you — they copy your draft JSON schema from your branch or use the template below.</p>
 <ol class="tsteps">
-<li>Create the package skeleton: <code>marc/__init__.py</code>, <code>marc/graph/__init__.py</code>, and a root <code>requirements.txt</code> with <code>torch</code>, <code>torch-geometric</code>, <code>sympy</code>, <code>numpy</code>.</li>
-<li>In <code>marc/graph/schema.py</code>, define Python dataclasses (or typed dicts) for: <b>VariableNode</b> (id, name, type=known|unknown|constant, current value as float), <b>FactorNode</b> (id, constraint type, scope list of variable ids, SymPy expression string), and <b>Edge</b> (variable id, factor id, edge features: coefficient, exponent, role).</li>
-<li>In <code>marc/graph/graph.py</code>, define a <code>FactorGraph</code> class holding lists of variables, factors, edges, plus methods <code>num_vars()</code>, <code>num_factors()</code>, <code>get_values()</code>, <code>set_values(x)</code>.</li>
-<li>In <code>marc/graph/serialize.py</code>, add <code>to_json(graph) → dict</code> and <code>from_json(dict) → FactorGraph</code> so graphs can be saved to disk under <code>marc/data/examples/</code>.</li>
-<li>In <code>marc/graph/pyg.py</code>, add <code>to_hetero_data(graph, x) → HeteroData</code> that builds a PyTorch Geometric graph with node types <code>variable</code> and <code>factor</code>, edge index, and edge attributes.</li>
-<li>Hand-build one tiny example in <code>marc/data/examples/two_equations.json</code> (e.g. x+y=3, x−y=1) and write <code>tests/test_graph.py</code> that loads it, round-trips JSON, and builds HeteroData without error.</li>
+<li>Create <code>marc/__init__.py</code>, <code>requirements.txt</code> (torch, torch-geometric, sympy, numpy, pytest).</li>
+<li>Define <code>VariableNode</code>, <code>FactorNode</code>, <code>Edge</code> in <code>marc/graph/schema.py</code>.</li>
+<li>Implement <code>FactorGraph</code> in <code>marc/graph/graph.py</code> with <code>get_values()</code> / <code>set_values(x)</code>.</li>
+<li>Add JSON I/O in <code>marc/graph/serialize.py</code> and PyG builder in <code>marc/graph/pyg.py</code>.</li>
+<li>Commit the team contract file <code>marc/data/examples/two_equations.json</code> (x+y=3, x−y=1) by end of Day 2 — post in Slack when merged.</li>
+<li>Tests: <code>tests/test_graph.py</code> round-trips JSON and builds HeteroData.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> Running <code>pytest tests/test_graph.py</code> passes. Another teammate can <code>from marc.graph import FactorGraph</code> and load your example JSON.</p>
-<p class="tbox push"><b>Push to:</b> Commit on a branch (e.g. <code>akash/graph-schema</code>), push to <code>github.com/saidlaboratory/MARC</code>, open a PR into <code>main</code>. Files to include: everything under <code>marc/graph/</code>, <code>tests/test_graph.py</code>, <code>marc/data/examples/two_equations.json</code>, <code>requirements.txt</code>.</p>`},
- {t:'Procedural problem generator',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Automatically create random solvable math problems as constraint graphs, with the answer baked in.</p>
-<p class="tl"><b>Where:</b> <code>marc/data/</code> — new folder next to <code>marc/graph/</code>.</p>
-<p class="tl"><b>Depends on:</b> Constraint-graph schema task (you need <code>FactorGraph</code> to build into).</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_graph.py</code> passes and <code>two_equations.json</code> is on <code>main</code>.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p0-schema</code> → <code>main</code>.</p>`},
+ {t:'[P0-A] Eval metrics (standalone)',p:'P0',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Implement the paper metrics as pure functions — no model, no CAS needed yet.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/metrics.py</code>, <code>tests/test_metrics.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. Input is just Python lists of booleans (solved/not). Do not wait for generator or checker — stub those later.</p>
 <ol class="tsteps">
-<li>Create <code>marc/data/__init__.py</code> and <code>marc/data/templates.py</code>. Define 2–3 structure templates as config objects, e.g. <code>LinearSystem2x2</code>, <code>LinearSystem3x3</code> — each specifies how many variables and what factor shapes to use.</li>
-<li>In <code>marc/data/generator.py</code>, implement <code>generate_instance(template_name, difficulty) → (FactorGraph, x_star)</code>. Algorithm: (1) pick a random valid solution vector x*, (2) build equations that x* satisfies, (3) assemble into a FactorGraph.</li>
-<li>In <code>marc/data/splits.py</code>, hard-code which templates are <b>train</b> vs <b>test</b> (e.g. train on ≤3-variable templates, test on 4–5 variable templates never seen in training).</li>
-<li>Add <code>marc/data/curriculum.py</code> with a <code>difficulty</code> knob: number range for coefficients, optional nonlinearity flag.</li>
-<li>Write <code>tests/test_generator.py</code>: generate 100 instances, assert every graph has the right number of nodes, and (once CAS exists) assert residuals are zero at x*.</li>
-<li>Save 10 sample instances to <code>marc/data/samples/</code> as JSON for the team to inspect manually.</li>
+<li>Implement <code>solve_rate(results)</code>, <code>generalization_gap(train, test)</code>, <code>entrapment_rate(trajectories, tol)</code>, <code>perturbation_robustness(...)</code> in <code>metrics.py</code>.</li>
+<li>Write <code>tests/test_metrics.py</code> with hand-made arrays — e.g. 8/10 solved → rate 0.8.</li>
+<li>Stub <code>marc/eval/runner.py</code> with a <code>DummySolver</code> that returns random values; wire metrics at the end.</li>
+<li>Add <code>scripts/run_eval.py</code> CLI that runs dummy solver on 5 fake problems and writes <code>results/p0_smoke/metrics.json</code>.</li>
+<li>Add <code>results/</code> to <code>.gitignore</code>.</li>
+<li>Document metric definitions in a comment block at top of <code>metrics.py</code> (maps to TECHNICAL_GUIDE §11).</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>python -m marc.data.generator --template LinearSystem3x3 --n 10</code> (or equivalent script) prints 10 graphs + solutions; test split is documented in a comment at the top of <code>splits.py</code>.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> on <code>github.com/saidlaboratory/MARC</code> with <code>marc/data/*</code> and <code>tests/test_generator.py</code>.</p>`},
- {t:'CAS residual interface',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Build the calculator that scores how wrong a candidate answer is — one number per constraint, plus total energy.</p>
-<p class="tl"><b>Where:</b> <code>marc/cas/</code> — the Computer Algebra System wrapper (SymPy under the hood).</p>
-<p class="tl"><b>Depends on:</b> Constraint-graph schema (<code>FactorGraph</code> + factor expressions in each graph).</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_metrics.py</code> passes and <code>run_eval.py</code> writes JSON.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p0-metrics</code> → <code>main</code>.</p>`},
+ {t:'[P0-A] Diffusion schedule + forward corrupt',p:'P0',o:['Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Implement the noise schedule and corruption formula on tensors — no graph library needed yet.</p>
+<p class="tl"><b>Where:</b> <code>marc/diffusion/schedule.py</code>, <code>marc/diffusion/forward.py</code>, <code>marc/refine/noise.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. Test with random <code>x0</code> tensors shape <code>[n, 1]</code>. Plug into real graphs in P0-B integration.</p>
 <ol class="tsteps">
-<li>Create <code>marc/cas/__init__.py</code> and <code>marc/cas/engine.py</code>. Define class <code>CAS</code> with four methods: <code>residuals(G, x) → Tensor[m]</code>, <code>energy(G, x) → float</code>, <code>energy_grad(G, x) → Tensor[n]</code>, <code>accepts(G, x, tol=1e-6) → bool</code>.</li>
-<li>In <code>marc/cas/residuals.py</code>, for each factor node, parse its SymPy expression, substitute variable values from x, return r_i (0 = satisfied). Start with equality constraints only.</li>
-<li>In <code>marc/cas/energy.py</code>, compute E(x) = ½ Σ r_i². This is what training will try to drive to zero.</li>
-<li>In <code>marc/cas/gradients.py</code>, precompute analytic ∂r_i/∂x_v per factor template at graph build time; at runtime compute ∇E = Σ r_i · ∇r_i.</li>
-<li>Write <code>tests/test_cas.py</code> using <code>marc/data/examples/two_equations.json</code>: verify E=0 at the known solution, E&gt;0 at a random wrong x, and <code>accepts()</code> returns True/False correctly.</li>
-<li>Add a short <code>marc/cas/README.md</code> (3–5 lines) showing a copy-paste usage example for teammates.</li>
+<li>Implement cosine beta schedule (T=1000) exporting <code>alpha_bar_t</code> in <code>schedule.py</code>.</li>
+<li>Implement <code>corrupt(x0, t, eps) → x_t</code> in <code>forward.py</code> (DDPM formula).</li>
+<li>Implement <code>inject_noise(x, sigma)</code> in <code>refine/noise.py</code> for the simpler iterative path.</li>
+<li>Write <code>tests/test_corruption_math.py</code>: assert corrupted tensor differs from x0, shape unchanged, noise increases with t.</li>
+<li>Stub empty <code>marc/diffusion/sample.py</code> with <code>ddim_step(...)</code> signature for P1.</li>
+<li>Add 5-line README in <code>marc/diffusion/README.md</code> explaining forward vs refine paths.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_cas.py</code> passes. Quang/Davin can call <code>CAS().residuals(G, x)</code> from their denoiser code.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/cas/*</code> and <code>tests/test_cas.py</code>.</p>`},
- {t:'Checker integration',p:'P0',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Build the final yes/no gate that decides if a solution counts — used at inference stop and as RL reward in P2.</p>
-<p class="tl"><b>Where:</b> <code>marc/cas/checker.py</code> (extends the CAS module Akash builds — add your file in the same PR or coordinate merges).</p>
-<p class="tl"><b>Depends on:</b> CAS residual interface (<code>CAS.residuals</code> must work first).</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_corruption_math.py</code> passes — no CAS or graph required.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p0-diffusion</code> → <code>main</code>.</p>`},
+ {t:'[P0-A] GNN layers + embeddings skeleton',p:'P0',o:['Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Build message-passing layers that work on any HeteroData — use a mock graph until real schema merges.</p>
+<p class="tl"><b>Where:</b> <code>marc/model/embeddings.py</code>, <code>marc/model/layers.py</code>, <code>tests/test_layers.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. Build a tiny mock HeteroData inline in the test file (2 variables, 1 factor). Swap in Akash's loader in P0-B.</p>
 <ol class="tsteps">
-<li>Create <code>marc/cas/checker.py</code> with class <code>Checker</code> and method <code>verify(G, x) → CheckResult</code> where <code>CheckResult</code> has fields <code>accepted: bool</code>, <code>failed_factors: list</code>, <code>max_residual: float</code>.</li>
-<li>Implement <b>Stage 1 — numeric gate:</b> reject if any |r_i| &gt; tol (default 1e-6). Fast, runs every denoising step.</li>
-<li>Implement <b>Stage 2 — symbolic gate:</b> for candidates passing Stage 1, re-evaluate each factor with SymPy exact/rational arithmetic to catch float false-accepts.</li>
-<li>Add <code>Checker.explain_rejection(G, x) → str</code> that logs which factor failed and why — needed for debugging RL rollouts later.</li>
-<li>Wire <code>CAS.accepts()</code> in <code>engine.py</code> to delegate to your <code>Checker.verify()</code> so there is one entry point.</li>
-<li>Write <code>tests/test_checker.py</code> with 4 cases: correct solution (accept), wrong values (reject), float-near-correct but symbolically wrong (reject), empty graph edge case.</li>
+<li>Implement <code>step_emb(t)</code> and type embeddings in <code>embeddings.py</code>.</li>
+<li>Implement one bipartite message-passing round in <code>layers.py</code> (variable↔factor, scatter sum, edge features).</li>
+<li>Write <code>tests/test_layers.py</code> with a hand-built 2-node mock HeteroData — assert output shape <code>[n_vars, D]</code>.</li>
+<li>Stub <code>marc/model/denoiser.py</code> class shell with <code>forward(G, x_t, t)</code> calling layers (residuals = zeros for now).</li>
+<li>Confirm one backward pass works (gradients flow through MLPs).</li>
+<li>Add <code>scripts/layers_smoke.py</code> printing output norm on mock graph.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_checker.py</code> passes. Team agrees: <b>never reward RL without symbolic confirmation</b> once Stage 2 is enabled.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/cas/checker.py</code>, updates to <code>marc/cas/engine.py</code>, and <code>tests/test_checker.py</code>.</p>`},
- {t:'Graph corruption utilities',p:'P0',o:['Sparsh','Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Implement the "add noise to a valid answer" step — required before the GNN can learn to denoise.</p>
-<p class="tl"><b>Where:</b> <code>marc/diffusion/</code> (noise schedules + forward corruption) and <code>marc/refine/</code> (simpler iterative-noise variant).</p>
-<p class="tl"><b>Depends on:</b> Graph schema + CAS energy (to verify corruption increases energy).</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_layers.py</code> passes with mock graph.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p0-layers</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] Problem generator + splits',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Auto-generate solvable problems as graphs with known answers.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/generator.py</code>, <code>templates.py</code>, <code>splits.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Starts after your schema PR merges (~Day 3). Davin/Sparsh/Quang keep working on their tracks; you don't block them.</p>
 <ol class="tsteps">
-<li>Create <code>marc/diffusion/__init__.py</code>, <code>marc/diffusion/schedule.py</code> — implement cosine beta schedule with T=1000; export arrays <code>beta_t</code>, <code>alpha_bar_t</code>.</li>
-<li>In <code>marc/diffusion/forward.py</code>, implement <code>corrupt(x0, t, eps) → x_t</code> using x_t = √ᾱ_t·x₀ + √(1−ᾱ_t)·ε. Only corrupt variable values; graph structure stays fixed.</li>
-<li>Create <code>marc/refine/noise.py</code> with <code>inject_noise(x, sigma) → x_noisy</code> for the simpler iterative-refinement path (annealed σ_k schedule in same file).</li>
-<li>Write <code>tests/test_corruption.py</code>: take a known-valid (G, x₀) from the generator, corrupt at t=500, assert CAS energy E(x_t) &gt; 0 and E(x₀) ≈ 0.</li>
-<li>Add <code>marc/diffusion/README.md</code> with one diagram or comment block showing how corruption pairs with the denoiser in P1.</li>
-<li>Stub (empty function body OK) <code>marc/diffusion/sample.py → ddim_step(...)</code> for Davin to fill in during P1.</li>
+<li>Define templates <code>LinearSystem2x2</code>, <code>LinearSystem3x3</code> in <code>templates.py</code>.</li>
+<li>Implement <code>generate_instance(name, difficulty) → (FactorGraph, x_star)</code> — sample x* first, build equations second.</li>
+<li>Hard-code train vs test template lists in <code>splits.py</code> (structure holdout, not numeric).</li>
+<li>Save 10 samples to <code>marc/data/samples/</code> as JSON.</li>
+<li>Write <code>tests/test_generator.py</code> — correct node counts; add CAS check once Davin's PR merges.</li>
+<li>CLI: <code>python scripts/generate_samples.py --n 10</code>.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_corruption.py</code> passes. Davin can import <code>corrupt</code> and the schedule in P1 training code.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/diffusion/*</code>, <code>marc/refine/noise.py</code>, <code>tests/test_corruption.py</code>.</p>`},
- {t:'Evaluation harness & metrics',p:'P0',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Build the script that runs experiments and prints the numbers that go in the paper (solve rate, generalization gap, etc.).</p>
-<p class="tl"><b>Where:</b> <code>marc/eval/</code> — plus a top-level runner script <code>scripts/run_eval.py</code>.</p>
-<p class="tl"><b>Depends on:</b> Generator (for test sets), Checker (for pass/fail), CAS (for energy metrics). Can stub the solver as random noise until P1.</p>
+<p class="tbox done"><b>Done when:</b> 10 sample JSONs exist and generator tests pass.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p0-generator</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] CAS engine (residuals + energy)',p:'P0',o:['Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Build the calculator: per-constraint residuals, total energy, guidance gradient.</p>
+<p class="tl"><b>Where:</b> <code>marc/cas/engine.py</code>, <code>residuals.py</code>, <code>energy.py</code>, <code>gradients.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Starts once <code>two_equations.json</code> is on main (~Day 3). Quang swaps zero-residuals stub for real CAS in denoiser same day.</p>
 <ol class="tsteps">
-<li>Create <code>marc/eval/metrics.py</code> with functions: <code>solve_rate(results)</code>, <code>generalization_gap(train_results, test_results)</code>, <code>perturbation_robustness(solver, G, x, n_perturb=10)</code>, <code>entrapment_rate(trajectories, tol)</code>.</li>
-<li>Create <code>marc/eval/runner.py</code> with <code>run_eval(solver_fn, test_split, n_seeds=3) → EvalReport</code> that loops problems, calls solver, checks with Checker, aggregates metrics.</li>
-<li>Create <code>marc/eval/report.py</code> that writes results to <code>results/&lt;experiment_name&gt;/metrics.json</code> and optionally logs to Weights &amp; Biases (add <code>wandb</code> to requirements if used).</li>
-<li>Add <code>scripts/run_eval.py</code> CLI: <code>python scripts/run_eval.py --split test --seed 0</code>. For P0, plug in a dummy solver that returns random x.</li>
-<li>Document train/test template names in <code>marc/eval/splits.yaml</code> (which templates from <code>marc/data/splits.py</code> belong to which eval bucket).</li>
-<li>Write <code>tests/test_metrics.py</code> with synthetic pass/fail arrays to verify metric math.</li>
+<li>Implement <code>CAS.residuals(G,x)</code>, <code>.energy(G,x)</code>, <code>.energy_grad(G,x)</code>, <code>.accepts(G,x)</code> in SymPy.</li>
+<li>Test on <code>two_equations.json</code>: E=0 at known solution, E&gt;0 at random x.</li>
+<li>Write <code>tests/test_cas.py</code> and 3-line usage in <code>marc/cas/README.md</code>.</li>
+<li>Leave <code>accepts()</code> as numeric-only for now — Sparsh adds symbolic gate in checker PR.</li>
+<li>Hook into Davin's corruption test: corrupt x0, assert E(x_t) &gt; 0 (rename test file <code>tests/test_corruption.py</code>).</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>python scripts/run_eval.py</code> completes and writes a JSON report under <code>results/</code>. Metrics module has unit tests.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/eval/*</code>, <code>scripts/run_eval.py</code>, <code>marc/eval/splits.yaml</code>, <code>tests/test_metrics.py</code>. Add <code>results/</code> to <code>.gitignore</code>.</p>`},
- {t:'Forward / reverse diffusion + noise schedule',p:'P1',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Build the inference loop that takes a problem graph and returns a verified solution by iteratively denoising.</p>
-<p class="tl"><b>Where:</b> <code>marc/diffusion/sample.py</code> (sampler) and <code>marc/diffusion/solve.py</code> (top-level <code>solve()</code> API).</p>
-<p class="tl"><b>Depends on:</b> P0 corruption utilities, CAS gradients, GNN denoiser (Quang), Checker.</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_cas.py</code> and corruption integration test pass.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p0-cas</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] Checker (numeric + symbolic gate)',p:'P0',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Final accept/reject gate for inference and RL reward.</p>
+<p class="tl"><b>Where:</b> <code>marc/cas/checker.py</code>, <code>tests/test_checker.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Write checker class against mock residuals Day 3–4; wire to real CAS when Davin's PR merges. Eval runner updated same day.</p>
 <ol class="tsteps">
-<li>Finish <code>marc/diffusion/sample.py</code>: implement DDIM step function <code>ddim_step(x, score, t) → x_prev</code> for 20–50 inference steps (even if trained with T=1000).</li>
-<li>In <code>marc/diffusion/guidance.py</code>, implement guided score: <code>guided_score = learned_score - lambda_t * CAS.energy_grad(G, x)</code> with λ annealed (stronger at low noise).</li>
-<li>In <code>marc/diffusion/solve.py</code>, implement <code>solve(G, steps=40, n_samples=8, guidance_fn) → x_best</code>: start x ~ N(0,I), loop denoise steps, early-stop if Checker accepts, keep best-of-N by lowest energy.</li>
-<li>Add config file <code>marc/configs/inference/default.yaml</code> with steps, n_samples, guidance weights — use plain YAML or Hydra if already set up.</li>
-<li>Write <code>scripts/solve_one.py</code>: load a graph JSON from <code>marc/data/samples/</code>, run solve, print solution + checker result.</li>
-<li>Compare two modes in a notebook or markdown log under <code>results/p1_sampler_comparison.md</code>: full DDIM vs simpler iterative refinement — which converges on 20 in-distribution problems?</li>
+<li>Define <code>CheckResult(accepted, failed_factors, max_residual)</code> and <code>Checker.verify(G,x)</code>.</li>
+<li>Stage 1: numeric gate (|r_i| ≤ tol). Stage 2: SymPy exact re-check.</li>
+<li>Add <code>explain_rejection(G,x) → str</code> for RL debug logs.</li>
+<li>Wire <code>CAS.accepts()</code> to delegate to <code>Checker</code> (coordinate merge with Davin).</li>
+<li>Update your eval runner to use Checker instead of dummy pass/fail.</li>
+<li>4 test cases in <code>tests/test_checker.py</code> including float false-accept catch.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>python scripts/solve_one.py --graph marc/data/samples/...</code> returns a checker-accepted solution on at least 50% of in-distribution training-template problems.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/diffusion/sample.py</code>, <code>guidance.py</code>, <code>solve.py</code>, <code>scripts/solve_one.py</code>, config YAML.</p>`},
- {t:'Denoising objective',p:'P1',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Write the training loop (Stage A) that teaches the GNN to reverse noise on valid graphs.</p>
-<p class="tl"><b>Where:</b> <code>marc/train/stage_a.py</code> and config <code>marc/configs/train/stage_a.yaml</code>.</p>
-<p class="tl"><b>Depends on:</b> Corruption utilities, GNN denoiser, data generator, CAS (for optional energy term).</p>
+<p class="tbox done"><b>Done when:</b> Checker tests pass and eval runner reports real accept/reject on sample graphs.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p0-checker</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] Assemble GraphDenoiser + wire CAS',p:'P0',o:['Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Complete denoiser forward pass on a real graph with real CAS residuals.</p>
+<p class="tl"><b>Where:</b> <code>marc/model/denoiser.py</code>, <code>tests/test_denoiser.py</code>, <code>scripts/denoiser_smoke.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Layers done in P0-A. This PR merges after schema + CAS land — integrate same week, no waiting into P1.</p>
 <ol class="tsteps">
-<li>Create <code>marc/train/__init__.py</code> and <code>marc/train/stage_a.py</code> with function <code>train_step(batch, model, cas, config) → loss</code>.</li>
-<li>Implement <b>Loss A (diffusion):</b> sample t, corrupt x₀ → x_t, predict ε with denoiser, MSE against true ε.</li>
-<li>Implement <b>Loss B (iterative refinement):</b> predict (x₀ − x_k) with denoiser, MSE + optional γ·E(x_k + prediction) term.</li>
-<li>Add config flag <code>loss_type: diffusion | iterative</code> in <code>stage_a.yaml</code> so you can switch without code changes.</li>
-<li>Create <code>scripts/train_stage_a.py</code> CLI: loads generator, trains for N steps, saves checkpoint to <code>checkpoints/stage_a/&lt;run_id&gt;.pt</code>.</li>
-<li>Log loss + mean energy per step to W&amp;B or a CSV at <code>results/stage_a/train_log.csv</code>. Confirm energy decreases over training.</li>
+<li>Replace mock graph in tests with <code>from_json(two_equations.json)</code>.</li>
+<li>Call <code>CAS().residuals(G, x_t)</code> in forward (no backprop through CAS).</li>
+<li>Assert output shape <code>[n_vars, 1]</code> and backward pass succeeds.</li>
+<li>Run <code>scripts/denoiser_smoke.py</code> on a generated sample from Akash.</li>
+<li>Post "denoiser ready" in Slack with import example for Davin.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> A checkpoint exists under <code>checkpoints/stage_a/</code> and the trained denoiser + solve loop beats random baseline on in-distribution eval.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/train/stage_a.py</code>, <code>scripts/train_stage_a.py</code>, config. Add <code>checkpoints/</code> to <code>.gitignore</code> (upload best checkpoint to shared drive or W&amp;B artifacts).</p>`},
- {t:'GNN denoiser (message-passing step)',p:'P1',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Build the neural network that takes a noisy graph + CAS residuals and predicts how to move values toward a valid solution.</p>
-<p class="tl"><b>Where:</b> <code>marc/model/denoiser.py</code>, helpers in <code>marc/model/layers.py</code> and <code>marc/model/embeddings.py</code>.</p>
-<p class="tl"><b>Depends on:</b> P0 graph schema (<code>to_hetero_data</code>), CAS (<code>residuals</code> for factor node features).</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_denoiser.py</code> passes on real graphs + CAS.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p0-denoiser</code> → <code>main</code>.</p>`},
+ {t:'[P1] Solve loop + DDIM sampler',p:'P1',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Inference API: noisy start → denoise → checker accepts.</p>
+<p class="tl"><b>Where:</b> <code>marc/diffusion/sample.py</code>, <code>guidance.py</code>, <code>solve.py</code>, <code>scripts/solve_one.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Quang trains denoiser, Akash builds data loader, Sparsh wires eval — all start Day 1 of P1 using P0 outputs.</p>
 <ol class="tsteps">
-<li>Create <code>marc/model/__init__.py</code>. In <code>embeddings.py</code>, add sinusoidal step embedding <code>step_emb(t)</code> and type embeddings for variable/factor nodes.</li>
-<li>In <code>layers.py</code>, implement one message-passing round: factor←variable messages and variable←factor messages using <code>torch_geometric</code> scatter. Inject edge features into every message.</li>
-<li>In <code>denoiser.py</code>, class <code>GraphDenoiser(nn.Module)</code> with <code>forward(G, x_t, t) → eps_hat</code> (or delta_x). Run L=6 rounds internally (configurable). Start with hidden dim D=256.</li>
-<li>Inside <code>forward</code>, call <code>CAS().residuals(G, x_t)</code> and feed residuals into factor node initialization (do not backprop through CAS).</li>
-<li>Write <code>tests/test_denoiser.py</code>: random small graph, random x_t, assert output shape matches number of variables; one backward pass succeeds.</li>
-<li>Add <code>scripts/denoiser_smoke.py</code> that loads a sample graph, runs one forward pass, prints output norm — for Davin to sanity-check before training.</li>
+<li>Implement <code>ddim_step</code> in <code>sample.py</code> (20–50 steps).</li>
+<li>Implement guided score in <code>guidance.py</code> using <code>CAS.energy_grad</code>.</li>
+<li>Implement <code>solve(G, steps, n_samples, guidance_fn) → x_best</code> with early-stop + best-of-N.</li>
+<li>Config: <code>marc/configs/inference/default.yaml</code>.</li>
+<li>CLI: <code>scripts/solve_one.py</code> on a sample JSON — print solution + checker result.</li>
+<li>Log sampler comparison in <code>results/p1_sampler_comparison.md</code> (DDIM vs iterative).</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_denoiser.py</code> passes and Davin successfully imports <code>GraphDenoiser</code> in <code>stage_a.py</code>.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/model/*</code>, <code>tests/test_denoiser.py</code>, <code>scripts/denoiser_smoke.py</code>.</p>`},
- {t:'Convergence & entrapment study',p:'P1',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Answer research question RQ2: does adding noise help escape bad local minima, or is it unnecessary?</p>
-<p class="tl"><b>Where:</b> <code>marc/eval/ablations/noise_ablation.py</code> and results under <code>results/p1_entrapment/</code>.</p>
-<p class="tl"><b>Depends on:</b> Working solve loop (Davin), eval harness (Sparsh), trained Stage-A checkpoint.</p>
+<p class="tbox done"><b>Done when:</b> <code>solve_one.py</code> gets checker-accept on ≥50% of in-distribution samples.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p1-solve</code> → <code>main</code>.</p>`},
+ {t:'[P1] Stage A training + denoiser polish',p:'P1',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Train the GNN to reverse noise; produce first checkpoint.</p>
+<p class="tl"><b>Where:</b> <code>marc/train/stage_a.py</code>, <code>marc/configs/train/stage_a.yaml</code>, <code>scripts/train_stage_a.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Uses Davin's corrupt() and Akash's dataloader — stub batch with one graph if those PRs lag by a day.</p>
 <ol class="tsteps">
-<li>Create <code>marc/eval/ablations/noise_ablation.py</code> that runs the same 50 test graphs twice: once with noise σ_k &gt; 0 in the refinement loop, once with σ_k = 0 (deterministic).</li>
-<li>For each run, record: solved (checker yes/no), final energy E, number of steps taken, whether it stalled (energy flat for 10+ steps while E &gt; tol).</li>
-<li>Compute <b>entrapment rate</b> = fraction of runs that stalled without solving. Compare noise on vs off.</li>
-<li>Generate plots saved to <code>results/p1_entrapment/entrapment_vs_noise.png</code> and <code>solve_rate_vs_noise.png</code> (matplotlib).</li>
-<li>Write <code>results/p1_entrapment/report.md</code> with 1-page summary: numbers, plot embeds, clear verdict ("noise helps / doesn't help / inconclusive").</li>
-<li>If noise shows no benefit, flag in team Slack/issue immediately — this threatens the core hypothesis.</li>
+<li>Implement <code>train_step</code> with diffusion MSE loss (and iterative loss behind config flag).</li>
+<li>CLI saves checkpoints to <code>checkpoints/stage_a/</code>; log loss CSV or W&amp;B.</li>
+<li>Run entrapment smoke test: noise on vs off for 20 problems (prep full ablation for Sparsh).</li>
+<li>Share best checkpoint path in Slack for P2.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> Report markdown + plots exist and team has reviewed. Numbers are ready to paste into paper §RQ2.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with ablation script + report markdown. Push plots to repo or attach to W&amp;B run (link in report).</p>`},
- {t:'RLVR / GRPO against the checker',p:'P2',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Fine-tune the denoiser so it only gets reward when the checker accepts — forcing derive-not-recall behavior.</p>
-<p class="tl"><b>Where:</b> <code>marc/train/stage_b.py</code>, config <code>marc/configs/train/stage_b.yaml</code>, runner <code>scripts/train_stage_b.py</code>.</p>
-<p class="tl"><b>Depends on:</b> Stage-A checkpoint, solve/sampling loop, Checker, CAS energy for reward shaping.</p>
+<p class="tbox done"><b>Done when:</b> Checkpoint exists and beats random solver on in-distribution eval.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p1-train</code> → <code>main</code>. Add <code>checkpoints/</code> to <code>.gitignore</code>.</p>`},
+ {t:'[P1] DataLoader + batch collation',p:'P1',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Feed variable-size graphs into training in batches.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/dataset.py</code>, <code>marc/data/collate.py</code>, <code>tests/test_dataloader.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P1. Quang can train on single-graph batches until this merges (~2 days).</p>
 <ol class="tsteps">
-<li>In <code>stage_b.py</code>, implement one rollout: start from noise, run K denoising steps (stochastic — keep Gaussian sampling so log-probs are tractable), return trajectory + final x.</li>
-<li>Define reward function in <code>marc/train/reward.py</code>: R = B·accept + Σ(E_before − E_after) per step. Start with B=1 and shaping enabled.</li>
-<li>Implement GRPO in <code>marc/train/grpo.py</code>: for each problem, sample N=8 rollouts, compute group-relative advantages, clipped surrogate loss, KL penalty vs Stage-A reference model.</li>
-<li>Load Stage-A weights as both init and <code>pi_ref</code>. Save Stage-B checkpoints to <code>checkpoints/stage_b/</code>.</li>
-<li>Log per epoch: accept rate, mean reward, KL divergence, mean final energy. Target: accept rate trending up on training templates.</li>
-<li>Add config flag <code>purist_reward: true/false</code> — when true, reward is checker-only (no energy shaping) for ablation in P2 eval.</li>
+<li>Implement <code>MARCDataset</code> wrapping generator + template split.</li>
+<li>Implement <code>collate_graphs(batch) → BatchedHeteroData</code> with PyG batching.</li>
+<li>Test: batch of 4 graphs with different sizes loads without error.</li>
+<li>Wire into <code>scripts/train_stage_a.py</code> via PR or pair with Quang.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> Stage-B checkpoint improves checker accept rate vs Stage-A on held-out structure templates (even modestly — e.g. +5 pp).</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/train/stage_b.py</code>, <code>reward.py</code>, <code>grpo.py</code>, <code>scripts/train_stage_b.py</code>, config YAML.</p>`},
- {t:'Derive-not-recall evaluation',p:'P2',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Produce the paper's main results table: MARC vs CoT baseline on generalization and perturbation tests.</p>
-<p class="tl"><b>Where:</b> <code>marc/eval/paper/</code> for experiment configs, <code>results/p2_main/</code> for outputs, <code>paper/figures/</code> for plots (create <code>paper/</code> folder at repo root).</p>
-<p class="tl"><b>Depends on:</b> Stage-B checkpoint (Quang), eval harness (your P0 work), test split from generator.</p>
+<p class="tbox done"><b>Done when:</b> Training script runs with batch_size &gt; 1.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p1-dataloader</code> → <code>main</code>.</p>`},
+ {t:'[P1] Baseline eval + entrapment report',p:'P1',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Wire eval harness to real solver; produce P1 numbers for the paper.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/runner.py</code>, <code>marc/eval/ablations/noise_ablation.py</code>, <code>results/p1_entrapment/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1: finalize runner interface. Day 3+: plug in Davin's solve + Quang's checkpoint when ready.</p>
 <ol class="tsteps">
-<li>Create <code>marc/eval/paper/run_main_eval.py</code> that loads Stage-B model, runs full eval suite on train templates (in-distribution) and held-out test templates.</li>
-<li>Run perturbation test: for each solved problem, change constants in G, re-solve, measure how often it still succeeds (recall detector).</li>
-<li>Run length extrapolation: train templates with ≤3 vars, test with 5+ vars — plot solve rate vs variable count.</li>
-<li>Run ablations via config flags: noise on/off, guidance on/off, purist vs shaped reward. Save each as separate JSON under <code>results/p2_main/</code>.</li>
-<li>Generate publication figures with <code>marc/eval/paper/plot_results.py</code> → output to <code>paper/figures/fig_generalization.pdf</code>, <code>fig_perturbation.pdf</code>.</li>
-<li>Write <code>results/p2_main/summary_table.md</code> with LaTeX-ready table rows for the paper.</li>
+<li>Replace DummySolver with import of <code>solve()</code> from Davin's module.</li>
+<li>Run in-distribution + held-out-structure eval; write <code>results/p1_baselines/metrics.json</code>.</li>
+<li>Run noise on/off ablation (50 graphs) → plots + <code>results/p1_entrapment/report.md</code>.</li>
+<li>Flag team immediately if noise shows no entrapment benefit.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> Summary table + at least 2 figures exist. Generalization gap and perturbation numbers are documented with train/test split names.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with eval scripts + summary markdown. Figures can live in <code>paper/figures/</code> on the repo.</p>`},
- {t:'Discrete graph-growing diffusion',p:'P3',o:['Davin','Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Prototype letting the model add new nodes/edges during denoising (invent auxiliary variables). Preliminary results only — not required for a working MVP.</p>
-<p class="tl"><b>Where:</b> <code>marc/structure/</code> — new module, separate from value-diffusion code.</p>
-<p class="tl"><b>Depends on:</b> Stable P1 value diffusion + P2 checkpoint. Do not start until P2 eval shows baseline numbers.</p>
+<p class="tbox done"><b>Done when:</b> Baseline JSON + entrapment report exist on repo or linked W&amp;B run.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p1-eval</code> → <code>main</code>.</p>`},
+ {t:'[P2] GRPO fine-tuning (Stage B)',p:'P2',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> RL fine-tune denoiser against checker reward only.</p>
+<p class="tl"><b>Where:</b> <code>marc/train/stage_b.py</code>, <code>grpo.py</code>, <code>scripts/train_stage_b.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Davin builds reward function Day 1–2 in parallel; you import it when merged. Sparsh preps eval scripts; Akash preps CoT baseline.</p>
 <ol class="tsteps">
-<li>Create <code>marc/structure/schema.py</code>: extend graph with padded slots (max 10 variable slots, max 10 factor slots), each slot has categorical type including <code>ABSENT</code>.</li>
-<li>In <code>marc/structure/diffusion.py</code>, implement categorical forward corruption toward ABSENT/MASK state (start with single-step flip noise, not full D3PM if too hard).</li>
-<li>In <code>marc/structure/denoiser.py</code>, extend GraphDenoiser to predict both value updates and slot-type logits.</li>
-<li>Pick 3 toy problems in <code>marc/data/structure_toys/</code> that need one auxiliary variable (document expected auxiliary node in a README in that folder).</li>
-<li>Run prototype training in <code>scripts/train_structure_pilot.py</code> — 1000 steps max, log whether auxiliary slots activate on toy problems.</li>
-<li>Write <code>results/p3_structure/pilot_report.md</code> with honest scope: what worked, what didn't, 1–2 figure candidates for paper.</li>
+<li>Implement rollout loop (K stochastic denoising steps, log-probs).</li>
+<li>Integrate <code>reward.py</code> from Davin: R = accept + energy shaping.</li>
+<li>Implement GRPO: N=8 rollouts, group advantage, clipped surrogate, KL to Stage-A ref.</li>
+<li>Config flag <code>purist_reward</code> for checker-only ablation.</li>
+<li>Save checkpoints to <code>checkpoints/stage_b/</code>; log accept rate per epoch.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> Pilot report exists with at least one example where an auxiliary slot becomes non-ABSENT on a toy problem (even if checker doesn't accept yet).</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/structure/*</code>, toy data, pilot script, report markdown.</p>`},
- {t:'Intermediate-object invention eval',p:'P3',o:['Akash','Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Measure whether structure diffusion actually invents useful auxiliary objects (tests hypothesis H2).</p>
-<p class="tl"><b>Where:</b> <code>marc/eval/structure_eval.py</code>, results in <code>results/p3_h2/</code>.</p>
-<p class="tl"><b>Depends on:</b> Structure diffusion prototype (Davin/Quang), toy problems in <code>marc/data/structure_toys/</code>.</p>
+<p class="tbox done"><b>Done when:</b> Stage-B accept rate beats Stage-A on held-out templates by ≥5 pp.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p2-grpo</code> → <code>main</code>.</p>`},
+ {t:'[P2] Reward function + rollout MDP',p:'P2',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Define the RL reward and rollout interface Quang's GRPO imports.</p>
+<p class="tl"><b>Where:</b> <code>marc/train/reward.py</code>, <code>marc/train/rollout.py</code>, <code>tests/test_reward.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P2. Build + test with fake trajectories before GRPO trainer exists.</p>
 <ol class="tsteps">
-<li>In <code>structure_eval.py</code>, load fixed-structure Stage-B model and structure-diffusion pilot model on the same 3 toy problems.</li>
-<li>For each rollout, log: number of slots transitioned from ABSENT → active, which slot types appeared, final checker result.</li>
-<li>Define metric <code>auxiliary_usage_rate</code> = (# accepted rollouts with ≥1 new auxiliary node) / (total rollouts).</li>
-<li>Compare solve rate: fixed-structure vs structure-diffusion on toys. If structure model solves any problem the fixed model cannot, document as a case study.</li>
-<li>Save trajectory logs to <code>results/p3_h2/trajectories.jsonl</code> for manual inspection.</li>
-<li>Write <code>results/p3_h2/h2_report.md</code> with metric table + 1–2 annotated examples (graph before/after auxiliary invention).</li>
+<li>Implement <code>compute_reward(trajectory, G, checker, cas) → float</code>.</li>
+<li>Implement <code>run_rollout(policy, G, K) → trajectory</code> wrapping solve steps.</li>
+<li>Unit test: fake trajectory with energy decreasing → positive shaping reward.</li>
+<li>Unit test: checker accept → terminal reward fires.</li>
+<li>Document API in module docstring for Quang.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> H2 report exists with auxiliary_usage_rate computed and at least one side-by-side case study (fixed vs structure).</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/eval/structure_eval.py</code> and <code>results/p3_h2/h2_report.md</code>.</p>`},
- {t:'Autoformalizer / NL → graph parser',p:'P4',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Convert a plain-English word problem into a <code>FactorGraph</code> automatically. Post-submission work — do not block P0–P2.</p>
-<p class="tl"><b>Where:</b> <code>marc/parser/</code> (new module), benchmark data in <code>marc/data/nl_benchmark/</code>.</p>
-<p class="tl"><b>Depends on:</b> Stable graph schema. Can use an LLM API or rule-based parser — document choice in README.</p>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_reward.py</code> passes; Quang imports without changes.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p2-reward</code> → <code>main</code> (merge before or same day as GRPO).</p>`},
+ {t:'[P2] Paper eval + figures',p:'P2',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Main paper results: generalization gap, perturbation, length extrapolation.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/paper/</code>, <code>paper/figures/</code>, <code>results/p2_main/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Write <code>run_main_eval.py</code> skeleton Day 1 with placeholder checkpoint path. Swap in Stage-B weights when Quang finishes.</p>
 <ol class="tsteps">
-<li>Create <code>marc/parser/__init__.py</code> and <code>parse_word_problem(text: str) → FactorGraph</code> in <code>marc/parser/nl_to_graph.py</code>.</li>
-<li>Manually formalize 20 word problems into gold JSON graphs in <code>marc/data/nl_benchmark/gold/</code> (one file per problem).</li>
-<li>Implement evaluation in <code>marc/parser/eval_parse.py</code>: compare predicted graph structure (variable count, factor count, edge features) to gold.</li>
-<li>Target MVP parser scope: linear equation word problems only (two sentences, 2–3 unknowns).</li>
-<li>Run eval, save accuracy report to <code>results/p4_parser/accuracy.md</code>.</li>
-<li>If accuracy &gt; 70% on the 20-problem set, wire parser output into <code>scripts/solve_one.py --from-text "..."</code> as end-to-end demo.</li>
+<li>Implement <code>run_main_eval.py</code> + <code>plot_results.py</code>.</li>
+<li>Run generalization gap, perturbation, length extrapolation suites.</li>
+<li>Ablations: noise, guidance, purist reward — separate JSON per ablation.</li>
+<li>Output <code>paper/figures/fig_generalization.pdf</code>, <code>fig_perturbation.pdf</code>, <code>summary_table.md</code>.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> 20 gold examples exist, accuracy report exists, and at least one word problem runs through parse → solve → check pipeline.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with <code>marc/parser/*</code>, gold benchmark JSONs, accuracy report.</p>`},
- {t:'Broaden domains & scale',p:'P4',o:['Davin','Quang','Akash','Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> After paper submission, extend MARC beyond linear equation systems and scale up training.</p>
-<p class="tl"><b>Where:</b> Across <code>marc/data/templates.py</code>, <code>marc/configs/</code>, and experiment logs in <code>results/p4_scale/</code>.</p>
-<p class="tl"><b>Depends on:</b> P2 complete. Parser (Akash) optional for NL-input demos.</p>
+<p class="tbox done"><b>Done when:</b> Summary table + 2 figures ready for paper draft.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p2-paper-eval</code> → <code>main</code>.</p>`},
+ {t:'[P2] CoT baseline + perturbation harness',p:'P2',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Token-level CoT comparison baseline so paper claims are fair.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/baselines/cot_baseline.py</code>, <code>marc/eval/baselines/perturb.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P2. Use same test split JSON as Sparsh — no need to wait for Stage-B model for baseline runs.</p>
 <ol class="tsteps">
-<li>Add one new template family in <code>marc/data/templates.py</code> — start with coordinate geometry (points as variables, distance/slope constraints as factors).</li>
-<li>Scale GNN in config: try D=512, L=8; document compute cost in <code>results/p4_scale/scaling_notes.md</code>.</li>
-<li>Increase training data 10× via generator; run full Stage-A + Stage-B pipeline on new template.</li>
-<li>If float precision fails on larger coefficients, prototype upgraded node encoding in <code>marc/model/embeddings.py</code> (document in scaling notes).</li>
-<li>Integrate NL parser (if ready) into demo script <code>scripts/demo_end_to_end.py</code>.</li>
-<li>Write <code>results/p4_scale/roadmap.md</code> listing what worked, what is deferred (Lean formal checker, full structure diffusion).</li>
+<li>Implement CoT baseline wrapper (API or local model) matching same problem set.</li>
+<li>Implement constant perturbation: change coefficients in G, re-run solver, log success rate drop.</li>
+<li>Export results to <code>results/p2_main/cot_baseline.json</code> for Sparsh to merge into figures.</li>
+<li>Document model + prompt used in <code>marc/eval/baselines/README.md</code>.</li>
 </ol>
-<p class="tbox done"><b>Done when:</b> At least one non-equation template trains and evals end-to-end, and roadmap doc is merged.</p>
-<p class="tbox push"><b>Push to:</b> PR to <code>main</code> with new templates, configs, scaling notes, and roadmap markdown.</p>`},
+<p class="tbox done"><b>Done when:</b> CoT baseline JSON exists and Sparsh has merged it into summary table.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p2-baseline</code> → <code>main</code>.</p>`},
+ {t:'[P3] Structure diffusion prototype',p:'P3',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Prototype denoising graph structure (add auxiliary nodes). Preliminary only.</p>
+<p class="tl"><b>Where:</b> <code>marc/structure/diffusion.py</code>, <code>schema.py</code>, <code>scripts/train_structure_pilot.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Akash builds toy problems, Quang extends denoiser head, Sparsh writes H2 metrics — all Day 1 of P3.</p>
+<ol class="tsteps">
+<li>Padded slot schema (ABSENT type) in <code>structure/schema.py</code>.</li>
+<li>Categorical forward corruption in <code>structure/diffusion.py</code> (simple flip noise OK).</li>
+<li>Pilot training script — 1000 steps max on toys.</li>
+<li>Report: <code>results/p3_structure/pilot_report.md</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> One toy run shows a slot going ABSENT → active.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p3-structure</code> → <code>main</code>.</p>`},
+ {t:'[P3] Structure denoiser head',p:'P3',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Extend GraphDenoiser to predict slot-type logits alongside value updates.</p>
+<p class="tl"><b>Where:</b> <code>marc/structure/denoiser.py</code>, <code>tests/test_structure_denoiser.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Build head against mock padded graph Day 1; integrate Davin's corruption when ready.</p>
+<ol class="tsteps">
+<li>Add categorical output head to denoiser for slot types.</li>
+<li>Test forward pass on mock 10-slot graph.</li>
+<li>Wire into <code>train_structure_pilot.py</code> with Davin.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Structure denoiser tests pass and pilot script runs end-to-end.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p3-structure-head</code> → <code>main</code>.</p>`},
+ {t:'[P3] Structure toy problems',p:'P3',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> 3 problems that require an auxiliary variable — fixed graph cannot solve them.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/structure_toys/</code> + README explaining each toy.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P3. Hand-build JSON graphs; no wait for structure code.</p>
+<ol class="tsteps">
+<li>Create 3 JSON graphs + gold solutions in <code>structure_toys/</code>.</li>
+<li>Document expected auxiliary node for each in README.</li>
+<li>Verify fixed-structure Stage-B model fails on all 3 (baseline for H2).</li>
+<li>Share paths with Sparsh for eval script.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> 3 toys + README merged; baseline failure logged.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p3-toys</code> → <code>main</code>.</p>`},
+ {t:'[P3] H2 evaluation (auxiliary object usage)',p:'P3',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Measure whether structure diffusion invents useful auxiliary objects.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/structure_eval.py</code>, <code>results/p3_h2/h2_report.md</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Write eval script Day 1 using stub structure model; run for real when Davin/Quang merge.</p>
+<ol class="tsteps">
+<li>Implement <code>auxiliary_usage_rate</code> metric.</li>
+<li>Compare fixed vs structure model on Akash's 3 toys.</li>
+<li>Save trajectories to <code>results/p3_h2/trajectories.jsonl</code>.</li>
+<li>Write H2 report with case study (graph before/after).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> H2 report with metric table + 1 case study merged.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p3-h2-eval</code> → <code>main</code>.</p>`},
+ {t:'[P4] NL → graph parser',p:'P4',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Parse word problems into FactorGraph JSON. Post-submission.</p>
+<p class="tl"><b>Where:</b> <code>marc/parser/</code>, gold data in <code>marc/data/nl_benchmark/gold/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> All P4 tasks independent — start after Jul 28 submission.</p>
+<ol class="tsteps">
+<li>Hand-label 20 gold graphs; implement <code>parse_word_problem(text) → FactorGraph</code>.</li>
+<li>Eval script + <code>results/p4_parser/accuracy.md</code>.</li>
+<li>If &gt;70% accuracy, add <code>--from-text</code> flag to <code>solve_one.py</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> 20 gold examples + accuracy report exist.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p4-parser</code> → <code>main</code>.</p>`},
+ {t:'[P4] Geometry templates',p:'P4',o:['Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Extend generator beyond equation systems to coordinate geometry.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/templates.py</code> — new <code>CoordinateGeometry</code> template family.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Independent of parser; uses existing schema + CAS.</p>
+<ol class="tsteps">
+<li>Add geometry template: points as variables, distance/slope as factors.</li>
+<li>Generate 20 samples; verify CAS accepts at x*.</li>
+<li>Document in <code>marc/data/README.md</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Geometry samples generate and pass CAS check.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p4-geometry</code> → <code>main</code>.</p>`},
+ {t:'[P4] Scale model + training configs',p:'P4',o:['Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Scale GNN capacity and document compute cost.</p>
+<p class="tl"><b>Where:</b> <code>marc/configs/train/scale.yaml</code>, <code>results/p4_scale/scaling_notes.md</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Run scaling experiments on Akash's geometry templates when ready.</p>
+<ol class="tsteps">
+<li>Configs for D=512, L=8; run Stage-A + Stage-B on geometry data.</li>
+<li>Log GPU hours and solve rate vs capacity in scaling notes.</li>
+<li>If float precision fails, prototype upgraded embeddings in <code>model/embeddings.py</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Scaling notes doc merged with at least 2 data points.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p4-scale</code> → <code>main</code>.</p>`},
+ {t:'[P4] End-to-end demo + scale eval',p:'P4',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Demo script and eval on new domain; post-submission roadmap.</p>
+<p class="tl"><b>Where:</b> <code>scripts/demo_end_to_end.py</code>, <code>results/p4_scale/roadmap.md</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Wire parser (Akash) + geometry (Davin) + scaled model (Quang) as each lands.</p>
+<ol class="tsteps">
+<li>Build demo: optional NL input → graph → solve → checker → print.</li>
+<li>Run eval on geometry split; append to scaling results.</li>
+<li>Write roadmap: what worked, what's deferred (Lean, full structure diffusion).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Demo script runs on ≥1 geometry problem; roadmap merged.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p4-demo</code> → <code>main</code>.</p>`},
 ];
 const phaseMeta={
- P0:['Infrastructure','Schema, generator, calculator, checker, eval harness — the rails everything runs on.','Jun 8 – 21'],
- P1:['Value-diffusion MVP','Fixed-structure value diffusion: a learned, stochastic equation solver. The first real result.','Jun 15 – 28'],
- P2:['Checker fine-tuning','RLVR against the checker; prove derive-not-recall with the generalization suites. This is the paper\'s core result.','Jun 22 – Jul 12'],
- P3:['Structure diffusion','Discrete graph-growing so the model can invent intermediate objects — scoped to early, promising results for the paper.','Jul 6 – 19'],
- P4:['Scope &amp; scale','Autoformalize natural-language problems; broaden domains and scale up. Future work, after submission.','After Jul 28'],
+ P0:['Infrastructure','Week A: 4 parallel tracks (schema · metrics · diffusion · layers). Week B: 4 parallel integrations (generator · CAS · checker · denoiser). Nobody waits.','Jun 8 – 21'],
+ P1:['Value-diffusion MVP','4 parallel tracks: solve loop · training · dataloader · baseline eval. Integrate at end of week.','Jun 15 – 28'],
+ P2:['Checker fine-tuning','4 parallel tracks: GRPO · reward/rollout · paper eval · CoT baseline. Core paper result.','Jun 22 – Jul 12'],
+ P3:['Structure diffusion','4 parallel tracks: structure proto · denoiser head · toy data · H2 eval. Preliminary only.','Jul 6 – 19'],
+ P4:['Scope &amp; scale','4 parallel tracks: parser · geometry · scaling · demo. After submission.','After Jul 28'],
 };
 const initial=n=>n[0];
 
