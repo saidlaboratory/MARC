@@ -1,0 +1,44 @@
+{
+  "variables": [
+    {
+      "id": "x",
+      "value": 0.0
+    },
+    {
+      "id": "y",
+      "value": 0.0
+    }
+  ],
+  "factors": [
+    {
+      "id": "eq1",
+      "expression": "x+y-3"
+    },
+    {
+      "id": "eq2",
+      "expression": "x-y-1"
+    }
+  ],
+  "edges": [
+    {
+      "variable_id": "x",
+      "factor_id": "eq1",
+      "coefficient": 1
+    },
+    {
+      "variable_id": "y",
+      "factor_id": "eq1",
+      "coefficient": 1
+    },
+    {
+      "variable_id": "x",
+      "factor_id": "eq2",
+      "coefficient": 1
+    },
+    {
+      "variable_id": "y",
+      "factor_id": "eq2",
+      "coefficient": -1
+    }
+  ]
+}

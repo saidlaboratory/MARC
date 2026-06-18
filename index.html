@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARC — Mathematical AI Reasoning Core</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0e13; --ink2:#13161f; --ink3:#1a1e29; --panel:#11141c;
+  --line:rgba(233,227,213,.10); --line2:rgba(233,227,213,.16);
+  --text:#e9e4d7; --dim:#a3a094; --faint:#6c6a60;
+  --amber:#f0a830; --amber-deep:#c9871f; --amber-soft:rgba(240,168,48,.14);
+  --cyan:#5bc8d6; --rose:#e8836b; --green:#8fcf7a;
+  --bad:#e2664f; --warn:#e6a23c; --ok:#7fc77a;
+  --serif:'Fraunces',Georgia,serif; --body:'Hanken Grotesk',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink); color:var(--text); font-family:var(--body);
+  line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+/* atmosphere */
+.bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
+.bg .grid{position:absolute;inset:0;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(ellipse 90% 70% at 50% 30%,#000 30%,transparent 80%);opacity:.5}
+.blob{position:fixed;border-radius:50%;filter:blur(90px);z-index:-1;opacity:.35;pointer-events:none}
+.blob.a{width:520px;height:520px;background:radial-gradient(circle,rgba(240,168,48,.5),transparent 70%);top:-160px;left:-60px;animation:float1 18s ease-in-out infinite}
+.blob.b{width:460px;height:460px;background:radial-gradient(circle,rgba(91,200,214,.4),transparent 70%);top:30%;right:-140px;animation:float2 22s ease-in-out infinite}
+@keyframes float1{50%{transform:translate(60px,50px) scale(1.1)}}
+@keyframes float2{50%{transform:translate(-50px,-40px) scale(1.08)}}
+
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+section{padding:108px 0;position:relative}
+
+/* eyebrow / section index */
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);
+  display:inline-flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--amber);display:inline-block;opacity:.7}
+.sec-no{font-family:var(--serif);font-size:13px;color:var(--faint);letter-spacing:.1em}
+
+h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.05;letter-spacing:-.01em}
+h2{font-size:clamp(30px,4.5vw,52px);margin:18px 0 22px}
+h2 em{font-style:italic;color:var(--amber)}
+p.lead{font-size:clamp(17px,1.6vw,20px);color:var(--dim);max-width:60ch}
+.mono{font-family:var(--mono)}
+
+/* HERO */
+.hero{min-height:96vh;display:flex;flex-direction:column;justify-content:center;padding-top:90px}
+.tag{font-family:var(--mono);font-size:12.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+.hero h1{font-size:clamp(58px,12vw,150px);line-height:.92;margin:22px 0 4px;letter-spacing:-.02em}
+.hero h1 .light{color:var(--text)} .hero h1 .glow{color:var(--amber);text-shadow:0 0 50px rgba(240,168,48,.35)}
+.hero .expand{font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.4vw,30px);color:var(--dim);margin-bottom:30px}
+.hero .sub{font-size:18px;color:var(--dim);max-width:58ch;margin-bottom:40px}
+.hero .sub b{color:var(--text);font-weight:600}
+.pillrow{display:flex;gap:10px;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:12px;letter-spacing:.06em;border:1px solid var(--line2);border-radius:100px;padding:8px 15px;color:var(--dim)}
+.pill .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-right:8px;vertical-align:middle}
+.scrollcue{margin-top:64px;font-family:var(--mono);font-size:11px;letter-spacing:.25em;color:var(--faint);text-transform:uppercase}
+.scrollcue span{display:block;width:1px;height:42px;background:linear-gradient(var(--amber),transparent);margin-top:14px;animation:drop 2.2s infinite}
+@keyframes drop{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* rise on load */
+.rise{opacity:0;transform:translateY(26px);animation:rise .9s cubic-bezier(.2,.75,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+/* reveal on scroll */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* CONCEPT cards */
+.head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.card{background:linear-gradient(180deg,var(--ink2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:26px;position:relative;overflow:hidden}
+.card .k{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.1em;margin-bottom:14px}
+.card h3{font-size:21px;margin-bottom:10px}
+.card p{color:var(--dim);font-size:15px}
+.card.bad .k{color:var(--rose)}
+.card .strike{text-decoration:line-through;text-decoration-color:var(--rose);text-decoration-thickness:2px}
+
+/* MECHANISM */
+.demo{display:grid;grid-template-columns:1.15fr .85fr;gap:30px;margin-top:42px;align-items:start}
+.demowrap{background:linear-gradient(180deg,#0e1118,#0b0d12);border:1px solid var(--line2);border-radius:18px;padding:22px}
+.demowrap svg{width:100%;height:auto;display:block}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+button.ctl{font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;background:var(--ink3);color:var(--text);border:1px solid var(--line2);
+  border-radius:9px;padding:10px 14px;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:7px}
+button.ctl:hover{border-color:var(--amber);color:var(--amber)}
+button.ctl.primary{background:var(--amber);color:#1a1306;border-color:var(--amber);font-weight:700}
+button.ctl.primary:hover{background:#ffc056;color:#1a1306}
+.meterbox{margin-top:18px}
+.meterlabel{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:7px}
+.meter{height:9px;border-radius:6px;background:var(--ink3);overflow:hidden;border:1px solid var(--line)}
+.meter>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber-deep),var(--amber));transition:width .35s ease,background .35s}
+.status{margin-top:14px;display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:13px;
+  border:1px solid var(--line2);border-radius:100px;padding:8px 15px;color:var(--dim);transition:.3s}
+.status .ck{width:9px;height:9px;border-radius:50%;background:var(--faint);transition:.3s}
+.status.ok{border-color:var(--amber);color:var(--amber);background:var(--amber-soft);box-shadow:0 0 24px rgba(240,168,48,.18)}
+.status.ok .ck{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.explain h3{font-size:24px;margin-bottom:14px}
+.explain p{color:var(--dim);margin-bottom:16px;font-size:15.5px}
+.steps-inline{list-style:none;display:flex;flex-direction:column;gap:12px}
+.steps-inline li{display:flex;gap:13px;align-items:flex-start;font-size:14.5px;color:var(--dim)}
+.steps-inline li b{color:var(--text)}
+.steps-inline .n{font-family:var(--mono);font-size:12px;color:var(--amber);border:1px solid var(--line2);border-radius:7px;
+  min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* loop diagram */
+.loop{margin-top:46px;background:linear-gradient(180deg,var(--ink2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:30px}
+.loop .lc{font-family:var(--mono);font-size:12px;color:var(--dim);text-align:center;margin-top:14px;letter-spacing:.04em}
+
+/* ROADMAP */
+.phases{margin-top:42px;display:flex;flex-direction:column;gap:12px}
+.phase{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--ink2),var(--panel));overflow:hidden}
+.phase>.top{display:flex;align-items:center;gap:18px;padding:22px 26px;cursor:pointer;user-select:none}
+.phase .code{font-family:var(--serif);font-size:30px;color:var(--amber);min-width:54px}
+.phase .pt{flex:1}
+.phase .pt h3{font-size:21px} .phase .pt span{font-size:13.5px;color:var(--dim)}
+.phase .chev{font-family:var(--mono);color:var(--faint);transition:.3s}
+.phase.open .chev{transform:rotate(90deg);color:var(--amber)}
+.phase .body{max-height:0;overflow:hidden;transition:max-height .45s ease}
+.phase.open .body{overflow:visible}
+.phase .inner{padding:4px 26px 26px 96px}
+.tasklist{list-style:none;display:flex;flex-direction:column;gap:11px}
+.tasklist li{display:flex;align-items:center;gap:13px;padding:13px 16px;background:var(--ink);border:1px solid var(--line);border-radius:10px}
+.tasklist li .task-row{display:flex;align-items:center;gap:13px;width:100%}
+.tasklist li .tx{flex:1;font-size:14.5px}
+.who{display:inline-flex;gap:5px}
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;color:#0c0e13}
+.av.Davin{background:var(--amber)} .av.Quang{background:var(--rose)} .av.Akash{background:var(--cyan)} .av.Sparsh{background:var(--green)}
+.mbadge{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--amber);border:1px solid var(--amber);border-radius:5px;padding:2px 7px;background:var(--amber-soft)}
+
+/* TEAM */
+.legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--dim)}
+.legend .pp{display:inline-flex;align-items:center;gap:9px}
+.note{margin-top:22px;padding:16px 20px;border-left:2px solid var(--amber);background:var(--amber-soft);border-radius:0 10px 10px 0;font-size:14.5px;color:var(--text);max-width:70ch}
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin-top:30px}
+.fchip{font-family:var(--mono);font-size:12.5px;letter-spacing:.05em;border:1px solid var(--line2);border-radius:100px;padding:9px 16px;cursor:pointer;color:var(--dim);transition:.18s;display:inline-flex;align-items:center;gap:8px}
+.fchip:hover{color:var(--text);border-color:var(--line2)}
+.fchip.active{background:var(--text);color:var(--ink);border-color:var(--text);font-weight:700}
+.fchip .sw{width:9px;height:9px;border-radius:50%}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.tcard{background:linear-gradient(180deg,var(--ink2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:20px;transition:.3s;position:relative}
+.tcard.hide{display:none}
+.tcard .ph{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint)}
+.tcard h3{font-size:17px;margin:9px 0 9px;line-height:1.25}
+.tcard .tdetails{font-size:13px;color:var(--dim);margin-bottom:16px;line-height:1.5}
+.tcard .tdetails .tl{margin:0 0 7px;font-size:13px}
+.tcard .tdetails .tsteps{margin:10px 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.tcard .tdetails .tsteps li{line-height:1.55}
+.tcard .tdetails .tsteps li::marker{color:var(--amber);font-weight:700}
+.tcard .tdetails .tbox{margin:10px 0 0;padding:10px 13px;border-radius:8px;border-left:2px solid var(--line2);background:var(--ink);font-size:12.5px;line-height:1.5}
+.tcard .tdetails .tbox.done{border-left-color:var(--green)}
+.tcard .tdetails .tbox.push{border-left-color:var(--cyan)}
+.tcard .tdetails .tbox.parallel{border-left-color:var(--amber)}
+.tcard .tdetails b{color:var(--text);font-weight:600}
+.tcard .tdetails code{font-family:var(--mono);font-size:11.5px;color:var(--amber);background:rgba(0,0,0,.25);padding:1px 5px;border-radius:4px}
+.tcard .foot{display:flex;justify-content:space-between;align-items:center}
+
+#roadmap{padding-bottom:0}
+#team{padding-top:48px;padding-bottom:160px}
+footer{margin-top:72px;padding:60px 0 80px;border-top:1px solid var(--line);text-align:center}
+footer .mono{font-size:12px;color:var(--faint);letter-spacing:.1em}
+footer h3{font-size:26px;margin-bottom:10px}
+footer p{color:var(--dim);max-width:54ch;margin:0 auto}
+
+/* DEEP-DIVE explanations + comparison */
+.deep{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:42px}
+.deep .blk{background:linear-gradient(180deg,var(--ink2),var(--panel));border:1px solid var(--line);border-radius:16px;padding:26px}
+.deep .blk.wide{grid-column:1/-1}
+.deep .blk .ic{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--amber);border:1px solid var(--line2);border-radius:6px;padding:4px 9px;display:inline-block;margin-bottom:14px}
+.deep .blk h3{font-size:20px;margin-bottom:11px}
+.deep .blk p{color:var(--dim);font-size:14.5px;margin-bottom:11px}
+.deep .blk p:last-child{margin-bottom:0}
+.deep .blk b{color:var(--text)} .deep .blk .am{color:var(--amber)}
+.vv{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+.vv>div{border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--ink);font-size:14px;color:var(--dim);line-height:1.6}
+.vv>div b{color:var(--text)} .vv .t{font-family:var(--mono);font-size:12px;color:var(--amber);margin-bottom:9px}
+.vv.struct .t{color:var(--cyan)}
+
+.compare{margin-top:30px;border:1px solid var(--line);border-radius:16px;overflow-x:auto}
+.compare table{width:100%;border-collapse:collapse;min-width:640px}
+.compare th,.compare td{padding:15px 18px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top}
+.compare thead th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:var(--ink2);color:var(--dim)}
+.compare thead th.marc{color:var(--amber)}
+.compare tbody th{font-weight:600;color:var(--text);background:var(--panel);width:23%}
+.compare td{color:var(--dim)} .compare td.marc{color:var(--text);background:rgba(240,168,48,.06)}
+.compare tr:last-child th,.compare tr:last-child td{border-bottom:none}
+
+/* TIMELINE */
+.deadline{margin-top:34px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between;
+  background:linear-gradient(110deg,rgba(240,168,48,.13),var(--ink2));border:1px solid var(--amber);border-radius:16px;padding:24px 30px}
+.deadline .cd{display:flex;gap:20px;align-items:center}
+.deadline .num{font-family:var(--serif);font-size:60px;line-height:1;color:var(--amber);text-shadow:0 0 40px rgba(240,168,48,.3)}
+.deadline .lbl{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+.deadline .dts{font-family:var(--mono);font-size:13px;color:var(--dim);text-align:right;line-height:2}
+.deadline .dts b{color:var(--amber)}
+
+.gantt{margin-top:26px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--ink2),var(--panel));padding:24px 24px 18px;overflow-x:auto}
+.gwrap{min-width:720px}
+.ghead{display:grid;grid-template-columns:172px 1fr}
+.ghead .wk{display:grid;grid-template-columns:repeat(7,1fr)}
+.ghead .wk span{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:center;padding:0 4px 12px;line-height:1.5}
+.ghead .wk span.sub{color:var(--amber)}
+.grow{display:grid;grid-template-columns:172px 1fr;align-items:center;border-top:1px solid var(--line)}
+.grow .gl{font-size:13.5px;color:var(--text);padding:8px 12px 8px 0}
+.grow .gl small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:2px}
+.gtrack{display:grid;grid-template-columns:repeat(7,1fr);height:46px;background-image:linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:calc(100%/7) 100%}
+.gtrack .bar{margin:11px 3px;border-radius:7px;display:flex;align-items:center;padding:0 11px;
+  font-family:var(--mono);font-size:11px;font-weight:700;color:#0c0e13;white-space:nowrap;overflow:hidden}
+.b-amber{background:var(--amber)} .b-rose{background:var(--rose)} .b-cyan{background:var(--cyan)} .b-green{background:var(--green)}
+.b-line{background:repeating-linear-gradient(45deg,#f0a830,#f0a830 7px,#b9791b 7px,#b9791b 14px);color:#1a1306}
+.gnote{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:16px;line-height:1.8}
+.phase .pdate{font-family:var(--mono);font-size:12px;color:var(--amber);padding-right:14px;white-space:nowrap}
+.scoped{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--cyan);border:1px solid var(--cyan);border-radius:5px;padding:2px 6px;margin-left:9px;vertical-align:middle}
+
+@media(max-width:860px){
+  .cards{grid-template-columns:1fr} .demo{grid-template-columns:1fr} .board{grid-template-columns:1fr}
+  .phase .inner{padding-left:26px} section{padding:80px 0}
+  .deep{grid-template-columns:1fr} .vv{grid-template-columns:1fr}
+  .deadline{flex-direction:column;align-items:flex-start} .deadline .dts{text-align:left}
+}
+</style>
+</head>
+<body>
+<div class="bg"><div class="grid"></div></div>
+<div class="blob a"></div><div class="blob b"></div>
+
+<!-- HERO -->
+<header class="hero wrap">
+  <div class="tag rise" style="animation-delay:.05s">Mathematical AI Reasoning Core · Research Brief v0.1 · Target: AAAI-27</div>
+  <h1 class="rise" style="animation-delay:.15s"><span class="light">M A</span><span class="glow">R C</span></h1>
+  <div class="expand rise" style="animation-delay:.28s">A model that <span style="color:var(--amber)">derives</span> mathematics instead of recalling it.</div>
+  <p class="sub rise" style="animation-delay:.4s">Instead of writing a chain of words, MARC represents a problem as a <b>constraint graph</b> and solves it by <b>iteratively denoising that graph</b> toward a checker-verified state — offloading arithmetic to an exact engine and reasoning about structure.</p>
+  <div class="pillrow rise" style="animation-delay:.52s">
+    <span class="pill"><span class="dot"></span>Denoising diffusion over constraint graphs</span>
+    <span class="pill"><span class="dot"></span>CAS-guided · checker-rewarded</span>
+    <span class="pill" style="border-color:var(--amber);color:var(--amber)"><span class="dot"></span>Paper due Jul 27, 2026</span>
+  </div>
+  <div class="scrollcue rise" style="animation-delay:.66s">Scroll<span></span></div>
+</header>
+
+<!-- 01 CONCEPT -->
+<section class="wrap" id="concept">
+  <div class="head reveal">
+    <div><div class="eyebrow">The premise</div></div>
+    <div class="sec-no">01 — CONCEPT</div>
+  </div>
+  <h2 class="reveal">Why not just a <em>chain of thought?</em></h2>
+  <p class="lead reveal">Chain-of-thought works, but three cracks motivate a different substrate. MARC keeps the reasoning and removes the cracks by moving computation into a structured, verifiable object.</p>
+  <div class="cards">
+    <div class="card bad reveal">
+      <div class="k">Crack 01</div>
+      <h3>It can <span class="strike">recall</span></h3>
+      <p>Much benchmark performance reflects solutions seen in training, not reasoning. A system that can recall an answer can't be trusted to have derived it.</p>
+    </div>
+    <div class="card bad reveal" style="transition-delay:.08s">
+      <div class="k">Crack 02</div>
+      <h3>It can lie to itself</h3>
+      <p>The written chain often doesn't match the computation that produced the answer — a post-hoc story, unreliable to study or verify.</p>
+    </div>
+    <div class="card bad reveal" style="transition-delay:.16s">
+      <div class="k">Crack 03</div>
+      <h3>It fumbles arithmetic</h3>
+      <p>Token models compute digits poorly and burn capacity tracking them. The mechanical part belongs in a calculator, not the model.</p>
+    </div>
+  </div>
+  <div class="note reveal" style="margin-top:28px">Mathematics is the right first domain because answers are <b>verifiable</b>. A computer-algebra engine or proof kernel supplies an objective signal with no human labels — so MARC can be built as the tightest possible loop between generating a solution and checking it.</div>
+</section>
+
+<!-- 02 THE IDEA -->
+<section class="wrap" id="idea">
+  <div class="head reveal">
+    <div><div class="eyebrow">The idea</div></div>
+    <div class="sec-no">02 — IN DEPTH</div>
+  </div>
+  <h2 class="reveal">What MARC actually <em>does</em></h2>
+  <p class="lead reveal">Four ideas do all the work — and none of them has the model write out its reasoning in words. The thinking happens inside a structured object that can be checked at every step.</p>
+  <div class="deep">
+    <div class="blk reveal">
+      <span class="ic">01 · REPRESENT</span>
+      <h3>A problem becomes a graph</h3>
+      <p>Every quantity in the problem — knowns and unknowns alike — is a <b>variable node</b>. Every relation it must satisfy — an equation, an inequality, a definition — is a <b>constraint node</b> wired to the variables it touches.</p>
+      <p>There is no first step or last step. The whole graph <em>is</em> the problem, and a solution is simply an assignment where <span class="am">every constraint is satisfied at once</span>.</p>
+    </div>
+    <div class="blk reveal" style="transition-delay:.06s">
+      <span class="ic">02 · SOLVE</span>
+      <h3>Solving is relaxation, not search</h3>
+      <p>The model doesn't hunt for a path to the answer. It starts from a noisy guess and <b>denoises the whole graph</b> — nudging every value toward consistency, again and again, until nothing is violated.</p>
+      <p>The injected noise isn't a flaw: it's what lets the process <span class="am">escape states that look locally fine but are globally wrong</span> — the trap that sinks ordinary constraint solvers.</p>
+    </div>
+    <div class="blk reveal">
+      <span class="ic">03 · COMPUTE</span>
+      <h3>The calculator does the arithmetic</h3>
+      <p>A computer-algebra engine measures exactly how violated each constraint is. Those residuals are the signal that steers every denoising step.</p>
+      <p>So the model never grinds through digit arithmetic — the thing it's worst at. It spends capacity on <b>which constraints to attack and how to move</b>, and leaves exact computation to the engine.</p>
+    </div>
+    <div class="blk reveal" style="transition-delay:.06s">
+      <span class="ic">04 · VERIFY</span>
+      <h3>Trained only against a checker</h3>
+      <p>The single reward is whether a checker accepts the result. There's no answer key to copy, so the model <b>can't fall back on recalling</b> a memorized solution — it has to produce something that actually checks out.</p>
+      <p>We confirm it's truly deriving by testing on <span class="am">unseen structure and far larger problems</span> than it trained on. Memorization can't fake that; only a real procedure generalizes.</p>
+    </div>
+    <div class="blk wide reveal">
+      <span class="ic">THE TWO VERSIONS</span>
+      <h3>Denoise the numbers — or denoise the graph itself</h3>
+      <div class="vv">
+        <div><div class="t">▸ VALUE DIFFUSION · the MVP</div>The graph's wiring is fixed; only the <b>values</b> at the nodes are noisy. Denoising settles them onto the solution. Essentially a learned, stochastic equation solver — buildable, and the first real result.</div>
+        <div class="struct"><div class="t">▸ STRUCTURE DIFFUSION · the frontier</div>The <b>graph itself</b> is noisy — edges and nodes are added and removed during denoising. This is what lets the model <b>invent intermediate objects</b> (an auxiliary variable, a lemma) a fixed graph can't express. Hardest, most novel, highest risk.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="reveal" style="font-family:var(--serif);font-weight:500;font-size:26px;margin:50px 0 4px">How it differs from the usual approaches</h3>
+  <div class="compare reveal">
+    <table>
+      <thead><tr><th></th><th>Chain-of-thought</th><th>Symbolic tree search</th><th class="marc">MARC</th></tr></thead>
+      <tbody>
+        <tr><th>Represents a problem as</th><td>a stream of text tokens</td><td>discrete expression / proof states</td><td class="marc">a constraint graph of quantities &amp; relations</td></tr>
+        <tr><th>Makes progress by</th><td>appending the next token, left to right</td><td>branching and searching over discrete moves</td><td class="marc">denoising the whole graph toward consistency</td></tr>
+        <tr><th>Computation lives in</th><td>the token stream (often parroted)</td><td>the search policy</td><td class="marc">a learned relaxation + an exact calculator</td></tr>
+        <tr><th>Can it recall an answer?</th><td>Yes — a real risk</td><td>Partly</td><td class="marc">No — it must produce a checkable derivation</td></tr>
+        <tr><th>Verified by</th><td>usually just the final answer</td><td>each move valid by construction</td><td class="marc">every residual must vanish; the checker gates it</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 03 MECHANISM -->
+<section class="wrap" id="mechanism">
+  <div class="head reveal">
+    <div><div class="eyebrow">The mechanism</div></div>
+    <div class="sec-no">03 — HOW IT WORKS</div>
+  </div>
+  <h2 class="reveal">Watch a graph <em>relax</em> into a solution</h2>
+  <p class="lead reveal">A tiny system of equations as a constraint graph. Variable nodes hold noisy values; constraint nodes show how violated each equation is. Each denoise step nudges every value at once — guided by the calculator's residuals — until the checker accepts.</p>
+
+  <div class="demo">
+    <div>
+      <div class="demowrap reveal">
+        <svg viewBox="0 0 600 360" role="img" aria-label="Interactive constraint graph denoising demo">
+          <!-- edges -->
+          <g stroke="rgba(233,227,213,.18)" stroke-width="1.4">
+            <line x1="120" y1="118" x2="120" y2="242"/> <!-- x-E1 -->
+            <line x1="300" y1="118" x2="135" y2="244"/> <!-- y-E1 -->
+            <line x1="300" y1="118" x2="300" y2="242"/> <!-- y-E2 -->
+            <line x1="480" y1="118" x2="315" y2="244"/> <!-- z-E2 -->
+            <line x1="120" y1="118" x2="465" y2="244"/> <!-- x-E3 -->
+            <line x1="480" y1="118" x2="480" y2="242"/> <!-- z-E3 -->
+          </g>
+          <!-- variable nodes -->
+          <g font-family="JetBrains Mono, monospace">
+            <circle id="node-x" cx="120" cy="90" r="30" fill="#13161f" stroke="#f0a830" stroke-width="1.6"/>
+            <text x="120" y="86" text-anchor="middle" fill="#e9e4d7" font-size="16" font-weight="700">x</text>
+            <text id="val-x" x="120" y="103" text-anchor="middle" fill="#a3a094" font-size="11">0.00</text>
+
+            <circle id="node-y" cx="300" cy="90" r="30" fill="#13161f" stroke="#f0a830" stroke-width="1.6"/>
+            <text x="300" y="86" text-anchor="middle" fill="#e9e4d7" font-size="16" font-weight="700">y</text>
+            <text id="val-y" x="300" y="103" text-anchor="middle" fill="#a3a094" font-size="11">0.00</text>
+
+            <circle id="node-z" cx="480" cy="90" r="30" fill="#13161f" stroke="#f0a830" stroke-width="1.6"/>
+            <text x="480" y="86" text-anchor="middle" fill="#e9e4d7" font-size="16" font-weight="700">z</text>
+            <text id="val-z" x="480" y="103" text-anchor="middle" fill="#a3a094" font-size="11">0.00</text>
+          </g>
+          <!-- factor nodes -->
+          <g font-family="JetBrains Mono, monospace">
+            <rect id="fac-0" x="86" y="244" width="68" height="56" rx="9" fill="#13161f" stroke="#e2664f" stroke-width="1.4"/>
+            <text x="120" y="266" text-anchor="middle" fill="#e9e4d7" font-size="12">x+y=3</text>
+            <text id="res-0" x="120" y="286" text-anchor="middle" fill="#e2664f" font-size="11">r=0</text>
+
+            <rect id="fac-1" x="266" y="244" width="68" height="56" rx="9" fill="#13161f" stroke="#e2664f" stroke-width="1.4"/>
+            <text x="300" y="266" text-anchor="middle" fill="#e9e4d7" font-size="12">y+z=4</text>
+            <text id="res-1" x="300" y="286" text-anchor="middle" fill="#e2664f" font-size="11">r=0</text>
+
+            <rect id="fac-2" x="446" y="244" width="68" height="56" rx="9" fill="#13161f" stroke="#e2664f" stroke-width="1.4"/>
+            <text x="480" y="266" text-anchor="middle" fill="#e9e4d7" font-size="12">x+z=5</text>
+            <text id="res-2" x="480" y="286" text-anchor="middle" fill="#e2664f" font-size="11">r=0</text>
+          </g>
+          <text x="300" y="332" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#6c6a60" letter-spacing="1.5">VARIABLE NODES  ·  CONSTRAINT (FACTOR) NODES</text>
+        </svg>
+        <div class="controls">
+          <button class="ctl primary" id="step">▸ Denoise step</button>
+          <button class="ctl" id="auto">⟳ Auto-run</button>
+          <button class="ctl" id="noise">+ Inject noise</button>
+          <button class="ctl" id="reset">↺ Reset</button>
+        </div>
+        <div class="meterbox">
+          <div class="meterlabel"><span>Global consistency</span><span id="normtxt" class="mono">‖r‖ = 0.00</span></div>
+          <div class="meter"><i id="meterfill"></i></div>
+        </div>
+        <div class="status" id="status"><span class="ck"></span><span id="statustxt">awaiting consistency</span></div>
+      </div>
+    </div>
+    <div class="explain reveal" style="transition-delay:.1s">
+      <h3>The loop, in four moves</h3>
+      <p>The solution here is <span class="mono" style="color:var(--amber)">x=2, y=1, z=3</span>. Press <b>Denoise step</b> and watch the residuals fall from red to amber as the whole graph settles at once — no left-to-right token order.</p>
+      <ul class="steps-inline">
+        <li><span class="n">1</span><span><b>Constraint graph.</b> The problem becomes nodes (quantities) and factors (equations) — currently a noisy guess.</span></li>
+        <li><span class="n">2</span><span><b>Denoise step.</b> One round of message passing nudges all values toward consistency together.</span></li>
+        <li><span class="n">3</span><span><b>Calculator.</b> The CAS computes each residual exactly — that signal is what steers the step.</span></li>
+        <li><span class="n">4</span><span><b>Checker.</b> When every residual vanishes, the checker accepts. That acceptance is the only training reward.</span></li>
+      </ul>
+      <p style="margin-top:18px;font-size:14px;color:var(--faint)"><b style="color:var(--dim)">Why noise?</b> Injected noise lets the relaxation escape locally-consistent-but-wrong states — the failure mode of deterministic solvers. Try <span class="mono">+ Inject noise</span> mid-run.</p>
+    </div>
+  </div>
+
+  <!-- loop diagram -->
+  <div class="loop reveal">
+    <svg viewBox="0 0 680 200" role="img" aria-label="The MARC reasoning loop">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <text x="216" y="34" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" fill="#a3a094" letter-spacing="1">iterate until consistent</text>
+      <path d="M340 60 L340 44 L118 44 L118 60" fill="none" stroke="#5bc8d6" stroke-width="1.4" stroke-dasharray="5 5" marker-end="url(#ah)" class="flow"/>
+      <line x1="196" y1="92" x2="252" y2="92" stroke="#a3a094" stroke-width="1.4" marker-end="url(#ah)"/>
+      <line x1="430" y1="92" x2="486" y2="92" stroke="#a3a094" stroke-width="1.4" marker-end="url(#ah)"/>
+      <line x1="340" y1="172" x2="340" y2="128" stroke="#a3a094" stroke-width="1.4" marker-end="url(#ah)"/>
+      <g font-family="JetBrains Mono,monospace">
+        <rect x="46" y="64" width="150" height="56" rx="9" fill="#13161f" stroke="rgba(233,227,213,.18)"/>
+        <text x="121" y="88" text-anchor="middle" fill="#e9e4d7" font-size="13">constraint graph</text>
+        <text x="121" y="106" text-anchor="middle" fill="#a3a094" font-size="11">noisy state</text>
+
+        <rect x="252" y="64" width="178" height="56" rx="9" fill="#1a1320" stroke="#f0a830"/>
+        <text x="341" y="88" text-anchor="middle" fill="#f0a830" font-size="13">denoise step</text>
+        <text x="341" y="106" text-anchor="middle" fill="#c79a55" font-size="11">message passing</text>
+
+        <rect x="486" y="64" width="148" height="56" rx="9" fill="#101a16" stroke="#8fcf7a"/>
+        <text x="560" y="88" text-anchor="middle" fill="#8fcf7a" font-size="13">checker</text>
+        <text x="560" y="106" text-anchor="middle" fill="#7ba874" font-size="11">accepts result</text>
+      </g>
+      <g font-family="JetBrains Mono,monospace">
+        <rect x="261" y="146" width="160" height="46" rx="9" fill="#0f1a1c" stroke="#5bc8d6"/>
+        <text x="341" y="164" text-anchor="middle" fill="#5bc8d6" font-size="12">calculator (CAS)</text>
+        <text x="341" y="181" text-anchor="middle" fill="#79a8ad" font-size="10.5">residuals → guidance</text>
+      </g>
+    </svg>
+    <div class="lc">The graph is refined by a learned denoiser; the calculator scores each constraint; the checker gates the result — repeat until consistent.</div>
+  </div>
+</section>
+
+<!-- 04 TIMELINE -->
+<section class="wrap" id="roadmap">
+  <div class="head reveal">
+    <div><div class="eyebrow">The plan</div></div>
+    <div class="sec-no">04 — TIMELINE</div>
+  </div>
+  <h2 class="reveal">Seven weeks to <em>AAAI-27</em></h2>
+  <p class="lead reveal">The full paper is due <b>July 27, 2026</b>, with the abstract and title locked a week earlier on <b>July 20</b>. The plan: build the verifiable core first, scope the hard math to preliminary results, and reserve the final stretch for writing.</p>
+
+  <div class="deadline reveal">
+    <div class="cd"><div class="num" id="cd-num">—</div><div><div class="lbl">days to the paper deadline</div><div style="font-size:13px;color:var(--dim);margin-top:5px">counting down to Mon, Jul 27, 2026</div></div></div>
+    <div class="dts">Abstract + title locked&nbsp; <b>Mon · Jul 20, 2026</b><br>Full paper due&nbsp; <b>Mon · Jul 27, 2026</b><br>AAAI-27 · Montréal · Feb 16–23, 2027</div>
+  </div>
+
+  <div class="gantt reveal">
+    <div class="gwrap">
+      <div class="ghead"><div></div><div class="wk">
+        <span>Wk 1<br>Jun 8–14</span><span>Wk 2<br>Jun 15–21</span><span>Wk 3<br>Jun 22–28</span><span>Wk 4<br>Jun 29–Jul 5</span><span>Wk 5<br>Jul 6–12</span><span>Wk 6<br>Jul 13–19</span><span class="sub">Wk 7<br>Jul 20–27 ✦</span>
+      </div></div>
+      <div class="grow"><div class="gl">Infrastructure<small>everyone · parallel tracks</small></div><div class="gtrack"><div class="bar b-cyan" style="grid-column:1/3">P0 · schema · CAS · diffusion · eval · model stub</div></div></div>
+      <div class="grow"><div class="gl">Core modeling<small>Davin · Quang · Akash · Sparsh</small></div><div class="gtrack"><div class="bar b-amber" style="grid-column:2/4">P1 · solve loop · denoiser · data loader · baseline eval</div></div></div>
+      <div class="grow"><div class="gl">Training &amp; evaluation<small>everyone · parallel tracks</small></div><div class="gtrack"><div class="bar b-rose" style="grid-column:3/6">P2 · GRPO · rewards · paper eval · CoT baseline</div></div></div>
+      <div class="grow"><div class="gl">Structure diffusion<small>everyone · parallel tracks</small></div><div class="gtrack"><div class="bar b-line" style="grid-column:5/7">P3 · structure proto · toys · H2 eval</div></div></div>
+      <div class="grow"><div class="gl">Paper writing<small>everyone</small></div><div class="gtrack"><div class="bar b-green" style="grid-column:4/8">draft → figures → polish → submit</div></div></div>
+    </div>
+    <div class="gnote">✦ Week 7 is submission week — abstract registered Jul 20, full paper in by Jul 27.<br>P3 is deliberately scoped to early, promising results; the full structure-diffusion build and everything in P4 is future work, after submission. Dates follow the AAAI-27 CFP listing — deadlines are track-specific, so confirm them on the official call for papers.</div>
+  </div>
+
+  <div class="phases" id="phases"></div>
+</section>
+
+<!-- 04 TEAM -->
+<section class="wrap" id="team">
+  <div class="head reveal">
+    <div><div class="eyebrow">The crew</div></div>
+    <div class="sec-no">05 — TASK ASSIGNMENTS</div>
+  </div>
+  <h2 class="reveal">Who owns <em>what</em></h2>
+  <p class="lead reveal">Filter the board by person. Each card is a step-by-step plan with exact file paths. All Python code goes in a new folder <code style="font-family:var(--mono);color:var(--amber)">marc/</code> at the repo root — it does not exist yet; you create it and push to <a href="https://github.com/saidlaboratory/MARC" style="color:var(--cyan)">github.com/saidlaboratory/MARC</a>. See <code style="font-family:var(--mono);color:var(--amber)">TECHNICAL_GUIDE.md</code> §13 for the full layout.</p>
+  <div class="legend reveal">
+    <span class="pp"><span class="av Davin">D</span> Davin</span>
+    <span class="pp"><span class="av Quang">Q</span> Quang</span>
+    <span class="pp"><span class="av Akash">A</span> Akash</span>
+    <span class="pp"><span class="av Sparsh">S</span> Sparsh</span>
+  </div>
+  <div class="note reveal"><b>Parallel by design.</b> Tasks within a phase run on separate tracks — use stubs and the shared <code>marc/data/examples/two_equations.json</code> contract so nobody blocks anyone. Integration happens at the end of each phase, not at the start. <span class="mono" style="color:var(--amber)">Davin &amp; Quang</span> = modeling/diffusion. <span class="mono" style="color:var(--cyan)">Akash &amp; Sparsh</span> = data/eval/checker.</div>
+  <div class="filters reveal" id="filters"></div>
+  <div class="board" id="board"></div>
+</section>
+
+<footer class="wrap">
+  <div class="mono reveal">MARC · MATHEMATICAL AI REASONING CORE</div>
+  <h3 class="reveal" style="margin-top:14px">Derive, don't recall.</h3>
+  <p class="reveal">Pin down the constraint-graph schema and the Stage-A/B training details first — sections 04 of the brief are the parts to harden before P0 kicks off.</p>
+</footer>
+
+<script>
+/* ---------- interactive denoising demo ---------- */
+const A = [[1,1,0],[0,1,1],[1,0,1]];   // x+y, y+z, x+z
+const b = [3,4,5];                      // solution x=2,y=1,z=3
+const lr = 0.12;
+let v = [0,0,0];
+let timer = null;
+
+const rnd = (a,c)=>a+Math.random()*(c-a);
+function gauss(s){ // Box-Muller
+  let u=Math.random(),w=Math.random();
+  return s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w);
+}
+function residuals(){ return A.map((row,i)=>row[0]*v[0]+row[1]*v[1]+row[2]*v[2]-b[i]); }
+function gradient(r){ // A^T r
+  let g=[0,0,0];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) g[j]+=A[i][j]*r[i];
+  return g;
+}
+function rcolor(ar){ return ar<0.12?'#7fc77a':ar<0.8?'#e6a23c':'#e2664f'; }
+
+function render(){
+  const r = residuals();
+  ['x','y','z'].forEach((k,i)=>{ document.getElementById('val-'+k).textContent=v[i].toFixed(2); });
+  let norm=0;
+  r.forEach((rv,i)=>{
+    norm+=rv*rv;
+    const c=rcolor(Math.abs(rv));
+    const rt=document.getElementById('res-'+i);
+    rt.textContent='r='+(rv>=0?'+':'')+rv.toFixed(2); rt.setAttribute('fill',c);
+    document.getElementById('fac-'+i).setAttribute('stroke',c);
+  });
+  norm=Math.sqrt(norm);
+  document.getElementById('normtxt').textContent='‖r‖ = '+norm.toFixed(2);
+  const consistency=Math.max(0,Math.min(1,1-norm/8));
+  const fill=document.getElementById('meterfill');
+  fill.style.width=(consistency*100)+'%';
+  const st=document.getElementById('status'), sx=document.getElementById('statustxt');
+  if(norm<0.12){
+    fill.style.background='linear-gradient(90deg,#c9871f,#f0a830)';
+    st.classList.add('ok'); sx.textContent='✓ checker accepts';
+    ['x','y','z'].forEach(k=>document.getElementById('node-'+k).setAttribute('stroke','#f0a830'));
+  }else{
+    st.classList.remove('ok'); sx.textContent='awaiting consistency';
+  }
+}
+function step(){
+  const r=residuals(), g=gradient(r);
+  for(let j=0;j<3;j++) v[j]-=lr*g[j];
+  render();
+}
+function reset(){
+  if(timer){clearInterval(timer);timer=null;document.getElementById('auto').classList.remove('primary');document.getElementById('auto').textContent='⟳ Auto-run';}
+  v=[rnd(-3,8),rnd(-3,8),rnd(-3,8)]; render();
+}
+document.getElementById('step').onclick=step;
+document.getElementById('noise').onclick=()=>{ v=v.map(x=>x+gauss(1.6)); render(); };
+document.getElementById('reset').onclick=reset;
+document.getElementById('auto').onclick=function(){
+  if(timer){clearInterval(timer);timer=null;this.classList.remove('primary');this.textContent='⟳ Auto-run';}
+  else{this.classList.add('primary');this.textContent='❚❚ Pause';
+    timer=setInterval(()=>{ step(); if(Math.sqrt(residuals().reduce((s,x)=>s+x*x,0))<0.04){clearInterval(timer);timer=null;document.getElementById('auto').classList.remove('primary');document.getElementById('auto').textContent='⟳ Auto-run';} },140);}
+};
+reset();
+
+/* animated dashed flow on loop */
+let dash=0; setInterval(()=>{ dash=(dash-1); document.querySelectorAll('.flow').forEach(e=>e.style.strokeDashoffset=dash); },60);
+
+/* ---------- roadmap + task data ---------- */
+const tasks=[
+ {t:'[P0-A] Repo scaffold + graph schema',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Create the shared data contract every other track imports.</p>
+<p class="tl"><b>Where:</b> <code>marc/</code> package root — scaffold + <code>marc/graph/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. While you work, Davin builds diffusion math on raw tensors, Quang builds GNN layers on mock graphs, Sparsh builds metric functions on fake result arrays. They do <em>not</em> wait for you — they copy your draft JSON schema from your branch or use the template below.</p>
+<ol class="tsteps">
+<li>Create <code>marc/__init__.py</code>, <code>requirements.txt</code> (torch, torch-geometric, sympy, numpy, pytest).</li>
+<li>Define <code>VariableNode</code>, <code>FactorNode</code>, <code>Edge</code> in <code>marc/graph/schema.py</code>.</li>
+<li>Implement <code>FactorGraph</code> in <code>marc/graph/graph.py</code> with <code>get_values()</code> / <code>set_values(x)</code>.</li>
+<li>Add JSON I/O in <code>marc/graph/serialize.py</code> and PyG builder in <code>marc/graph/pyg.py</code>.</li>
+<li>Commit the team contract file <code>marc/data/examples/two_equations.json</code> (x+y=3, x−y=1) by end of Day 2 — post in Slack when merged.</li>
+<li>Tests: <code>tests/test_graph.py</code> round-trips JSON and builds HeteroData.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_graph.py</code> passes and <code>two_equations.json</code> is on <code>main</code>.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p0-schema</code> → <code>main</code>.</p>`},
+ {t:'[P0-A] Eval metrics (standalone)',p:'P0',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Implement the paper metrics as pure functions — no model, no CAS needed yet.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/metrics.py</code>, <code>tests/test_metrics.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. Input is just Python lists of booleans (solved/not). Do not wait for generator or checker — stub those later.</p>
+<ol class="tsteps">
+<li>Implement <code>solve_rate(results)</code>, <code>generalization_gap(train, test)</code>, <code>entrapment_rate(trajectories, tol)</code>, <code>perturbation_robustness(...)</code> in <code>metrics.py</code>.</li>
+<li>Write <code>tests/test_metrics.py</code> with hand-made arrays — e.g. 8/10 solved → rate 0.8.</li>
+<li>Stub <code>marc/eval/runner.py</code> with a <code>DummySolver</code> that returns random values; wire metrics at the end.</li>
+<li>Add <code>scripts/run_eval.py</code> CLI that runs dummy solver on 5 fake problems and writes <code>results/p0_smoke/metrics.json</code>.</li>
+<li>Add <code>results/</code> to <code>.gitignore</code>.</li>
+<li>Document metric definitions in a comment block at top of <code>metrics.py</code> (maps to TECHNICAL_GUIDE §11).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_metrics.py</code> passes and <code>run_eval.py</code> writes JSON.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p0-metrics</code> → <code>main</code>.</p>`},
+ {t:'[P0-A] Diffusion schedule + forward corrupt',p:'P0',o:['Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Implement the noise schedule and corruption formula on tensors — no graph library needed yet.</p>
+<p class="tl"><b>Where:</b> <code>marc/diffusion/schedule.py</code>, <code>marc/diffusion/forward.py</code>, <code>marc/refine/noise.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. Test with random <code>x0</code> tensors shape <code>[n, 1]</code>. Plug into real graphs in P0-B integration.</p>
+<ol class="tsteps">
+<li>Implement cosine beta schedule (T=1000) exporting <code>alpha_bar_t</code> in <code>schedule.py</code>.</li>
+<li>Implement <code>corrupt(x0, t, eps) → x_t</code> in <code>forward.py</code> (DDPM formula).</li>
+<li>Implement <code>inject_noise(x, sigma)</code> in <code>refine/noise.py</code> for the simpler iterative path.</li>
+<li>Write <code>tests/test_corruption_math.py</code>: assert corrupted tensor differs from x0, shape unchanged, noise increases with t.</li>
+<li>Stub empty <code>marc/diffusion/sample.py</code> with <code>ddim_step(...)</code> signature for P1.</li>
+<li>Add 5-line README in <code>marc/diffusion/README.md</code> explaining forward vs refine paths.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_corruption_math.py</code> passes — no CAS or graph required.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p0-diffusion</code> → <code>main</code>.</p>`},
+ {t:'[P0-A] GNN layers + embeddings skeleton',p:'P0',o:['Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Build message-passing layers that work on any HeteroData — use a mock graph until real schema merges.</p>
+<p class="tl"><b>Where:</b> <code>marc/model/embeddings.py</code>, <code>marc/model/layers.py</code>, <code>tests/test_layers.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Start Day 1. Build a tiny mock HeteroData inline in the test file (2 variables, 1 factor). Swap in Akash's loader in P0-B.</p>
+<ol class="tsteps">
+<li>Implement <code>step_emb(t)</code> and type embeddings in <code>embeddings.py</code>.</li>
+<li>Implement one bipartite message-passing round in <code>layers.py</code> (variable↔factor, scatter sum, edge features).</li>
+<li>Write <code>tests/test_layers.py</code> with a hand-built 2-node mock HeteroData — assert output shape <code>[n_vars, D]</code>.</li>
+<li>Stub <code>marc/model/denoiser.py</code> class shell with <code>forward(G, x_t, t)</code> calling layers (residuals = zeros for now).</li>
+<li>Confirm one backward pass works (gradients flow through MLPs).</li>
+<li>Add <code>scripts/layers_smoke.py</code> printing output norm on mock graph.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_layers.py</code> passes with mock graph.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p0-layers</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] Problem generator + splits',p:'P0',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Auto-generate solvable problems as graphs with known answers.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/generator.py</code>, <code>templates.py</code>, <code>splits.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Starts after your schema PR merges (~Day 3). Davin/Sparsh/Quang keep working on their tracks; you don't block them.</p>
+<ol class="tsteps">
+<li>Define templates <code>LinearSystem2x2</code>, <code>LinearSystem3x3</code> in <code>templates.py</code>.</li>
+<li>Implement <code>generate_instance(name, difficulty) → (FactorGraph, x_star)</code> — sample x* first, build equations second.</li>
+<li>Hard-code train vs test template lists in <code>splits.py</code> (structure holdout, not numeric).</li>
+<li>Save 10 samples to <code>marc/data/samples/</code> as JSON.</li>
+<li>Write <code>tests/test_generator.py</code> — correct node counts; add CAS check once Davin's PR merges.</li>
+<li>CLI: <code>python scripts/generate_samples.py --n 10</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> 10 sample JSONs exist and generator tests pass.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p0-generator</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] CAS engine (residuals + energy)',p:'P0',o:['Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Build the calculator: per-constraint residuals, total energy, guidance gradient.</p>
+<p class="tl"><b>Where:</b> <code>marc/cas/engine.py</code>, <code>residuals.py</code>, <code>energy.py</code>, <code>gradients.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Starts once <code>two_equations.json</code> is on main (~Day 3). Quang swaps zero-residuals stub for real CAS in denoiser same day.</p>
+<ol class="tsteps">
+<li>Implement <code>CAS.residuals(G,x)</code>, <code>.energy(G,x)</code>, <code>.energy_grad(G,x)</code>, <code>.accepts(G,x)</code> in SymPy.</li>
+<li>Test on <code>two_equations.json</code>: E=0 at known solution, E&gt;0 at random x.</li>
+<li>Write <code>tests/test_cas.py</code> and 3-line usage in <code>marc/cas/README.md</code>.</li>
+<li>Leave <code>accepts()</code> as numeric-only for now — Sparsh adds symbolic gate in checker PR.</li>
+<li>Hook into Davin's corruption test: corrupt x0, assert E(x_t) &gt; 0 (rename test file <code>tests/test_corruption.py</code>).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_cas.py</code> and corruption integration test pass.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p0-cas</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] Checker (numeric + symbolic gate)',p:'P0',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Final accept/reject gate for inference and RL reward.</p>
+<p class="tl"><b>Where:</b> <code>marc/cas/checker.py</code>, <code>tests/test_checker.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Write checker class against mock residuals Day 3–4; wire to real CAS when Davin's PR merges. Eval runner updated same day.</p>
+<ol class="tsteps">
+<li>Define <code>CheckResult(accepted, failed_factors, max_residual)</code> and <code>Checker.verify(G,x)</code>.</li>
+<li>Stage 1: numeric gate (|r_i| ≤ tol). Stage 2: SymPy exact re-check.</li>
+<li>Add <code>explain_rejection(G,x) → str</code> for RL debug logs.</li>
+<li>Wire <code>CAS.accepts()</code> to delegate to <code>Checker</code> (coordinate merge with Davin).</li>
+<li>Update your eval runner to use Checker instead of dummy pass/fail.</li>
+<li>4 test cases in <code>tests/test_checker.py</code> including float false-accept catch.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Checker tests pass and eval runner reports real accept/reject on sample graphs.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p0-checker</code> → <code>main</code>.</p>`},
+ {t:'[P0-B] Assemble GraphDenoiser + wire CAS',p:'P0',o:['Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Complete denoiser forward pass on a real graph with real CAS residuals.</p>
+<p class="tl"><b>Where:</b> <code>marc/model/denoiser.py</code>, <code>tests/test_denoiser.py</code>, <code>scripts/denoiser_smoke.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Layers done in P0-A. This PR merges after schema + CAS land — integrate same week, no waiting into P1.</p>
+<ol class="tsteps">
+<li>Replace mock graph in tests with <code>from_json(two_equations.json)</code>.</li>
+<li>Call <code>CAS().residuals(G, x_t)</code> in forward (no backprop through CAS).</li>
+<li>Assert output shape <code>[n_vars, 1]</code> and backward pass succeeds.</li>
+<li>Run <code>scripts/denoiser_smoke.py</code> on a generated sample from Akash.</li>
+<li>Post "denoiser ready" in Slack with import example for Davin.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_denoiser.py</code> passes on real graphs + CAS.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p0-denoiser</code> → <code>main</code>.</p>`},
+ {t:'[P1] Solve loop + DDIM sampler',p:'P1',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Inference API: noisy start → denoise → checker accepts.</p>
+<p class="tl"><b>Where:</b> <code>marc/diffusion/sample.py</code>, <code>guidance.py</code>, <code>solve.py</code>, <code>scripts/solve_one.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Quang trains denoiser, Akash builds data loader, Sparsh wires eval — all start Day 1 of P1 using P0 outputs.</p>
+<ol class="tsteps">
+<li>Implement <code>ddim_step</code> in <code>sample.py</code> (20–50 steps).</li>
+<li>Implement guided score in <code>guidance.py</code> using <code>CAS.energy_grad</code>.</li>
+<li>Implement <code>solve(G, steps, n_samples, guidance_fn) → x_best</code> with early-stop + best-of-N.</li>
+<li>Config: <code>marc/configs/inference/default.yaml</code>.</li>
+<li>CLI: <code>scripts/solve_one.py</code> on a sample JSON — print solution + checker result.</li>
+<li>Log sampler comparison in <code>results/p1_sampler_comparison.md</code> (DDIM vs iterative).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>solve_one.py</code> gets checker-accept on ≥50% of in-distribution samples.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p1-solve</code> → <code>main</code>.</p>`},
+ {t:'[P1] Stage A training + denoiser polish',p:'P1',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Train the GNN to reverse noise; produce first checkpoint.</p>
+<p class="tl"><b>Where:</b> <code>marc/train/stage_a.py</code>, <code>marc/configs/train/stage_a.yaml</code>, <code>scripts/train_stage_a.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Uses Davin's corrupt() and Akash's dataloader — stub batch with one graph if those PRs lag by a day.</p>
+<ol class="tsteps">
+<li>Implement <code>train_step</code> with diffusion MSE loss (and iterative loss behind config flag).</li>
+<li>CLI saves checkpoints to <code>checkpoints/stage_a/</code>; log loss CSV or W&amp;B.</li>
+<li>Run entrapment smoke test: noise on vs off for 20 problems (prep full ablation for Sparsh).</li>
+<li>Share best checkpoint path in Slack for P2.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Checkpoint exists and beats random solver on in-distribution eval.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p1-train</code> → <code>main</code>. Add <code>checkpoints/</code> to <code>.gitignore</code>.</p>`},
+ {t:'[P1] DataLoader + batch collation',p:'P1',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Feed variable-size graphs into training in batches.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/dataset.py</code>, <code>marc/data/collate.py</code>, <code>tests/test_dataloader.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P1. Quang can train on single-graph batches until this merges (~2 days).</p>
+<ol class="tsteps">
+<li>Implement <code>MARCDataset</code> wrapping generator + template split.</li>
+<li>Implement <code>collate_graphs(batch) → BatchedHeteroData</code> with PyG batching.</li>
+<li>Test: batch of 4 graphs with different sizes loads without error.</li>
+<li>Wire into <code>scripts/train_stage_a.py</code> via PR or pair with Quang.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Training script runs with batch_size &gt; 1.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p1-dataloader</code> → <code>main</code>.</p>`},
+ {t:'[P1] Baseline eval + entrapment report',p:'P1',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Wire eval harness to real solver; produce P1 numbers for the paper.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/runner.py</code>, <code>marc/eval/ablations/noise_ablation.py</code>, <code>results/p1_entrapment/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1: finalize runner interface. Day 3+: plug in Davin's solve + Quang's checkpoint when ready.</p>
+<ol class="tsteps">
+<li>Replace DummySolver with import of <code>solve()</code> from Davin's module.</li>
+<li>Run in-distribution + held-out-structure eval; write <code>results/p1_baselines/metrics.json</code>.</li>
+<li>Run noise on/off ablation (50 graphs) → plots + <code>results/p1_entrapment/report.md</code>.</li>
+<li>Flag team immediately if noise shows no entrapment benefit.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Baseline JSON + entrapment report exist on repo or linked W&amp;B run.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p1-eval</code> → <code>main</code>.</p>`},
+ {t:'[P2] GRPO fine-tuning (Stage B)',p:'P2',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> RL fine-tune denoiser against checker reward only.</p>
+<p class="tl"><b>Where:</b> <code>marc/train/stage_b.py</code>, <code>grpo.py</code>, <code>scripts/train_stage_b.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Davin builds reward function Day 1–2 in parallel; you import it when merged. Sparsh preps eval scripts; Akash preps CoT baseline.</p>
+<ol class="tsteps">
+<li>Implement rollout loop (K stochastic denoising steps, log-probs).</li>
+<li>Integrate <code>reward.py</code> from Davin: R = accept + energy shaping.</li>
+<li>Implement GRPO: N=8 rollouts, group advantage, clipped surrogate, KL to Stage-A ref.</li>
+<li>Config flag <code>purist_reward</code> for checker-only ablation.</li>
+<li>Save checkpoints to <code>checkpoints/stage_b/</code>; log accept rate per epoch.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Stage-B accept rate beats Stage-A on held-out templates by ≥5 pp.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p2-grpo</code> → <code>main</code>.</p>`},
+ {t:'[P2] Reward function + rollout MDP',p:'P2',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Define the RL reward and rollout interface Quang's GRPO imports.</p>
+<p class="tl"><b>Where:</b> <code>marc/train/reward.py</code>, <code>marc/train/rollout.py</code>, <code>tests/test_reward.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P2. Build + test with fake trajectories before GRPO trainer exists.</p>
+<ol class="tsteps">
+<li>Implement <code>compute_reward(trajectory, G, checker, cas) → float</code>.</li>
+<li>Implement <code>run_rollout(policy, G, K) → trajectory</code> wrapping solve steps.</li>
+<li>Unit test: fake trajectory with energy decreasing → positive shaping reward.</li>
+<li>Unit test: checker accept → terminal reward fires.</li>
+<li>Document API in module docstring for Quang.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> <code>pytest tests/test_reward.py</code> passes; Quang imports without changes.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p2-reward</code> → <code>main</code> (merge before or same day as GRPO).</p>`},
+ {t:'[P2] Paper eval + figures',p:'P2',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Main paper results: generalization gap, perturbation, length extrapolation.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/paper/</code>, <code>paper/figures/</code>, <code>results/p2_main/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Write <code>run_main_eval.py</code> skeleton Day 1 with placeholder checkpoint path. Swap in Stage-B weights when Quang finishes.</p>
+<ol class="tsteps">
+<li>Implement <code>run_main_eval.py</code> + <code>plot_results.py</code>.</li>
+<li>Run generalization gap, perturbation, length extrapolation suites.</li>
+<li>Ablations: noise, guidance, purist reward — separate JSON per ablation.</li>
+<li>Output <code>paper/figures/fig_generalization.pdf</code>, <code>fig_perturbation.pdf</code>, <code>summary_table.md</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Summary table + 2 figures ready for paper draft.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p2-paper-eval</code> → <code>main</code>.</p>`},
+ {t:'[P2] CoT baseline + perturbation harness',p:'P2',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Token-level CoT comparison baseline so paper claims are fair.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/baselines/cot_baseline.py</code>, <code>marc/eval/baselines/perturb.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P2. Use same test split JSON as Sparsh — no need to wait for Stage-B model for baseline runs.</p>
+<ol class="tsteps">
+<li>Implement CoT baseline wrapper (API or local model) matching same problem set.</li>
+<li>Implement constant perturbation: change coefficients in G, re-run solver, log success rate drop.</li>
+<li>Export results to <code>results/p2_main/cot_baseline.json</code> for Sparsh to merge into figures.</li>
+<li>Document model + prompt used in <code>marc/eval/baselines/README.md</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> CoT baseline JSON exists and Sparsh has merged it into summary table.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p2-baseline</code> → <code>main</code>.</p>`},
+ {t:'[P3] Structure diffusion prototype',p:'P3',o:['Davin'],m:true,d:`<p class="tl"><b>Goal:</b> Prototype denoising graph structure (add auxiliary nodes). Preliminary only.</p>
+<p class="tl"><b>Where:</b> <code>marc/structure/diffusion.py</code>, <code>schema.py</code>, <code>scripts/train_structure_pilot.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Akash builds toy problems, Quang extends denoiser head, Sparsh writes H2 metrics — all Day 1 of P3.</p>
+<ol class="tsteps">
+<li>Padded slot schema (ABSENT type) in <code>structure/schema.py</code>.</li>
+<li>Categorical forward corruption in <code>structure/diffusion.py</code> (simple flip noise OK).</li>
+<li>Pilot training script — 1000 steps max on toys.</li>
+<li>Report: <code>results/p3_structure/pilot_report.md</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> One toy run shows a slot going ABSENT → active.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p3-structure</code> → <code>main</code>.</p>`},
+ {t:'[P3] Structure denoiser head',p:'P3',o:['Quang'],m:true,d:`<p class="tl"><b>Goal:</b> Extend GraphDenoiser to predict slot-type logits alongside value updates.</p>
+<p class="tl"><b>Where:</b> <code>marc/structure/denoiser.py</code>, <code>tests/test_structure_denoiser.py</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Build head against mock padded graph Day 1; integrate Davin's corruption when ready.</p>
+<ol class="tsteps">
+<li>Add categorical output head to denoiser for slot types.</li>
+<li>Test forward pass on mock 10-slot graph.</li>
+<li>Wire into <code>train_structure_pilot.py</code> with Davin.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Structure denoiser tests pass and pilot script runs end-to-end.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p3-structure-head</code> → <code>main</code>.</p>`},
+ {t:'[P3] Structure toy problems',p:'P3',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> 3 problems that require an auxiliary variable — fixed graph cannot solve them.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/structure_toys/</code> + README explaining each toy.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Day 1 of P3. Hand-build JSON graphs; no wait for structure code.</p>
+<ol class="tsteps">
+<li>Create 3 JSON graphs + gold solutions in <code>structure_toys/</code>.</li>
+<li>Document expected auxiliary node for each in README.</li>
+<li>Verify fixed-structure Stage-B model fails on all 3 (baseline for H2).</li>
+<li>Share paths with Sparsh for eval script.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> 3 toys + README merged; baseline failure logged.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p3-toys</code> → <code>main</code>.</p>`},
+ {t:'[P3] H2 evaluation (auxiliary object usage)',p:'P3',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Measure whether structure diffusion invents useful auxiliary objects.</p>
+<p class="tl"><b>Where:</b> <code>marc/eval/structure_eval.py</code>, <code>results/p3_h2/h2_report.md</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Write eval script Day 1 using stub structure model; run for real when Davin/Quang merge.</p>
+<ol class="tsteps">
+<li>Implement <code>auxiliary_usage_rate</code> metric.</li>
+<li>Compare fixed vs structure model on Akash's 3 toys.</li>
+<li>Save trajectories to <code>results/p3_h2/trajectories.jsonl</code>.</li>
+<li>Write H2 report with case study (graph before/after).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> H2 report with metric table + 1 case study merged.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p3-h2-eval</code> → <code>main</code>.</p>`},
+ {t:'[P4] NL → graph parser',p:'P4',o:['Akash'],m:false,d:`<p class="tl"><b>Goal:</b> Parse word problems into FactorGraph JSON. Post-submission.</p>
+<p class="tl"><b>Where:</b> <code>marc/parser/</code>, gold data in <code>marc/data/nl_benchmark/gold/</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> All P4 tasks independent — start after Jul 28 submission.</p>
+<ol class="tsteps">
+<li>Hand-label 20 gold graphs; implement <code>parse_word_problem(text) → FactorGraph</code>.</li>
+<li>Eval script + <code>results/p4_parser/accuracy.md</code>.</li>
+<li>If &gt;70% accuracy, add <code>--from-text</code> flag to <code>solve_one.py</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> 20 gold examples + accuracy report exist.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>akash/p4-parser</code> → <code>main</code>.</p>`},
+ {t:'[P4] Geometry templates',p:'P4',o:['Davin'],m:false,d:`<p class="tl"><b>Goal:</b> Extend generator beyond equation systems to coordinate geometry.</p>
+<p class="tl"><b>Where:</b> <code>marc/data/templates.py</code> — new <code>CoordinateGeometry</code> template family.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Independent of parser; uses existing schema + CAS.</p>
+<ol class="tsteps">
+<li>Add geometry template: points as variables, distance/slope as factors.</li>
+<li>Generate 20 samples; verify CAS accepts at x*.</li>
+<li>Document in <code>marc/data/README.md</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Geometry samples generate and pass CAS check.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>davin/p4-geometry</code> → <code>main</code>.</p>`},
+ {t:'[P4] Scale model + training configs',p:'P4',o:['Quang'],m:false,d:`<p class="tl"><b>Goal:</b> Scale GNN capacity and document compute cost.</p>
+<p class="tl"><b>Where:</b> <code>marc/configs/train/scale.yaml</code>, <code>results/p4_scale/scaling_notes.md</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Run scaling experiments on Akash's geometry templates when ready.</p>
+<ol class="tsteps">
+<li>Configs for D=512, L=8; run Stage-A + Stage-B on geometry data.</li>
+<li>Log GPU hours and solve rate vs capacity in scaling notes.</li>
+<li>If float precision fails, prototype upgraded embeddings in <code>model/embeddings.py</code>.</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Scaling notes doc merged with at least 2 data points.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>quang/p4-scale</code> → <code>main</code>.</p>`},
+ {t:'[P4] End-to-end demo + scale eval',p:'P4',o:['Sparsh'],m:false,d:`<p class="tl"><b>Goal:</b> Demo script and eval on new domain; post-submission roadmap.</p>
+<p class="tl"><b>Where:</b> <code>scripts/demo_end_to_end.py</code>, <code>results/p4_scale/roadmap.md</code>.</p>
+<p class="tbox parallel"><b>Parallel track:</b> Wire parser (Akash) + geometry (Davin) + scaled model (Quang) as each lands.</p>
+<ol class="tsteps">
+<li>Build demo: optional NL input → graph → solve → checker → print.</li>
+<li>Run eval on geometry split; append to scaling results.</li>
+<li>Write roadmap: what worked, what's deferred (Lean, full structure diffusion).</li>
+</ol>
+<p class="tbox done"><b>Done when:</b> Demo script runs on ≥1 geometry problem; roadmap merged.</p>
+<p class="tbox push"><b>Push to:</b> PR <code>sparsh/p4-demo</code> → <code>main</code>.</p>`},
+];
+const phaseMeta={
+ P0:['Infrastructure','Week A: 4 parallel tracks (schema · metrics · diffusion · layers). Week B: 4 parallel integrations (generator · CAS · checker · denoiser). Nobody waits.','Jun 8 – 21'],
+ P1:['Value-diffusion MVP','4 parallel tracks: solve loop · training · dataloader · baseline eval. Integrate at end of week.','Jun 15 – 28'],
+ P2:['Checker fine-tuning','4 parallel tracks: GRPO · reward/rollout · paper eval · CoT baseline. Core paper result.','Jun 22 – Jul 12'],
+ P3:['Structure diffusion','4 parallel tracks: structure proto · denoiser head · toy data · H2 eval. Preliminary only.','Jul 6 – 19'],
+ P4:['Scope &amp; scale','4 parallel tracks: parser · geometry · scaling · demo. After submission.','After Jul 28'],
+};
+const initial=n=>n[0];
+
+/* deadline countdown */
+(function(){
+  const due=new Date('2026-07-27T23:59:59-12:00');
+  const days=Math.max(0,Math.ceil((due-new Date())/86400000));
+  const el=document.getElementById('cd-num'); if(el) el.textContent=days;
+})();
+
+/* render phases */
+const phasesEl=document.getElementById('phases');
+Object.keys(phaseMeta).forEach((code,idx)=>{
+  const [name,desc,dates]=phaseMeta[code];
+  const items=tasks.filter(t=>t.p===code);
+  const li=items.map(t=>`<li><div class="task-row"><span class="tx">${t.t}</span>${t.m?'<span class="mbadge">MATH</span>':''}<span class="who">${t.o.map(o=>`<span class="av ${o}" title="${o}">${initial(o)}</span>`).join('')}</span></div></li>`).join('');
+  const scoped = code==='P3'?'<span class="scoped">PRELIMINARY</span>':code==='P4'?'<span class="scoped">FUTURE WORK</span>':'';
+  const el=document.createElement('div');
+  el.className='phase';
+  el.innerHTML=`<div class="top"><div class="code">${code}</div><div class="pt"><h3>${name}${scoped}</h3><span>${desc}</span></div><div class="pdate">${dates}</div><div class="chev mono">▸</div></div><div class="body"><ul class="tasklist inner">${li}</ul></div>`;
+  phasesEl.appendChild(el);
+  const body=el.querySelector('.body');
+  const setBodyHeight=(open)=>{
+    if(open){
+      body.style.maxHeight='none';
+      const h=body.scrollHeight;
+      body.style.maxHeight='0';
+      requestAnimationFrame(()=>{body.style.maxHeight=h+'px';});
+    }else{
+      body.style.maxHeight='0';
+    }
+  };
+  el.querySelector('.top').onclick=()=>{
+    const open=el.classList.toggle('open');
+    setBodyHeight(open);
+  };
+});
+
+/* render task board + filters */
+const people=['All','Davin','Quang','Akash','Sparsh'];
+const sw={Davin:'var(--amber)',Quang:'var(--rose)',Akash:'var(--cyan)',Sparsh:'var(--green)'};
+const filtersEl=document.getElementById('filters');
+people.forEach((p,i)=>{
+  const c=document.createElement('div');
+  c.className='fchip'+(i===0?' active':''); c.dataset.p=p;
+  c.innerHTML=(p!=='All'?`<span class="sw" style="background:${sw[p]}"></span>`:'')+p;
+  filtersEl.appendChild(c);
+});
+const boardEl=document.getElementById('board');
+tasks.forEach(t=>{
+  const c=document.createElement('div');
+  c.className='tcard'; c.dataset.owners=t.o.join(',');
+  c.innerHTML=`<div class="ph">${t.p} ${t.m?'· <span style="color:var(--amber)">MATH-HEAVY</span>':''}</div><h3>${t.t}</h3><div class="tdetails">${t.d}</div><div class="foot"><span class="who">${t.o.map(o=>`<span class="av ${o}" title="${o}">${initial(o)}</span>`).join('')}</span><span class="mono" style="font-size:11px;color:var(--faint)">${t.o.join(' + ')}</span></div>`;
+  boardEl.appendChild(c);
+});
+filtersEl.addEventListener('click',e=>{
+  const chip=e.target.closest('.fchip'); if(!chip)return;
+  filtersEl.querySelectorAll('.fchip').forEach(x=>x.classList.remove('active'));
+  chip.classList.add('active');
+  const p=chip.dataset.p;
+  boardEl.querySelectorAll('.tcard').forEach(card=>{
+    const show = p==='All' || card.dataset.owners.split(',').includes(p);
+    card.classList.toggle('hide',!show);
+  });
+});
+
+/* ---------- scroll reveal ---------- */
+const io=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(e=>io.observe(e));
+</script>
+</body>
+</html>
