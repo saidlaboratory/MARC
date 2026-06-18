@@ -5,7 +5,9 @@ import pytest
 
 from marc.eval.metrics import (
     entrapment_rate,
+    entrapment_reduction,
     generalization_gap,
+    pass_at_k,
     perturbation_robustness,
     solve_rate,
 )
@@ -43,6 +45,43 @@ class TestSolveRate:
     def test_accepts_integers_as_bool(self):
         # 1 and 0 should be treated as True/False
         assert solve_rate([1, 0, 1]) == pytest.approx(2 / 3)
+
+
+# ---------------------------------------------------------------------------
+# pass_at_k
+# ---------------------------------------------------------------------------
+
+class TestPassAtK:
+    def test_k1_uses_first_attempt(self):
+        # first attempts: True, False, True → 2/3
+        per_problem = [[True, True], [False, True], [True, False]]
+        assert pass_at_k(per_problem, k=1) == pytest.approx(2 / 3)
+
+    def test_k2_finds_later_success(self):
+        # problem 2 fails first but succeeds on second attempt → all 3 solved
+        per_problem = [[True, True], [False, True], [True, False]]
+        assert pass_at_k(per_problem, k=2) == pytest.approx(1.0)
+
+    def test_k_larger_than_attempts(self):
+        # k beyond available attempts just uses all of them
+        per_problem = [[False, False], [False, True]]
+        assert pass_at_k(per_problem, k=10) == pytest.approx(0.5)
+
+    def test_none_solved(self):
+        per_problem = [[False, False], [False]]
+        assert pass_at_k(per_problem, k=2) == pytest.approx(0.0)
+
+    def test_k1_matches_solve_rate_of_first_attempts(self):
+        per_problem = [[True], [False], [True], [True]]
+        assert pass_at_k(per_problem, k=1) == pytest.approx(0.75)
+
+    def test_empty_raises(self):
+        with pytest.raises(ValueError):
+            pass_at_k([], k=1)
+
+    def test_invalid_k_raises(self):
+        with pytest.raises(ValueError):
+            pass_at_k([[True]], k=0)
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +140,34 @@ class TestEntrapmentRate:
     def test_empty_raises(self):
         with pytest.raises(ValueError):
             entrapment_rate([])
+
+
+# ---------------------------------------------------------------------------
+# entrapment_reduction
+# ---------------------------------------------------------------------------
+
+class TestEntrapmentReduction:
+    def test_noise_helps(self):
+        # noise off: 3/4 trapped = 0.75; noise on: 1/4 trapped = 0.25 → 0.5
+        noise_off = [1.0, 1.0, 1.0, 0.0]
+        noise_on = [0.0, 0.0, 0.0, 1.0]
+        assert entrapment_reduction(noise_off, noise_on) == pytest.approx(0.5)
+
+    def test_noise_no_effect(self):
+        same = [1.0, 0.0, 1.0]
+        assert entrapment_reduction(same, same) == pytest.approx(0.0)
+
+    def test_noise_hurts(self):
+        # noise on traps more → negative reduction
+        noise_off = [0.0, 0.0]
+        noise_on = [1.0, 1.0]
+        assert entrapment_reduction(noise_off, noise_on) == pytest.approx(-1.0)
+
+    def test_respects_custom_tol(self):
+        noise_off = [0.05, 0.05]
+        noise_on = [0.0, 0.0]
+        # tol=0.09 → noise_off none trapped → reduction 0.0
+        assert entrapment_reduction(noise_off, noise_on, tol=0.09) == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------
