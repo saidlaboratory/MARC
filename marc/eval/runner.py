@@ -1,10 +1,4 @@
-"""
-Stub eval runner with a DummySolver.
-
-DummySolver returns random values so the metrics pipeline can be exercised
-end-to-end without a trained model or real CAS.  Replace with a real solver
-once the model and checker exist.
-"""
+"""Stub eval runner with a DummySolver — exercises the metrics pipeline without a model or CAS."""
 
 from __future__ import annotations
 
@@ -22,19 +16,13 @@ from marc.eval.metrics import (
 
 @dataclass
 class Problem:
-    """Minimal placeholder for a math problem instance."""
     id: str
     description: str
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class DummySolver:
-    """
-    Returns random solve decisions and energies.
-    solve_prob controls the probability of accepting a problem (simulates
-    varying difficulty).  energy_if_trapped is the energy value returned for
-    "stuck" runs.
-    """
+    """Returns random solve decisions and energies, seeded for reproducibility."""
 
     def __init__(
         self,
@@ -51,7 +39,6 @@ class DummySolver:
         self._rng = random.Random(seed)
 
     def solve(self, problem: Problem) -> tuple[bool, float]:
-        """Return (accepted, final_energy) for a single problem."""
         trapped = self._rng.random() < self.entrapment_prob
         if trapped:
             return False, self.energy_if_trapped
@@ -65,11 +52,7 @@ def run_eval(
     solver: DummySolver | None = None,
     perturb_fraction: float = 0.1,
 ) -> dict[str, Any]:
-    """
-    Run solver on problems and compute all §11 metrics.
-
-    Returns a dict suitable for JSON serialisation.
-    """
+    """Run solver on problems and return §11 metrics as a JSON-serialisable dict."""
     if solver is None:
         solver = DummySolver()
 
@@ -80,7 +63,6 @@ def run_eval(
         results.append(accepted)
         energies.append(energy)
 
-    # Simulate a perturbed version of each problem (same list, slightly worse solver)
     perturbed_solver = DummySolver(
         solve_prob=max(0.0, solver.solve_prob - perturb_fraction),
         entrapment_prob=solver.entrapment_prob,
@@ -88,7 +70,6 @@ def run_eval(
     )
     perturbed_results: list[bool] = [perturbed_solver.solve(p)[0] for p in problems]
 
-    # Treat first half as "train" distribution, second half as "test" (held-out)
     mid = max(1, len(results) // 2)
     train_results = results[:mid]
     test_results = results[mid:] if len(results) > mid else results[:mid]

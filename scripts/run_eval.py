@@ -16,7 +16,6 @@ import os
 import sys
 from pathlib import Path
 
-# Allow running from repo root without installing the package
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from marc.eval.runner import DummySolver, Problem, run_eval

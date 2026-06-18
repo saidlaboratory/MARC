@@ -1,6 +1,5 @@
 """Tests for marc/eval/metrics.py — all inputs are hand-made arrays."""
 
-import math
 import pytest
 
 from marc.eval.metrics import (
@@ -12,10 +11,6 @@ from marc.eval.metrics import (
     solve_rate,
 )
 
-
-# ---------------------------------------------------------------------------
-# solve_rate
-# ---------------------------------------------------------------------------
 
 class TestSolveRate:
     def test_eight_of_ten(self):
@@ -46,10 +41,6 @@ class TestSolveRate:
         # 1 and 0 should be treated as True/False
         assert solve_rate([1, 0, 1]) == pytest.approx(2 / 3)
 
-
-# ---------------------------------------------------------------------------
-# pass_at_k
-# ---------------------------------------------------------------------------
 
 class TestPassAtK:
     def test_k1_uses_first_attempt(self):
@@ -84,10 +75,6 @@ class TestPassAtK:
             pass_at_k([[True]], k=0)
 
 
-# ---------------------------------------------------------------------------
-# generalization_gap
-# ---------------------------------------------------------------------------
-
 class TestGeneralizationGap:
     def test_positive_gap(self):
         # train: 9/10 = 0.9, test: 5/10 = 0.5 → gap = 0.4
@@ -108,10 +95,6 @@ class TestGeneralizationGap:
     def test_single_item_each(self):
         assert generalization_gap([True], [False]) == pytest.approx(1.0)
 
-
-# ---------------------------------------------------------------------------
-# entrapment_rate
-# ---------------------------------------------------------------------------
 
 class TestEntrapmentRate:
     def test_two_of_five_trapped(self):
@@ -142,10 +125,6 @@ class TestEntrapmentRate:
             entrapment_rate([])
 
 
-# ---------------------------------------------------------------------------
-# entrapment_reduction
-# ---------------------------------------------------------------------------
-
 class TestEntrapmentReduction:
     def test_noise_helps(self):
         # noise off: 3/4 trapped = 0.75; noise on: 1/4 trapped = 0.25 → 0.5
@@ -169,10 +148,6 @@ class TestEntrapmentReduction:
         # tol=0.09 → noise_off none trapped → reduction 0.0
         assert entrapment_reduction(noise_off, noise_on, tol=0.09) == pytest.approx(0.0)
 
-
-# ---------------------------------------------------------------------------
-# perturbation_robustness
-# ---------------------------------------------------------------------------
 
 class TestPerturbationRobustness:
     def test_typical_drop(self):

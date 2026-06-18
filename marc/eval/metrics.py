@@ -1,48 +1,14 @@
 """
-Evaluation metrics for MARC (§11, TECHNICAL_GUIDE).
+Evaluation metrics for MARC (maps to TECHNICAL_GUIDE §11).
 
-All functions are pure — they take Python lists/sequences of booleans or floats
-and return a float. No model, no CAS dependency.
+Pure functions over sequences of bool/float — no model, no CAS dependency.
 
-Metric definitions (maps to TECHNICAL_GUIDE §11 table):
-
-  solve_rate(results)
-    Fraction of problems the checker accepted.  Implements pass@1.
-    results: sequence of bool — True if checker accepted that run.
-
-  pass_at_k(results_per_problem, k)
-    Fraction of problems solved within k independent attempts (pass@k).
-    A problem counts as solved if any of its first k attempts was accepted.
-    results_per_problem: sequence of bool-sequences, one per problem, each
-                         holding the accept/reject outcome of each attempt.
-    With k=1 this reduces to solve_rate over the first attempt of each problem.
-
-  generalization_gap(train_results, test_results)
-    (in-distribution solve rate) − (held-out-structure solve rate).
-    Positive gap → model is over-fitting to training distribution.
-    Tests hypothesis H1 (derive-not-recall): MARC should show a smaller gap
-    than a CoT baseline at equal scale.
-
-  entrapment_rate(trajectories, tol)
-    Fraction of runs that stalled at a fixed point with energy > tol, i.e.
-    the solver got "trapped" and never reached E=0.
-    trajectories: sequence of float — the final energy E(x) for each run.
-    tol: tolerance below which E is considered solved (default 1e-6).
-    Compares noise-on vs noise-off to test RQ2: does injected noise reduce
-    entrapment?  Call once per condition and compare.
-
-  entrapment_reduction(noise_off_trajectories, noise_on_trajectories, tol)
-    The key RQ2 ablation: entrapment_rate(noise_off) − entrapment_rate(noise_on).
-    Positive value → injected noise reduced entrapment (supports the core
-    hypothesis); zero or negative → noise did not help (hypothesis in trouble).
-
-  perturbation_robustness(baseline_results, perturbed_results)
-    Solve-rate drop when problem constants are perturbed.
-    baseline_results:  bool sequence on original problems.
-    perturbed_results: bool sequence on constant-perturbed versions of the same
-                       problems (same order).
-    Returns baseline_rate − perturbed_rate.  A large drop signals the model is
-    recalling memorized constants rather than deriving the solution.
+  solve_rate            — pass@1: fraction the checker accepted.
+  pass_at_k             — pass@k: fraction solved within k attempts.
+  generalization_gap    — in-distribution rate − held-out-structure rate (H1).
+  entrapment_rate       — fraction of runs stalled at energy > tol (RQ2).
+  entrapment_reduction  — entrapment without noise − with noise (RQ2 ablation).
+  perturbation_robustness — solve-rate drop when constants are perturbed.
 """
 
 from __future__ import annotations
