@@ -1,6 +1,10 @@
 # Issue sync utility (local / ops — not part of the research repo)
 scripts/create_github_issues.py
-scripts/__pycache__/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
 
 # Runtime outputs
 results/
