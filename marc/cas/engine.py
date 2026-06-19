@@ -1,6 +1,7 @@
 import sympy as sp
 from .residuals import get_residuals
 from .energy import get_energy
+from .checker import Checker
 
 class CASEngine:
     def __init__(self, json_path, symbol_names):
@@ -24,6 +25,11 @@ class CASEngine:
     def energy_grad(self, x_vals):
         return list(self._grad_func(*x_vals))
 
+    def verify(self, x_vals, tol=1e-6):
+        # delegate to the two-stage Checker, returning the full CheckResult
+        symbols = list(self.x) if isinstance(self.x, (list, tuple)) else [self.x]
+        factors = [(f"f{i}", r) for i, r in enumerate(self._residual_exprs)]
+        return Checker(tol=tol).check(symbols, factors, x_vals)
+
     def accepts(self, x_vals, tol=1e-6):
-        # Numeric-only gate
-        return self.energy(x_vals) < tol
+        return self.verify(x_vals, tol).accepted
