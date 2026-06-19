@@ -9,11 +9,12 @@ Pure functions over sequences of bool/float — no model, no CAS dependency.
   entrapment_rate       — fraction of runs stalled at energy > tol (RQ2).
   entrapment_reduction  — entrapment without noise − with noise (RQ2 ablation).
   perturbation_robustness — solve-rate drop when constants are perturbed.
+  derivation_verifiability — fraction of accepted solutions that formally verify.
 """
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Callable, Sequence
 
 
 def solve_rate(results: Sequence[bool]) -> float:
@@ -72,3 +73,13 @@ def perturbation_robustness(
     if len(baseline_results) != len(perturbed_results):
         raise ValueError("baseline and perturbed result lists must have equal length")
     return solve_rate(baseline_results) - solve_rate(perturbed_results)
+
+
+def derivation_verifiability(
+    accepted_solutions: Sequence,
+    verify_fn: Callable,
+) -> float:
+    """Fraction of checker-accepted solutions that pass a stronger formal verifier."""
+    if not accepted_solutions:
+        return 0.0
+    return sum(1 for s in accepted_solutions if verify_fn(s)) / len(accepted_solutions)
