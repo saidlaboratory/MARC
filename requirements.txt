@@ -3,3 +3,4 @@ torch-geometric
 sympy
 numpy
 pytest
+pyyaml

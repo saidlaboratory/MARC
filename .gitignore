@@ -9,3 +9,7 @@ __pycache__/
 # Runtime outputs
 results/
 checkpoints/
+
+# Virtual environments & IDE
+.venv/
+.vscode/

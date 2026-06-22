@@ -1,0 +1,6 @@
+inference:
+  sampler: "ddim"
+  steps: 50
+  n_samples: 16
+  guidance_scale: 2.5
+  early_stop_freq: 5
