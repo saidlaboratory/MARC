@@ -1,56 +1,70 @@
-# marc/diffusion/solve.py
 import torch
+
 from .sample import ddim_step
-from .guidance import guided_score
+from .guidance import apply_guidance
 from .schedule import cosine_beta_schedule
+from marc.graph.pyg import build_heterodata
 
-def solve(G, model, cas_engine, checker, steps, n_samples, guidance_scale):
+
+def solve(
+    graph,
+    denoiser,
+    cas_engine,
+    steps: int = 40,
+    N: int = 8,
+    guidance_weight: float = 1.0,
+    eta: float = 0.0,
+    T: int = 1000,
+) -> torch.Tensor:
+    """Best-of-N DDIM inference with CAS guidance.
+
+    Args:
+        graph: FactorGraph
+        denoiser: callable (HeteroData, t_tensor) -> eps_hat [n, 1]
+        cas_engine: CASEngine instance
+        steps: number of DDIM denoising steps
+        N: number of independent rollouts (best-of-N)
+        guidance_weight: lambda for CAS energy gradient guidance
+        eta: DDIM stochasticity (0=deterministic)
+        T: training timesteps used to build the schedule
+
+    Returns:
+        best x found across all rollouts, shape [n_vars, 1]
     """
-    G: The constraint graph definition
-    model: The denoiser model (stub for now until Quang finishes training)
-    """
-    # Initialize n parallel noisy graphs: x_T ~ N(0, I)
-    x_t = torch.randn((n_samples, len(G.variables))) 
-    
-    # Define DDIM step intervals (e.g., jumping from 999 down to -1 in `steps` jumps)
-    time_steps = torch.linspace(999, -1, steps + 1, dtype=torch.long)
-    
-    x_best = None
-    best_residual = float('inf')
+    _, alpha_bar = cosine_beta_schedule(T)
+    n_vars = len(graph.variables)
 
-    # Get the schedule (T=1000)
-    _, alpha_bar_t = cosine_beta_schedule(1000)
-    alpha_bar_t = alpha_bar_t.to(x_t.device)
+    timesteps = [int(t) for t in torch.linspace(T - 1, 0, steps, dtype=torch.long).tolist()]
 
-    for i in range(steps):
-        t = time_steps[i]
-        t_prev = time_steps[i + 1]
-        
-        # 1. Unconditional noise prediction from the model
-        unconditional_eps = model(G, x_t, t)
-        
-        # 2. Apply CAS Guidance
-        alpha_t = alpha_bar_t[t]
-        guided_eps = guided_score(x_t, unconditional_eps, alpha_t, cas_engine, guidance_scale)
-        
-        # 3. Take DDIM Step
-        x_t = ddim_step(x_t, t, t_prev, guided_eps, alpha_bar_t)
-        
-        # 4. Early Stop & Checker Eval (Check every few steps to save compute)
-        if i % 5 == 0 or i == steps - 1:
-            for n in range(n_samples):
-                sample_state = x_t[n]
-                sample_list = sample_state.tolist()
-                
-                # If the exact checker accepts it, halt entirely.
-                if checker.accepts(G, sample_list):
-                    return sample_state
-                
-                # Best-of-N tracking
-                residual = cas_engine.energy(sample_list)
-                if residual < best_residual:
-                    best_residual = residual
-                    x_best = sample_state
+    best_x = None
+    best_energy = float("inf")
 
-    # Return the state with the lowest CAS residual if no exact match is found
-    return x_best
+    # Build static graph structure once; only variable features change each step
+    base_data = build_heterodata(graph)
+
+    for _ in range(N):
+        x = torch.randn(n_vars, 1)
+
+        for t in timesteps:
+            base_data["variable"].x = x
+            t_tensor = torch.tensor([t], dtype=torch.long)
+            eps_hat = denoiser(base_data, t_tensor)
+
+            abar_t = alpha_bar[t]
+            x_vals = x.squeeze().tolist()
+            guided_eps = eps_hat + guidance_weight * torch.tensor(
+                cas_engine.energy_grad(x_vals), dtype=eps_hat.dtype, device=eps_hat.device
+            ).view_as(eps_hat) * (1.0 - abar_t).sqrt()
+
+            x = ddim_step(x, guided_eps, t, alpha_bar, eta=eta)
+
+            x_vals = x.squeeze().tolist()
+            if cas_engine.accepts(x_vals):
+                return x
+
+        energy = cas_engine.energy(x.squeeze().tolist())
+        if energy < best_energy:
+            best_energy = energy
+            best_x = x.clone()
+
+    return best_x
