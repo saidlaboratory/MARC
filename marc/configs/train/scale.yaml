@@ -1,0 +1,45 @@
+# Scaling config: D=512, L=8 — Quang P4
+# Use with: python scripts/run_scale_experiment.py --config marc/configs/train/scale.yaml
+
+model:
+  D: 512           # hidden dimension (baseline=128, mid=256, large=512)
+  L: 8             # message-passing rounds (baseline=4, mid=6, large=8)
+  step_dim: 64     # sinusoidal time embedding dimension
+
+training:
+  T: 1000          # diffusion timesteps (cosine schedule)
+  epochs_A: 50     # Stage A (DSM pretraining) epochs
+  epochs_B: 20     # Stage B (GRPO RL fine-tuning) epochs
+  batch_size: 32
+  lr_A: 3.0e-4
+  lr_B: 1.0e-4
+  device: "cuda"   # change to "cpu" for smoke-test runs
+
+data:
+  n_train: 10000   # problems per template in training set
+  n_test: 2000     # problems per template in test set
+  templates:
+    - "LinearSystem2x2"
+    - "LinearSystem3x3"
+  seed: 42
+
+grpo:
+  N: 8             # rollouts per problem (group size)
+  B: 10.0          # terminal checker reward magnitude
+  beta: 0.01       # KL regularisation weight
+  eps_clip: 0.2    # PPO clip ratio
+  steps: 40        # DDIM steps per rollout
+  guidance_weight: 1.0
+
+checkpointing:
+  dir: "checkpoints/scale_D512_L8"
+  save_every_n_epochs: 5
+
+# Baseline configs for ablation reference
+_baseline:
+  D: 128
+  L: 4
+
+_mid:
+  D: 256
+  L: 6
