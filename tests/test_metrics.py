@@ -3,6 +3,7 @@
 import pytest
 
 from marc.eval.metrics import (
+    derivation_verifiability,
     entrapment_rate,
     entrapment_reduction,
     generalization_gap,
@@ -172,3 +173,20 @@ class TestPerturbationRobustness:
     def test_single_pair(self):
         assert perturbation_robustness([True], [False]) == pytest.approx(1.0)
         assert perturbation_robustness([False], [True]) == pytest.approx(-1.0)
+
+
+class TestDerivationVerifiability:
+    def test_all_verify(self):
+        solutions = [1, 2, 3]
+        assert derivation_verifiability(solutions, lambda s: True) == pytest.approx(1.0)
+
+    def test_none_verify(self):
+        solutions = [1, 2, 3]
+        assert derivation_verifiability(solutions, lambda s: False) == pytest.approx(0.0)
+
+    def test_half_verify(self):
+        solutions = [1, 2, 3, 4]
+        assert derivation_verifiability(solutions, lambda s: s % 2 == 0) == pytest.approx(0.5)
+
+    def test_empty(self):
+        assert derivation_verifiability([], lambda s: True) == pytest.approx(0.0)
