@@ -1,0 +1,30 @@
+{
+  "n_graphs": 50,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "tol": 1e-06,
+  "config": {
+    "steps": 1500,
+    "lr": 0.02,
+    "sigma0": 2.5,
+    "anneal": true
+  },
+  "entrapment_rate_noise_off": 1.0,
+  "entrapment_rate_noise_on_mean": 0.484,
+  "entrapment_rate_noise_on_per_seed": [
+    0.34,
+    0.44,
+    0.52,
+    0.52,
+    0.6
+  ],
+  "entrapment_rate_noise_on_ci95": 0.08623999999999998,
+  "entrapment_reduction_mean": 0.516,
+  "entrapment_reduction_ci95": 0.08623999999999997,
+  "noise_helps": true
+}
