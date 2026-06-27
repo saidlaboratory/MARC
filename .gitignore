@@ -8,6 +8,7 @@ __pycache__/
 
 # Runtime outputs
 results/
+!results/p4_scale/scaling_notes.md
 checkpoints/
 
 # Virtual environments & IDE
