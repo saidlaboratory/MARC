@@ -95,6 +95,58 @@ def held_out_structure(n: int = 25, seed: int = 1) -> List[Problem]:
     return problems
 
 
+def linear_system(n_vars: int, n: int = 25, seed: int = 0) -> List[Problem]:
+    """Uniquely-solvable ``n_vars``-variable linear systems (length-extrapolation axis).
+
+    "Global sum + consecutive differences" structure:
+
+        sum_j x_j = sum_j s_j        (one global-sum factor)
+        x_{i-1} - x_i = s_{i-1} - s_i   (i = 1 .. n_vars-1)
+
+    The unique solution is ``s = (s0, ..., s_{n_vars-1})``, so the checker is the
+    ground truth at any length. This is deliberately the *same family* the rest of
+    the harness trains/tests on: ``n_vars = 2`` reproduces :func:`in_distribution`
+    (x+y, x-y) and ``n_vars = 3`` reproduces :func:`held_out_structure` (sum + two
+    differences). Larger ``n_vars`` extend that structure to longer systems the model
+    never saw — the length-extrapolation probe (§11).
+
+    The family stays well-conditioned with length, so the energy-gradient baseline
+    solves every length to checker precision; a model that *memorised* short systems
+    is the one expected to fall off as length grows.
+    """
+    if n_vars < 2:
+        raise ValueError("n_vars must be >= 2")
+    # offset the seed by length so each bucket draws independent constants
+    rng = random.Random(seed + 1009 * n_vars)
+    problems: List[Problem] = []
+    for i in range(n):
+        s = [rng.randint(-9, 9) for _ in range(n_vars)]
+        variables = [VariableNode(f"x{j}") for j in range(n_vars)]
+
+        total = sum(s)
+        sum_expr = " + ".join(f"x{j}" for j in range(n_vars))
+        factors = [FactorNode("eq0", f"{sum_expr} - ({total})")]
+        edges = [Edge(f"x{j}", "eq0", 1) for j in range(n_vars)]
+        for j in range(1, n_vars):
+            fid = f"eq{j}"
+            d = s[j - 1] - s[j]
+            factors.append(FactorNode(fid, f"x{j - 1} - x{j} - ({d})"))
+            edges.append(Edge(f"x{j - 1}", fid, 1))
+            edges.append(Edge(f"x{j}", fid, -1))
+
+        graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+        problems.append(
+            Problem(
+                id=f"len{n_vars}_{i:03d}",
+                graph=graph,
+                solution=[float(v) for v in s],
+                description=f"sum + consecutive differences, {n_vars} vars",
+                metadata={"split": f"length_{n_vars}", "n_vars": n_vars},
+            )
+        )
+    return problems
+
+
 def entrapment_suite(n: int = 50, seed: int = 7) -> List[Problem]:
     """Nonconvex residuals that trap gradient descent (RQ2 probe).
 

@@ -3,7 +3,12 @@
 import pytest
 
 from marc.cas.checker import Checker
-from marc.eval.problems import entrapment_suite, held_out_structure, in_distribution
+from marc.eval.problems import (
+    entrapment_suite,
+    held_out_structure,
+    in_distribution,
+    linear_system,
+)
 
 
 @pytest.mark.parametrize(
@@ -36,3 +41,26 @@ def test_entrapment_starts_are_off_solution():
     # the seeded start must not already sit on the solution (else nothing to escape)
     for p in entrapment_suite(50):
         assert abs(p.metadata["init"][0] - p.solution[0]) > 0.5
+
+
+@pytest.mark.parametrize("n_vars", [2, 3, 4, 5, 6])
+def test_linear_system_solutions_accepted(n_vars):
+    checker = Checker()
+    problems = linear_system(n_vars, n=10)
+    assert len(problems) == 10
+    for p in problems:
+        assert p.metadata["split"] == f"length_{n_vars}"
+        assert len(p.graph.variables) == n_vars
+        assert len(p.graph.factors) == n_vars  # one global sum + (n-1) differences
+        assert checker.verify(p.graph, p.solution).accepted, p.id
+
+
+def test_linear_system_rejects_degenerate_length():
+    with pytest.raises(ValueError):
+        linear_system(1)
+
+
+def test_linear_system_is_deterministic():
+    a = linear_system(4, n=8)
+    b = linear_system(4, n=8)
+    assert [p.solution for p in a] == [p.solution for p in b]
