@@ -169,13 +169,23 @@ class LearnedSolver:
         self.eta = eta
         self.name = name
 
-        self.denoiser = GraphDenoiser(**(model_kwargs or {}))
         checkpoint = checkpoint or os.environ.get("MARC_CKPT")
+        ckpt_dict = None
         if checkpoint:
-            state = torch.load(checkpoint, map_location="cpu")
-            state = state.get("model", state) if isinstance(state, dict) else state
-            self.denoiser.load_state_dict(state)
+            ckpt_dict = torch.load(checkpoint, map_location="cpu")
+
+        # Prefer model_kwargs from checkpoint so the architecture always matches
+        if ckpt_dict and isinstance(ckpt_dict, dict) and "model_kwargs" in ckpt_dict:
+            resolved_kwargs = {**ckpt_dict["model_kwargs"], **(model_kwargs or {})}
         else:
+            resolved_kwargs = model_kwargs or {}
+
+        self.denoiser = GraphDenoiser(**resolved_kwargs)
+
+        if ckpt_dict is not None:
+            state = ckpt_dict.get("model", ckpt_dict.get("model_state_dict", ckpt_dict)) if isinstance(ckpt_dict, dict) else ckpt_dict
+            self.denoiser.load_state_dict(state)
+        elif not checkpoint:
             warnings.warn(
                 "LearnedSolver running with an UNTRAINED denoiser (no checkpoint). "
                 "Results are not meaningful — set MARC_CKPT to Quang's checkpoint.",
