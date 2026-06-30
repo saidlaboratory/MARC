@@ -29,18 +29,15 @@ def build_heterodata(graph: FactorGraph):
 
     src = []
     dst = []
+    coeffs = []
 
     for edge in graph.edges:
         src.append(variable_map[edge.variable_id])
         dst.append(factor_map[edge.factor_id])
+        coeffs.append([float(getattr(edge, "coefficient", 1.0))])
 
-    data[
-        "variable",
-        "connected_to",
-        "factor"
-    ].edge_index = torch.tensor(
-        [src, dst],
-        dtype=torch.long,
-    )
+    edge_type = data["variable", "connected_to", "factor"]
+    edge_type.edge_index = torch.tensor([src, dst], dtype=torch.long)
+    edge_type.edge_attr = torch.tensor(coeffs, dtype=torch.float)
 
     return data
