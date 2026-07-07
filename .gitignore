@@ -10,6 +10,7 @@ __pycache__/
 results/
 !results/p4_scale/scaling_notes.md
 !results/p4_scale/roadmap.md
+!results/p3_h2/h2_report.md
 checkpoints/
 
 # Virtual environments & IDE
