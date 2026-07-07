@@ -20,6 +20,7 @@ from __future__ import annotations
 import random
 from typing import List
 
+from marc.data.geometry import build_linked_graph, build_triangle_graph
 from marc.eval.runner import Problem
 from marc.graph.graph import FactorGraph
 from marc.graph.schema import Edge, FactorNode, VariableNode
@@ -142,6 +143,73 @@ def linear_system(n_vars: int, n: int = 25, seed: int = 0) -> List[Problem]:
                 solution=[float(v) for v in s],
                 description=f"sum + consecutive differences, {n_vars} vars",
                 metadata={"split": f"length_{n_vars}", "n_vars": n_vars},
+            )
+        )
+    return problems
+
+
+def geometry_in_distribution(n: int = 25, seed: int = 3) -> List[Problem]:
+    """Geometry domain (README §"same template extends to geometry"): coordinates as
+    variables, distance relations as factors. One unknown point P=(x, y); two fixed
+    anchors at the origin and (c, 0). Given the (integer, squared to stay polynomial
+    and avoid irrational constants) distances from P to each anchor, solve for P —
+    the classic triangle-from-three-side-lengths construction.
+    """
+    rng = random.Random(seed)
+    problems: List[Problem] = []
+    for i in range(n):
+        # Small integer ranges keep the two circles' squared-distance constants
+        # modest (see scripts/run_geometry_eval.py's tuning notes) — with the
+        # generic energy-gradient refine() this is a well-conditioned but
+        # genuinely nonconvex (quartic-energy) domain, unlike the convex linear
+        # systems the other suites use, so wide constant ranges make plain
+        # gradient descent's outer basin unreliable from generic random inits.
+        c = rng.randint(3, 5)
+        x = rng.choice([v for v in range(-4, 5) if v != 0])
+        y = rng.choice([v for v in range(-4, 5) if v != 0])
+        b_sq = x ** 2 + y ** 2          # squared distance P -> origin
+        a_sq = (x - c) ** 2 + y ** 2    # squared distance P -> (c, 0)
+        graph = build_triangle_graph(b_sq, a_sq, c)
+        problems.append(
+            Problem(
+                id=f"geo_{i:03d}",
+                graph=graph,
+                solution=[float(x), float(y)],
+                description=f"point at squared-distance {b_sq} from origin, {a_sq} from ({c},0)",
+                metadata={"split": "geometry_in_distribution", "n_vars": 2, "anchor": c},
+            )
+        )
+    return problems
+
+
+def geometry_held_out(n: int = 25, seed: int = 4) -> List[Problem]:
+    """Held-out geometry structure: a second unknown point P2 chained off the first
+    (its distance to P1 is a factor, not just to the fixed anchors) — a 4-variable,
+    genuinely more-coupled shape than :func:`geometry_in_distribution`'s single
+    triangle, mirroring how :func:`held_out_structure` chains an extra variable onto
+    :func:`in_distribution`.
+    """
+    rng = random.Random(seed)
+    problems: List[Problem] = []
+    for i in range(n):
+        c = rng.randint(3, 5)
+        x1 = rng.choice([v for v in range(-4, 5) if v != 0])
+        y1 = rng.choice([v for v in range(-4, 5) if v != 0])
+        x2 = rng.choice([v for v in range(-4, 5) if v != 0])
+        y2 = rng.choice([v for v in range(-4, 5) if v != 0])
+
+        b1_sq = x1 ** 2 + y1 ** 2
+        a1_sq = (x1 - c) ** 2 + y1 ** 2
+        link_sq = (x2 - x1) ** 2 + (y2 - y1) ** 2   # P2 -> P1, couples the two points
+        a2_sq = (x2 - c) ** 2 + y2 ** 2
+        graph = build_linked_graph(b1_sq, a1_sq, link_sq, a2_sq, c)
+        problems.append(
+            Problem(
+                id=f"geoho_{i:03d}",
+                graph=graph,
+                solution=[float(x1), float(y1), float(x2), float(y2)],
+                description=f"two-point chain off anchor ({c},0)",
+                metadata={"split": "geometry_held_out", "n_vars": 4, "anchor": c},
             )
         )
     return problems

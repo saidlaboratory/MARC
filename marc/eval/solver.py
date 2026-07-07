@@ -79,6 +79,8 @@ class GradientRefinementSolver:
         sigma0: float = 0.5,
         noise: bool = True,
         init_scale: float = 3.0,
+        polish_steps: int = 400,
+        polish_lr: float = 0.2,
         seed: int | None = 0,
         name: str = "refine",
     ) -> None:
@@ -87,6 +89,8 @@ class GradientRefinementSolver:
         self.sigma0 = sigma0
         self.noise = noise
         self.init_scale = init_scale
+        self.polish_steps = polish_steps
+        self.polish_lr = polish_lr
         self.seed = seed
         self.name = name
         self._rng = __import__("numpy").random.default_rng(seed)
@@ -106,6 +110,8 @@ class GradientRefinementSolver:
                 lr=self.lr,
                 sigma0=self.sigma0,
                 noise=self.noise,
+                polish_steps=self.polish_steps,
+                polish_lr=self.polish_lr,
                 seed=int(self._rng.integers(0, 2 ** 31 - 1)),
             )
             out.append(trace.x)
@@ -138,6 +144,12 @@ class LearnedSolver:
     Requires ``torch`` + ``torch_geometric`` (the GNN builds a ``HeteroData``) and a
     trained checkpoint — without one the denoiser is randomly initialised, so the
     constructor warns loudly rather than silently reporting near-zero solve rates.
+
+    ``solve()`` returns ``None`` when every one of its N rollouts diverges to a
+    non-finite energy (e.g. a checkpoint evaluated far outside the factor shapes it
+    trained on). ``sample()`` passes that through as a ``None`` candidate rather than
+    crashing — callers (:mod:`marc.eval.runner`'s ``Checker.verify`, or
+    ``scripts/demo_end_to_end.py``) should skip ``None`` entries.
     """
 
     def __init__(
@@ -208,7 +220,11 @@ class LearnedSolver:
                     guidance_weight=self.guidance_weight,
                     eta=self.eta,
                 )
-                out.append([float(v) for v in x.squeeze(-1).reshape(-1).tolist()])
+                if x is None:
+                    # every rollout this call diverged to a non-finite energy
+                    out.append(None)
+                else:
+                    out.append([float(v) for v in x.squeeze(-1).reshape(-1).tolist()])
         return out
 
 
