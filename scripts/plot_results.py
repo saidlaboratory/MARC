@@ -167,16 +167,36 @@ def build_summary_table(
         lines.append(f"| Noise on/off | ok | reduction {_fmt(red)} ± {_fmt(ci)} ({verdict}) |")
     if guid:
         if guid.get("status") == "ok":
-            lines.append(f"| Guidance weight | ok | best w = {guid.get('best_weight')} |")
+            best_rate = max((r["solve_rate"] for r in guid.get("sweep", [])), default=0.0)
+            lines.append(
+                f"| Guidance weight | ok | best w = {guid.get('best_weight')} "
+                f"(solve rate {_fmt(best_rate)}, checkpoint: `{Path(guid.get('checkpoint', '')).name}`) |"
+            )
         else:
             lines.append(f"| Guidance weight | skipped | {guid.get('reason')} |")
     if pur:
         if pur.get("status") == "ok":
             gain = pur.get("shaping_gain_overall_solve_rate")
-            lines.append(f"| Purist reward | ok | shaping gain {_fmt(gain)} |")
+            std_rate = pur["standard"]["overall_solve_rate"]
+            pur_rate = pur["purist"]["overall_solve_rate"]
+            lines.append(
+                f"| Purist reward | ok | shaping gain {_fmt(gain)} "
+                f"(standard {_fmt(std_rate)} vs. purist {_fmt(pur_rate)} overall solve rate) |"
+            )
         else:
             lines.append(f"| Purist reward | skipped | {pur.get('reason')} |")
     lines.append("")
+
+    if (guid and guid.get("status") == "ok") or (pur and pur.get("status") == "ok"):
+        lines.append(
+            "> **Checkpoint-scale caveat:** the guidance/purist checkpoints above are "
+            "toy-scale Stage-A/Stage-B runs (`scripts/train_p2_checkpoints.py`, D=128, "
+            "L=4, CPU, minutes not GPU-hours) trained to unblock the eval pipeline end "
+            "to end, not to demonstrate solve capability — see "
+            "`results/p4_scale/scaling_notes.md` and `results/p4_scale/roadmap.md` for "
+            "the full-scale training plan. Headline suite numbers above use the "
+            "deterministic `refine` baseline, which is unaffected by checkpoint scale.\n"
+        )
 
     lines.append("## Figures\n")
     lines.append("- `fig_generalization.pdf`")
