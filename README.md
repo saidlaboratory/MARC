@@ -8,7 +8,7 @@
 
 <br />
 
-[![Status](https://img.shields.io/badge/status-research%20draft-v0.1-blue?style=for-the-badge)](https://github.com/saidlaboratory/MARC)
+[![Status](https://img.shields.io/badge/status%20v0.1-research%20draft-blue?style=for-the-badge)](https://github.com/saidlaboratory/MARC)
 [![Phase](https://img.shields.io/badge/phase-P4%20Scope%20%26%20Scale-blue?style=for-the-badge)](#roadmap)
 [![Domain](https://img.shields.io/badge/domain-mathematical%20reasoning-6366f1?style=for-the-badge)](#motivation)
 [![License](https://img.shields.io/badge/license-TBD-888?style=for-the-badge)](#)
