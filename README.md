@@ -9,13 +9,13 @@
 <br />
 
 [![Status](https://img.shields.io/badge/status-research%20draft-v0.1-blue?style=for-the-badge)](https://github.com/saidlaboratory/MARC)
-[![Phase](https://img.shields.io/badge/phase-P0%20infrastructure-lightgrey?style=for-the-badge)](#roadmap)
+[![Phase](https://img.shields.io/badge/phase-P4%20Scope%20%26%20Scale-blue?style=for-the-badge)](#roadmap)
 [![Domain](https://img.shields.io/badge/domain-mathematical%20reasoning-6366f1?style=for-the-badge)](#motivation)
 [![License](https://img.shields.io/badge/license-TBD-888?style=for-the-badge)](#)
 
 <br />
 
-**Quang Bui** · SAID Laboratory · June 2026
+**Quang Bui, Sparsh Roy, Akash Gundimeda, Davin Yin** · SAID Laboratory · June 2026
 
 [Overview](#overview) · [Approach](#approach) · [Roadmap](#roadmap) · [Evaluation](#evaluation) · [Prior Art](#prior-art)
 
