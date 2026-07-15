@@ -16,3 +16,6 @@ checkpoints/
 # Virtual environments & IDE
 .venv/
 .vscode/
+
+# Personal notes (not a deliverable)
+DAVIN_P2_P3_NOTES.md
