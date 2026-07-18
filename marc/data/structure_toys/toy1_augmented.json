@@ -1,0 +1,81 @@
+{
+  "variables": [
+    {
+      "id": "x",
+      "value": 0.0
+    },
+    {
+      "id": "y",
+      "value": 0.0
+    },
+    {
+      "id": "u",
+      "value": 0.0
+    }
+  ],
+  "factors": [
+    {
+      "id": "eq1",
+      "expression": "x + y - u - 1"
+    },
+    {
+      "id": "eq2",
+      "expression": "x - y + u - 3"
+    },
+    {
+      "id": "eq3",
+      "expression": "x + u - 4"
+    },
+    {
+      "id": "aux",
+      "expression": "u - 2"
+    }
+  ],
+  "edges": [
+    {
+      "variable_id": "x",
+      "factor_id": "eq1",
+      "coefficient": 1.0
+    },
+    {
+      "variable_id": "y",
+      "factor_id": "eq1",
+      "coefficient": 1.0
+    },
+    {
+      "variable_id": "u",
+      "factor_id": "eq1",
+      "coefficient": -1
+    },
+    {
+      "variable_id": "x",
+      "factor_id": "eq2",
+      "coefficient": 1.0
+    },
+    {
+      "variable_id": "y",
+      "factor_id": "eq2",
+      "coefficient": -1
+    },
+    {
+      "variable_id": "u",
+      "factor_id": "eq2",
+      "coefficient": 1
+    },
+    {
+      "variable_id": "x",
+      "factor_id": "eq3",
+      "coefficient": 1.0
+    },
+    {
+      "variable_id": "u",
+      "factor_id": "eq3",
+      "coefficient": 1
+    },
+    {
+      "variable_id": "u",
+      "factor_id": "aux",
+      "coefficient": 1
+    }
+  ]
+}
