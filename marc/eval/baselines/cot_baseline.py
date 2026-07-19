@@ -27,13 +27,11 @@ def render_prompt(problem) -> str:
         "in exactly this format, using decimal numbers (e.g. 3.5, not 7/2):\n"
         f"ANSWER: {answer_line}"
     )
-import openai
-
-_client = openai.OpenAI()  # reads OPENAI_API_KEY from env automatically
-
-
 def call_model(prompt: str, model: str = "gpt-5") -> str:
-    response = _client.chat.completions.create(
+    import openai
+
+    client = openai.OpenAI()  # reads OPENAI_API_KEY from env automatically
+    response = client.chat.completions.create(
         model=model,
         max_completion_tokens=4096,
         messages=[{"role": "user", "content": prompt}],

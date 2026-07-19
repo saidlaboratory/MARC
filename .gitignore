@@ -11,6 +11,7 @@ results/
 !results/p4_scale/scaling_notes.md
 !results/p4_scale/roadmap.md
 !results/p3_h2/h2_report.md
+!results/p2_main/cot_baseline.json
 checkpoints/
 
 # Virtual environments & IDE
@@ -19,3 +20,5 @@ checkpoints/
 
 # Personal notes (not a deliverable)
 DAVIN_P2_P3_NOTES.md
+
+.DS_Store
