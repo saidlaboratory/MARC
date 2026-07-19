@@ -139,3 +139,144 @@ class LinearSystem3x3Template:
             return graph, solution
 
         raise RuntimeError("Could not generate a non-degenerate 3x3 linear system")
+
+
+# ---------------------------------------------------------------------------
+# Coordinate geometry (P4, Davin) — points as variables, distance/slope factors
+# ---------------------------------------------------------------------------
+#
+# Extends the generator beyond linear equation systems to 2-D coordinate geometry.
+# A point becomes a pair of variable nodes (px, py); relations become factor
+# expressions:
+#   - pin      : px - a                          (anchor a known coordinate)
+#   - distance : (px-qx)**2 + (py-qy)**2 - d2    (squared distance == d2)
+#   - slope    : rise*(px-ax) - run*(py-ay)      (P on the line through A with
+#                                                  direction (run, rise))
+# Coordinates are integers, so every residual is an exact integer and the CAS /
+# checker accept the stored solution exactly (energy == 0).
+
+
+def _pin_expr(var_id: str, value: int) -> str:
+    """Factor 'var - value' pinning a coordinate to a known integer."""
+    return f"{var_id} - ({value})"
+
+
+def _distance_expr(x1: str, y1: str, x2: str, y2: str, d2: int) -> str:
+    """Squared-distance equality: (x1-x2)**2 + (y1-y2)**2 - d2 == 0."""
+    return f"({x1}-{x2})**2 + ({y1}-{y2})**2 - ({d2})"
+
+
+def _slope_expr(px: str, py: str, ax: str, ay: str, rise: int, run: int) -> str:
+    """Collinearity of P with the line through A of direction (run, rise):
+    rise*(px-ax) - run*(py-ay) == 0."""
+    return f"({rise})*({px}-{ax}) - ({run})*({py}-{ay})"
+
+
+def _point_edges(factor_id: str, var_ids) -> list:
+    """One unit-coefficient edge per variable appearing in a (nonlinear) factor."""
+    return [Edge(v, factor_id, 1.0) for v in var_ids]
+
+
+@dataclass
+class TriangleDistanceTemplate:
+    """Coordinate geometry: find vertex C given base A, B and its distances to each.
+
+    Points A, B, C are variables; A and B are pinned to known integer coordinates and
+    two squared-distance factors fix C. A well-posed 6-variable / 6-factor system whose
+    stored integer solution the CAS accepts exactly.
+    """
+
+    name: str = "TriangleDistance"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        rng = random.Random(seed)
+        for _ in range(200):
+            ax, ay = rng.randint(-5, 5), rng.randint(-5, 5)
+            bx, by = rng.randint(-5, 5), rng.randint(-5, 5)
+            cx, cy = rng.randint(-5, 5), rng.randint(-5, 5)
+            if (ax, ay) == (bx, by) or (cx, cy) in {(ax, ay), (bx, by)}:
+                continue  # points must be distinct
+            # C off line AB (non-degenerate triangle): twice the signed area != 0
+            if (bx - ax) * (cy - ay) - (by - ay) * (cx - ax) == 0:
+                continue
+
+            d_ac2 = (cx - ax) ** 2 + (cy - ay) ** 2
+            d_bc2 = (cx - bx) ** 2 + (cy - by) ** 2
+
+            var_ids = ["ax", "ay", "bx", "by", "cx", "cy"]
+            variables = [VariableNode(id=v, value=0.0) for v in var_ids]
+            factors = [
+                FactorNode("pin_ax", _pin_expr("ax", ax)),
+                FactorNode("pin_ay", _pin_expr("ay", ay)),
+                FactorNode("pin_bx", _pin_expr("bx", bx)),
+                FactorNode("pin_by", _pin_expr("by", by)),
+                FactorNode("dist_ac", _distance_expr("cx", "cy", "ax", "ay", d_ac2)),
+                FactorNode("dist_bc", _distance_expr("cx", "cy", "bx", "by", d_bc2)),
+            ]
+            edges = (
+                _point_edges("pin_ax", ["ax"])
+                + _point_edges("pin_ay", ["ay"])
+                + _point_edges("pin_bx", ["bx"])
+                + _point_edges("pin_by", ["by"])
+                + _point_edges("dist_ac", ["cx", "cy", "ax", "ay"])
+                + _point_edges("dist_bc", ["cx", "cy", "bx", "by"])
+            )
+            graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+            solution = {
+                "ax": float(ax), "ay": float(ay),
+                "bx": float(bx), "by": float(by),
+                "cx": float(cx), "cy": float(cy),
+            }
+            return graph, solution
+
+        raise RuntimeError("Could not generate a non-degenerate triangle")
+
+
+@dataclass
+class PointSlopeTemplate:
+    """Coordinate geometry: find P on the line through anchor A at a given distance.
+
+    A is pinned; P is fixed by one slope (collinearity) factor and one squared-distance
+    factor — a 4-variable / 4-factor system exercising a slope factor alongside distance.
+    """
+
+    name: str = "PointSlope"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        rng = random.Random(seed)
+        for _ in range(200):
+            ax, ay = rng.randint(-5, 5), rng.randint(-5, 5)
+            px, py = rng.randint(-5, 5), rng.randint(-5, 5)
+            if (px, py) == (ax, ay):
+                continue  # P must differ from A (nonzero distance & defined direction)
+
+            rise = py - ay
+            run = px - ax
+            d_ap2 = run ** 2 + rise ** 2
+
+            var_ids = ["ax", "ay", "px", "py"]
+            variables = [VariableNode(id=v, value=0.0) for v in var_ids]
+            factors = [
+                FactorNode("pin_ax", _pin_expr("ax", ax)),
+                FactorNode("pin_ay", _pin_expr("ay", ay)),
+                FactorNode("slope_ap", _slope_expr("px", "py", "ax", "ay", rise, run)),
+                FactorNode("dist_ap", _distance_expr("px", "py", "ax", "ay", d_ap2)),
+            ]
+            edges = (
+                _point_edges("pin_ax", ["ax"])
+                + _point_edges("pin_ay", ["ay"])
+                + _point_edges("slope_ap", ["px", "py", "ax", "ay"])
+                + _point_edges("dist_ap", ["px", "py", "ax", "ay"])
+            )
+            graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+            solution = {
+                "ax": float(ax), "ay": float(ay),
+                "px": float(px), "py": float(py),
+            }
+            return graph, solution
+
+        raise RuntimeError("Could not generate a valid point-slope problem")
+
+
+#: The coordinate-geometry template family (P4).
+GEOMETRY_TEMPLATES = [TriangleDistanceTemplate(), PointSlopeTemplate()]
