@@ -52,11 +52,20 @@ def solve(
 
             abar_t = alpha_bar[t]
             x_vals = x.squeeze().tolist()
-            guided_eps = eps_hat + guidance_weight * torch.tensor(
+            grad = torch.tensor(
                 cas_engine.energy_grad(x_vals), dtype=eps_hat.dtype, device=eps_hat.device
-            ).view_as(eps_hat) * (1.0 - abar_t).sqrt()
+            ).view_as(eps_hat)
+            # Clip the guidance gradient: the CAS energy gradient grows without bound
+            # as x drifts, which otherwise feeds back into an exploding trajectory.
+            gnorm = grad.norm()
+            max_gnorm = 10.0
+            if gnorm > max_gnorm:
+                grad = grad * (max_gnorm / (gnorm + 1e-8))
+            guided_eps = eps_hat + guidance_weight * grad * (1.0 - abar_t).sqrt()
 
             x = ddim_step(x, guided_eps, t, alpha_bar, eta=eta)
+            # Keep the state in a sane range so a single bad step can't diverge.
+            x = x.clamp(-100.0, 100.0)
 
             x_vals = x.squeeze().tolist()
             if cas_engine.accepts(x_vals):

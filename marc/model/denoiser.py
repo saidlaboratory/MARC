@@ -3,6 +3,7 @@ import math
 import torch
 import torch.nn as nn
 from torch_geometric.data import HeteroData
+from torch_geometric.utils import scatter
 
 from .embeddings import sinusoidal_embedding, VariableEncoder, FactorEncoder, _mlp
 from .layers import BipartiteLayer
@@ -28,10 +29,10 @@ class GraphDenoiser(nn.Module):
         super().__init__()
         self.step_dim = step_dim
 
-        self.var_encoder = VariableEncoder(D, num_types=num_var_types)
+        self.var_encoder = VariableEncoder(D, num_types=num_var_types, step_dim=step_dim)
         self.fac_encoder = FactorEncoder(D, step_dim=step_dim, num_types=num_fac_types)
         self.layers = nn.ModuleList([BipartiteLayer(D) for _ in range(L)])
-        self.output_mlp = _mlp(D, D)
+        self.output_mlp = _mlp(D + step_dim, D)
         self.output_head = nn.Linear(D, 1)
 
         # Precompute sinusoidal frequency bank; avoids recomputation each forward pass.
@@ -72,21 +73,32 @@ class GraphDenoiser(nn.Module):
         device = x_var.device
 
         t_scalar = t.view(-1)[0].long()
-        step_emb = self._step_embedding(t_scalar.unsqueeze(0)).expand(n_facs, -1)
+        step_emb_1 = self._step_embedding(t_scalar.unsqueeze(0))  # [1, step_dim]
+        step_emb_v = step_emb_1.expand(n_vars, -1)
+        step_emb_f = step_emb_1.expand(n_facs, -1)
 
+        # Constant term per factor (encodes the constraint RHS), set by build_heterodata.
+        const = data["factor"].x
+        if const.size(0) != n_facs:  # robustness for older graphs
+            const = torch.zeros(n_facs, 1, device=device)
+
+        # Current residual (constraint violation at x_var). Exact via CAS when given;
+        # otherwise the analytic linear residual A·x + const (correct for linear systems).
         if cas_engine is not None:
             res_list = cas_engine.residuals(x_var.detach().squeeze(-1).tolist())
             residuals = torch.tensor(res_list, dtype=torch.float32, device=device).unsqueeze(-1)
         else:
-            residuals = torch.zeros(n_facs, 1, device=device)
+            src, dst = edge_index[0], edge_index[1]
+            agg = scatter(edge_attr * x_var[src], dst, dim=0, dim_size=n_facs, reduce="sum")
+            residuals = agg + const
 
         fac_type_id = torch.zeros(n_facs, dtype=torch.long, device=device)
         var_type_id = torch.zeros(n_vars, dtype=torch.long, device=device)
 
-        h_v = self.var_encoder(x_var, var_type_id)
-        h_f = self.fac_encoder(fac_type_id, residuals, step_emb)
+        h_v = self.var_encoder(x_var, var_type_id, step_emb_v)
+        h_f = self.fac_encoder(fac_type_id, residuals, step_emb_f, const)
 
         for layer in self.layers:
             h_v, h_f = layer(h_v, h_f, edge_index, edge_attr)
 
-        return self.output_head(self.output_mlp(h_v))
+        return self.output_head(self.output_mlp(torch.cat([h_v, step_emb_v], dim=-1)))
