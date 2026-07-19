@@ -59,6 +59,7 @@ def run_one_epoch(denoiser, loader, alpha_bar, T, optimizer, device):
             t = torch.randint(1, T + 1, (1,), device=device)
             eps = torch.randn_like(x0)
             x_t = corrupt(x0, t, eps, alpha_bar.to(device))
+            graph["variable"].x = x_t  # feed corrupted values (denoiser reads variable.x)
             eps_hat = denoiser(graph, t)
             total_loss = total_loss + nn.functional.mse_loss(eps_hat, eps)
         avg = total_loss / max(len(solutions), 1)
