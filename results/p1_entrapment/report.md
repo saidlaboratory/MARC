@@ -1,11 +1,11 @@
 # P1 — Noise On/Off Entrapment Ablation (RQ2)
 
-✅ **Noise reduces entrapment.** Injected noise lowers the entrapment rate by **0.52 ± 0.09** (95% CI excludes 0). The core RQ2 hypothesis holds on this suite.
+✅ **Noise reduces entrapment.** Injected noise lowers the entrapment rate by **0.53 ± 0.11** (95% CI excludes 0). The core RQ2 hypothesis holds on this suite.
 
 ## What this measures
 
 Energy-gradient iterative refinement (TECHNICAL_GUIDE §3.4) is run on
-**50** nonconvex problems whose starts sit inside a spurious,
+**200** nonconvex problems whose starts sit inside a spurious,
 locally-consistent-but-globally-wrong basin. With **noise off** the update is plain
 gradient descent — the deterministic constraint-relaxation baseline (§11) — which is
 trapped by construction. With **noise on** the same update gains an annealed Langevin
@@ -22,10 +22,10 @@ A run is **entrapped** when the best energy it ever reaches stays above
 | Arm | Entrapment rate |
 |---|---|
 | noise **off** (deterministic) | **1.000** |
-| noise **on** (mean over 5 seeds) | **0.484 ± 0.086** |
-| **Entrapment reduction (off − on)** | **0.516 ± 0.086** |
+| noise **on** (mean over 5 seeds) | **0.475 ± 0.109** |
+| **Entrapment reduction (off − on)** | **0.525 ± 0.109** |
 
-Per-seed noise-on entrapment rates: [0.34, 0.44, 0.52, 0.52, 0.6]
+Per-seed noise-on entrapment rates: [0.265, 0.48, 0.545, 0.5, 0.585]
 
 ## Figures
 
@@ -38,7 +38,7 @@ Per-seed noise-on entrapment rates: [0.34, 0.44, 0.52, 0.52, 0.6]
 The deterministic relaxation stalls at the spurious fixed point on every graph
 (entrapment = 1.00), exactly the failure mode §4 attributes to "deterministic
 message passing." Injected noise lets the relaxation escape and reach the global
-solution on a substantial fraction of graphs, cutting entrapment to 0.48. This is
+solution on a substantial fraction of graphs, cutting entrapment to 0.47. This is
 the load-bearing evidence for RQ2: **the noise is doing real work.**
 
 This ablation uses the exact energy gradient as a stand-in for the learned denoiser
