@@ -280,3 +280,74 @@ class PointSlopeTemplate:
 
 #: The coordinate-geometry template family (P4).
 GEOMETRY_TEMPLATES = [TriangleDistanceTemplate(), PointSlopeTemplate()]
+
+
+# ---------------------------------------------------------------------------
+# Hard (non-convex) templates — A1 de-saturation tier.
+# Convex linear systems let the classical `refine` solver hit ~100% every time,
+# so the eval suite saturates and H1 has no signal. These bilinear/quadratic
+# families create spurious energy minima that trap plain gradient descent, pulling
+# solve rates off the ceiling into the separable 0.3–0.8 band. Encodings mirror the
+# P3 structure toys (marc/eval/structure_eval.py).
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class BilinearSystemTemplate:
+    """2-variable bilinear (sum/product) system:  x + y = s,  x*y = p.
+
+    Non-convex: E = (x+y-s)^2 + (x*y-p)^2 has spurious stationary points that trap
+    gradient descent from a cold start. Solutions are the Vieta pair {x*, y*}."""
+
+    name: str = "BilinearSystem"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        rng = random.Random(seed)
+        x_star = rng.choice(_NONZERO)
+        y_star = rng.choice(_NONZERO)
+        while y_star == x_star:  # avoid the degenerate x=y instance
+            y_star = rng.choice(_NONZERO)
+        s, p = x_star + y_star, x_star * y_star
+        variables = [VariableNode("x", value=0.0), VariableNode("y", value=0.0)]
+        factors = [
+            FactorNode("eq1", f"x+y-({s})"),
+            FactorNode("eq2", f"x*y-({p})"),
+        ]
+        edges = [Edge("x", "eq1", 1.0), Edge("y", "eq1", 1.0),
+                 Edge("x", "eq2", 1.0), Edge("y", "eq2", 1.0)]
+        graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+        return graph, {"x": float(x_star), "y": float(y_star)}
+
+
+@dataclass
+class BilinearProductTemplate:
+    """3-variable bilinear system:  x*y = A,  y*z = B,  x*z = C.
+
+    Strongly non-convex and coupled; the product manifold has multiple sign-flipped
+    branches (x,y,z) and (-x,-y,z)-type reflections, so cold-start descent frequently
+    stalls at an inconsistent point."""
+
+    name: str = "BilinearProduct"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        rng = random.Random(seed)
+        x_star = rng.choice(_NONZERO)
+        y_star = rng.choice(_NONZERO)
+        z_star = rng.choice(_NONZERO)
+        A, B, C = x_star * y_star, y_star * z_star, x_star * z_star
+        variables = [VariableNode("x", value=0.0), VariableNode("y", value=0.0),
+                     VariableNode("z", value=0.0)]
+        factors = [
+            FactorNode("eq1", f"x*y-({A})"),
+            FactorNode("eq2", f"y*z-({B})"),
+            FactorNode("eq3", f"x*z-({C})"),
+        ]
+        edges = [Edge("x", "eq1", 1.0), Edge("y", "eq1", 1.0),
+                 Edge("y", "eq2", 1.0), Edge("z", "eq2", 1.0),
+                 Edge("x", "eq3", 1.0), Edge("z", "eq3", 1.0)]
+        graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+        return graph, {"x": float(x_star), "y": float(y_star), "z": float(z_star)}
+
+
+#: The hard non-convex template family (A1 de-saturation tier).
+HARD_TEMPLATES = [BilinearSystemTemplate(), BilinearProductTemplate()]

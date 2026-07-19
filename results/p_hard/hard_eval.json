@@ -1,0 +1,19 @@
+{
+  "K": 8,
+  "test_per_family": 40,
+  "epochs": 250,
+  "rows": [
+    {
+      "family": "BilinearSystem",
+      "refine_cold": 0.0,
+      "refine_langevin": 0.35,
+      "learned_hybrid": 0.625
+    },
+    {
+      "family": "BilinearProduct",
+      "refine_cold": 0.0,
+      "refine_langevin": 0.125,
+      "learned_hybrid": 0.725
+    }
+  ]
+}
