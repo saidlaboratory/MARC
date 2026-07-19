@@ -1,0 +1,99 @@
+{
+  "toy1_fixed": {
+    "solution": [
+      2.0,
+      1.0
+    ],
+    "variables": [
+      "x",
+      "y"
+    ],
+    "split": "structure_toy_fixed",
+    "description": "2 base vars, latent dropped; inconsistent (H2 baseline)"
+  },
+  "toy2_fixed": {
+    "solution": [
+      3.0,
+      2.0,
+      1.0
+    ],
+    "variables": [
+      "x",
+      "y",
+      "z"
+    ],
+    "split": "structure_toy_fixed",
+    "description": "3 base vars, latent dropped; inconsistent (H2 baseline)"
+  },
+  "toy3_fixed": {
+    "solution": [
+      2.0,
+      4.0
+    ],
+    "variables": [
+      "x",
+      "y"
+    ],
+    "split": "structure_toy_fixed",
+    "description": "2 base vars, shared latent dropped; inconsistent (H2 baseline)"
+  },
+  "toy1_augmented": {
+    "solution": [
+      2.0,
+      1.0,
+      2.0
+    ],
+    "variables": [
+      "x",
+      "y",
+      "u"
+    ],
+    "split": "structure_toy_augmented",
+    "description": "2 base vars + latent u; consistent (gold x=2, y=1, u=2)",
+    "auxiliary": {
+      "aux_var": "u",
+      "aux_value": 2.0,
+      "why_fixed_fails": "Drop u: eq1/eq2 fix (x,y)=(2,-1); the leftover eq3 (x-4) demands x=4. 3 constraints, 2 unknowns, no common solution."
+    }
+  },
+  "toy2_augmented": {
+    "solution": [
+      3.0,
+      2.0,
+      1.0,
+      2.0
+    ],
+    "variables": [
+      "x",
+      "y",
+      "z",
+      "u"
+    ],
+    "split": "structure_toy_augmented",
+    "description": "3 base vars + latent u; consistent (gold x=3, y=2, z=1, u=2)",
+    "auxiliary": {
+      "aux_var": "u",
+      "aux_value": 2.0,
+      "why_fixed_fails": "Drop u: sum + two differences fix (x,y,z)=(3,2,1); the leftover eq4 (x-5) demands x=5. Over-determined, inconsistent."
+    }
+  },
+  "toy3_augmented": {
+    "solution": [
+      2.0,
+      4.0,
+      2.0
+    ],
+    "variables": [
+      "x",
+      "y",
+      "u"
+    ],
+    "split": "structure_toy_augmented",
+    "description": "2 base vars + shared latent u; consistent (gold x=2, y=4, u=2)",
+    "auxiliary": {
+      "aux_var": "u",
+      "aux_value": 2.0,
+      "why_fixed_fails": "Drop u (which appeared in two measurements): eq1/eq2 force (x,y)=(4,6); the leftover eq3 (x+y-6) wants the sum to be 6. Contradiction."
+    }
+  }
+}
