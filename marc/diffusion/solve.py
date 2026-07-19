@@ -51,7 +51,7 @@ def solve(
             eps_hat = denoiser(base_data, t_tensor)
 
             abar_t = alpha_bar[t]
-            x_vals = x.squeeze().tolist()
+            x_vals = x.reshape(-1).tolist()
             grad = torch.tensor(
                 cas_engine.energy_grad(x_vals), dtype=eps_hat.dtype, device=eps_hat.device
             ).view_as(eps_hat)
@@ -67,11 +67,11 @@ def solve(
             # Keep the state in a sane range so a single bad step can't diverge.
             x = x.clamp(-100.0, 100.0)
 
-            x_vals = x.squeeze().tolist()
+            x_vals = x.reshape(-1).tolist()
             if cas_engine.accepts(x_vals):
                 return x
 
-        energy = cas_engine.energy(x.squeeze().tolist())
+        energy = cas_engine.energy(x.reshape(-1).tolist())
         if energy < best_energy:
             best_energy = energy
             best_x = x.clone()

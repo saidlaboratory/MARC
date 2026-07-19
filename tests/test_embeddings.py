@@ -41,6 +41,9 @@ def test_variable_encoder_shape_and_type_conditioning():
     h_t = enc(x, type_id, step_emb)
     assert h_t.shape == (5, 8)
     assert not torch.allclose(h_typed, h_t)
+    # incident-constant conditioning shifts the representation
+    incident_const = torch.randn(5, 1)
+    assert not torch.allclose(enc(x, type_id, step_emb, incident_const), h_t)
 
 
 def test_factor_encoder_shape_and_backward():

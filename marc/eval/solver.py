@@ -198,7 +198,10 @@ class LearnedSolver:
 
         if ckpt_dict is not None:
             state = ckpt_dict.get("model", ckpt_dict.get("model_state_dict", ckpt_dict)) if isinstance(ckpt_dict, dict) else ckpt_dict
-            self.denoiser.load_state_dict(state)
+            # strict=False so checkpoints predating newer conditioning params (e.g.
+            # the zero-init incident-constant projection) still load and behave as
+            # they did when trained.
+            self.denoiser.load_state_dict(state, strict=False)
         elif not checkpoint:
             warnings.warn(
                 "LearnedSolver running with an UNTRAINED denoiser (no checkpoint). "

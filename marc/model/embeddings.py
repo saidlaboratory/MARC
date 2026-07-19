@@ -38,18 +38,29 @@ class VariableEncoder(nn.Module):
         self.mlp = _mlp(1, D)
         self.type_emb = nn.Embedding(num_types, D)
         self.t_proj = nn.Linear(step_dim, D)
+        # Condition each variable directly on the constant terms of its incident
+        # factors. Without this the constraint constants only reach a variable via
+        # message passing, which washes them out and the model collapses to
+        # predicting the mean solution. (Standard init: a zero-init path never turns
+        # on — the model settles into mean-prediction first. Checkpoints predating
+        # this param load via strict=False; the learned-solver polish absorbs the
+        # small change in the denoiser output.)
+        self.const_proj = nn.Linear(1, D)
 
     def forward(
         self,
         x: torch.Tensor,
         type_id: torch.Tensor = None,
         step_emb: torch.Tensor = None,
+        incident_const: torch.Tensor = None,
     ) -> torch.Tensor:
         h = self.mlp(x)
         if type_id is not None:
             h = h + self.type_emb(type_id)
         if step_emb is not None:
             h = h + self.t_proj(step_emb)
+        if incident_const is not None:
+            h = h + self.const_proj(incident_const)
         return h
 
 

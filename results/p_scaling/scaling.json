@@ -1,0 +1,43 @@
+{
+  "K": 8,
+  "test_per_n": 40,
+  "epochs": 200,
+  "tol": 0.05,
+  "rows": [
+    {
+      "n": 1,
+      "deterministic": 0.0,
+      "langevin": 0.225,
+      "mean_prior": 0.0,
+      "learned_x0": 0.675
+    },
+    {
+      "n": 2,
+      "deterministic": 0.0,
+      "langevin": 0.025,
+      "mean_prior": 0.0,
+      "learned_x0": 0.425
+    },
+    {
+      "n": 3,
+      "deterministic": 0.0,
+      "langevin": 0.0,
+      "mean_prior": 0.0,
+      "learned_x0": 0.55
+    },
+    {
+      "n": 4,
+      "deterministic": 0.0,
+      "langevin": 0.0,
+      "mean_prior": 0.0,
+      "learned_x0": 0.65
+    },
+    {
+      "n": 6,
+      "deterministic": 0.0,
+      "langevin": 0.0,
+      "mean_prior": 0.0,
+      "learned_x0": 0.1
+    }
+  ]
+}
