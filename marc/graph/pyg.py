@@ -1,7 +1,19 @@
+import sympy as sp
 import torch
 from torch_geometric.data import HeteroData
 
 from .graph import FactorGraph
+
+
+def _factor_constant(expression: str, symbols: dict) -> float:
+    """Constant term of a factor expression = its value with all variables at 0
+    (encodes the RHS: for ``x + y - 3`` this is ``-3``). Falls back to 0.0 if the
+    expression can't be parsed as a constant offset."""
+    try:
+        expr = sp.sympify(expression, locals=symbols)
+        return float(expr.subs({s: 0 for s in symbols.values()}))
+    except (sp.SympifyError, TypeError, ValueError):
+        return 0.0
 
 
 def build_heterodata(graph: FactorGraph):
@@ -12,10 +24,13 @@ def build_heterodata(graph: FactorGraph):
         dtype=torch.float,
     )
 
-    data["factor"].x = torch.zeros(
-        (len(graph.factors), 1),
+    # Factor node feature = the constraint's constant term (its RHS), so systems
+    # that differ only in their constants are distinguishable to the model.
+    _syms = {v.id: sp.Symbol(v.id) for v in graph.variables}
+    data["factor"].x = torch.tensor(
+        [[_factor_constant(f.expression, _syms)] for f in graph.factors],
         dtype=torch.float,
-    )
+    ).reshape(len(graph.factors), 1)
 
     variable_map = {
         v.id: i

@@ -162,6 +162,7 @@ class LearnedSolver:
         eta: float = 0.0,
         model_kwargs: dict | None = None,
         name: str = "learned",
+        polish: bool = True,
     ) -> None:
         try:
             import torch
@@ -180,6 +181,7 @@ class LearnedSolver:
         self.guidance_weight = guidance_weight
         self.eta = eta
         self.name = name
+        self.polish = polish
 
         checkpoint = checkpoint or os.environ.get("MARC_CKPT")
         ckpt_dict = None
@@ -223,9 +225,24 @@ class LearnedSolver:
                 if x is None:
                     # every rollout this call diverged to a non-finite energy
                     out.append(None)
-                else:
-                    out.append([float(v) for v in x.squeeze(-1).reshape(-1).tolist()])
+                    continue
+                cand = [float(v) for v in x.squeeze(-1).reshape(-1).tolist()]
+                if self.polish:
+                    cand = self._polish(problem.graph, cand)
+                out.append(cand)
         return out
+
+    def _polish(self, graph: Any, x0: List[float]) -> List[float]:
+        """Diffusion proposes, energy-descent disposes: refine the (possibly coarse
+        or diverged) diffusion candidate to strict tolerance. Reuses the same
+        Langevin refinement as the baseline solver, seeded at the diffusion output."""
+        from marc.refine.iterative import refine
+
+        # guard against non-finite diffusion outputs before handing to the polisher
+        if not all(abs(v) < 1e6 for v in x0):
+            x0 = [0.0 for _ in x0]
+        trace = refine(graph, x0, noise=True, seed=0)
+        return trace.x
 
 
 def load_solver(name: str | None = None, **kwargs: Any) -> Solver:

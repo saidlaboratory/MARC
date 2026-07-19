@@ -50,6 +50,9 @@ def train_step_A(
         t = torch.randint(1, T + 1, (1,), device=device)
         eps = torch.randn_like(x0)
         x_t = corrupt(x0, t, eps, alpha_bar)
+        # Feed the corrupted values to the denoiser (it reads graph["variable"].x);
+        # without this the model never sees x_t and can only predict the noise mean.
+        graph["variable"].x = x_t
         eps_hat = denoiser(graph, t)
         loss = nn.functional.mse_loss(eps_hat, eps)
         total_loss = total_loss + loss

@@ -94,6 +94,14 @@ def train_b(stage_a_model: GraphDenoiser, problems, *, purist: bool, epochs: int
 
 
 def main() -> None:
+    import os
+
+    # Backward-compatible scale knobs (defaults reproduce the original smoke run).
+    n_per = int(os.environ.get("MARC_N_PER", "70"))
+    epochs_a = int(os.environ.get("MARC_EPOCHS_A", "15"))
+    epochs_b = int(os.environ.get("MARC_EPOCHS_B", "3"))
+    b_subset = int(os.environ.get("MARC_B_SUBSET", "16"))
+
     out_dir = Path("results/p2_main/train_data")
     out_dir.mkdir(parents=True, exist_ok=True)
     gen = ProblemGenerator(
@@ -101,16 +109,16 @@ def main() -> None:
         split_ratio=0.85,
         seed=42,
     )
-    print("Generating training problems (LinearSystem2x2 + LinearSystem3x3) ...")
-    train_pairs, _test_pairs = gen.generate(n_per_template=70, output_dir=str(out_dir))
+    print(f"Generating training problems (n_per_template={n_per}) ...")
+    train_pairs, _test_pairs = gen.generate(n_per_template=n_per, output_dir=str(out_dir))
     print(f"  {len(train_pairs)} training pairs.")
 
-    stage_a_model = train_a(train_pairs, epochs=15)
+    stage_a_model = train_a(train_pairs, epochs=epochs_a)
 
     # Stage B trains on a smaller subset — GRPO does N rollouts x steps per problem.
-    b_problems = _stage_b_problems(train_pairs[:16])
-    std_path = train_b(stage_a_model, b_problems, purist=False, epochs=3)
-    purist_path = train_b(stage_a_model, b_problems, purist=True, epochs=3)
+    b_problems = _stage_b_problems(train_pairs[:b_subset])
+    std_path = train_b(stage_a_model, b_problems, purist=False, epochs=epochs_b)
+    purist_path = train_b(stage_a_model, b_problems, purist=True, epochs=epochs_b)
 
     print("\n== done ==")
     print(f"MARC_CKPT={CKPT_DIR / 'denoiser_stage_a.pt'}")
