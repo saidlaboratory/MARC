@@ -42,21 +42,33 @@ contribution is too narrow.
 
 ---
 
-## 3. The ONE experiment that decides main-track vs workshop
+## 3. The decisive experiment — RAN IT. Result: the learned advantage does NOT survive coupling.
 
-**Does the learned advantage survive on a *coupled*, non-trivial high-dimensional family?**
+We built the coupled chained-bilinear family (`x_i+x_{i+1}=s_i, x_i·x_{i+1}=p_i`) and ran the
+scaling with the existing controls (R7 in `RESULTS.md`). **Outcome: the learned model ties or
+loses to random restart at every dimension (0/5).** The R5 high-dim advantage was an
+**independence artifact** — it required per-variable-separable solutions (memorizable marginals)
+*and* random restart collapsing (must hit all n basins by chance). Under coupling, neither holds,
+and the diffusion model provides **no advantage over random search + refinement**.
 
-The current crossover uses **independent** bundled traps — so "learn each variable's marginal"
-suffices, and a skeptic dismisses it. The decisive test: a family where variables are **coupled**
-so the solution is *not* a product of per-variable marginals (e.g. a chained system
-`x_i + x_{i+1} = s_i`, `x_i · x_{i+1} = p_i`, or a sparse random non-convex system), scaled in n.
+**Implication:** the "amortized learned proposal beats classical search" route to a main-track
+claim is **closed**. What remains genuinely solid is narrower: the learned solver *converges*
+(engineering), entrapment/noise escapes deterministic traps (real but textbook Langevin), and the
+hybrid recipe beats cold-start Langevin (but so does random restart). That is a **workshop-level**
+contribution.
 
-- **If learned still beats random restart at high n on the coupled family** → the model is doing
-  real joint amortized inference, not marginal memorization. **That is a main-track result.**
-- **If it collapses to random on coupling** → workshop framing; report honestly as a limitation.
-
-This is ~1 day (build the coupled template + calibrate + run the scaling with the controls that
-already exist). **Highest-leverage next action.**
+## 3b. The only remaining main-track shots (both high-risk in 7 days)
+- **Structure invention (novelty crown jewel).** Train the D3PM structure head + a family where
+  the fixed graph is *provably unsolvable without an invented auxiliary variable*, and show the
+  model invents it. "A model that invents the auxiliary quantity/lemma needed to solve" is
+  genuinely novel and main-track-shaped. Currently a null result on an untrained proxy;
+  ~3–4 days, high risk.
+- **A real (narrow) domain.** Get the model training+solving on geometry or a real
+  polynomial-system slice — moves it from "synthetic toy" to "real problems." ~2–3 days, medium
+  risk. Biggest credibility jump.
+- Honest note: a rigorous *"when do learned proposals help constraint solving — and when they
+  don't"* study (including the coupled negative) is a legitimate paper, but reads workshop, not
+  main-track, at AAAI.
 
 ---
 
