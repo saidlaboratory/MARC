@@ -120,8 +120,13 @@ def test_to_padded_and_corruption():
 
 
 def test_aux_required_missing_raises_clean_error(monkeypatch):
-    # simulate the module being absent regardless of what this branch carries
+    # simulate the module being absent regardless of what this branch carries;
+    # if an earlier test already imported it, `from marc.data import aux_required`
+    # resolves via the package attribute without consulting sys.modules — remove both
+    import marc.data
+
     monkeypatch.setitem(sys.modules, "marc.data.aux_required", None)
+    monkeypatch.delattr(marc.data, "aux_required", raising=False)
     with pytest.raises(ImportError, match="aux_required"):
         make_dataset("aux_required", 1, 0)
 
