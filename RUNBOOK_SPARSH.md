@@ -1,0 +1,160 @@
+# Overnight run — runbook for Sparsh
+
+Everything below assumes a fresh Linux GPU box with the repo cloned and you in
+the repo root. The whole night is driven by one script,
+`scripts/run_overnight.py`. It never crashes on a missing script or a failed
+experiment — it records the outcome in `results/overnight/MANIFEST.json` and
+moves on. Your job is: set up, sanity-check, launch, go to sleep, tar the
+results in the morning.
+
+## 1. Setup (~10 min)
+
+Python 3.10+ required (`python3 --version`).
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+If a `requirements-lock.txt` exists in the repo root, prefer
+`pip install -r requirements-lock.txt` for exact pins.
+
+`pip install torch` from the default index may give you a CPU-only wheel. For
+CUDA, install torch and torch-geometric against your CUDA version explicitly —
+the standard CUDA 12.1 lines are:
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+pip install torch_geometric
+pip install pyg_lib torch_scatter torch_sparse \
+    -f https://data.pyg.org/whl/torch-2.9.0+cu121.html
+```
+
+Adapt the `cu121` suffix to your driver (`nvidia-smi` shows the max CUDA
+version; `cu118`/`cu124` wheels exist too), and the `torch-2.9.0` part to the
+torch version pip actually installed (`python3 -c "import torch; print(torch.__version__)"`).
+The extra pyg wheels (`pyg_lib` etc.) are optional — plain
+`pip install torch_geometric` is enough for this repo; only reach for the
+`-f` wheel index if the plain install fails to build.
+
+Verify:
+
+```bash
+python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+```
+
+Expect `True`. If `False`, stop and fix the torch install — the whole night
+would silently run on CPU.
+
+## 2. Sanity (~5 min)
+
+```bash
+python3 -m pytest -q
+```
+
+Expect all green (~200 tests, under a minute on CPU). **If anything is red,
+don't launch the overnight run — ping the team instead.**
+
+```bash
+python3 scripts/run_overnight.py --smoke
+```
+
+This threads tiny arguments through every phase (the test suite still runs in
+full) and should finish well under 15 minutes on CPU. Afterwards check:
+
+- `results/overnight/MANIFEST.json` — every phase `"ok"` or `"skipped"`, none
+  `"failed"`.
+- `results/overnight/SUMMARY.md` exists.
+- `results/overnight/logs/` has one log per executed phase.
+
+Phases skipped with reason `"script not present — sibling PR not merged"` are
+**normal**: the trainer (`scripts/train_scale.py`) and the structure-invention
+scripts (`scripts/train_structure_policy.py`, `scripts/run_invention_eval.py`)
+live in sibling PRs. **Before the real run, merge all open PRs** so those
+phases actually execute — the run is still valid without them, but the training
+phases are the whole point of the GPU.
+
+`eval_cot` is skipped unless `GEMINI_API_KEY` or `OPENAI_API_KEY` is exported —
+export one before the real run if you have it, otherwise let it skip.
+
+## 3. The real run
+
+```bash
+nohup python3 scripts/run_overnight.py > overnight.out 2>&1 &
+```
+
+Expected shape of the night — honest caveat: the training scripts come from
+sibling PRs, so nobody has timed them end-to-end on your GPU yet. Rough
+expectations:
+
+- Data generation and the eval-only phases: minutes each.
+- **Stage-A training at D512/L8 dominates the night** — plan for it to take
+  most of the GPU hours. The harness gives it a 14 h timeout, Stage-B 8 h,
+  the structure policy 4 h; a phase that hits its timeout is marked `failed`
+  and the run continues with the best checkpoint written so far.
+- The eval battery afterwards: tens of minutes to a couple of hours total.
+
+Monitoring:
+
+```bash
+tail -f overnight.out                                  # harness + phase output
+tail -f checkpoints/scale_D512_L8/train_log.jsonl      # loss curve, once training starts
+watch nvidia-smi                                       # GPU utilisation
+```
+
+If `nvidia-smi` shows ~0% during a training phase, something is wrong —
+check `results/overnight/logs/train_stage_a.log`.
+
+## 4. If it crashes (or the box reboots)
+
+Just rerun the same command:
+
+```bash
+nohup python3 scripts/run_overnight.py > overnight.out 2>&1 &
+```
+
+Training resumes from `checkpoints/scale_D512_L8/latest.pt` and data
+generation is cached, so you lose little. Useful flags:
+
+- `--skip PHASE[,PHASE]` — skip phases (e.g. `--skip tests` to skip the test
+  gate, or skip a training phase that already finished).
+- `--only PHASE[,PHASE]` — run only the listed phases (e.g.
+  `--only eval_hard,figures,summarize` to redo one eval and the summary).
+- `--force` — continue even if the test suite is red (default: a red suite
+  aborts everything after it).
+
+Phase names are the `"phase"` fields in `MANIFEST.json`. Every phase's full
+stdout/stderr is in `results/overnight/logs/<phase>.log` — read that before
+anything else when a phase says `failed`.
+
+## 5. What to send back
+
+Everything below (one tar, from the repo root):
+
+```bash
+tar czf overnight_$(date +%Y%m%d).tar.gz \
+    results/ \
+    overnight.out \
+    checkpoints/scale_D512_L8/latest.pt \
+    checkpoints/scale_D512_L8/best.pt \
+    checkpoints/scale_D512_L8/train_log.jsonl \
+    checkpoints/structure_policy.pt \
+    --ignore-failed-read
+```
+
+(`--ignore-failed-read` tolerates checkpoints that don't exist because a
+training phase was skipped.) That covers the whole `results/overnight/` dir
+(MANIFEST, SUMMARY, logs, env), every `results/**/*.json` the run touched, and
+the checkpoints + training log.
+
+## 6. Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| CUDA out of memory during training | Lower `training.batch_size` in `marc/configs/train/scale.yaml`, rerun (resumes from `latest.pt`). |
+| bf16 / autocast error (older GPU) | Set `training.amp: "off"` in `marc/configs/train/scale.yaml`. |
+| torch-geometric install fails to build | Use the pinned wheel line from Setup: `pip install pyg_lib torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-<your-torch>+<your-cuda>.html` |
+| `pytest` red on arrival | Don't run anything — ping the team. |
+| A phase says `skipped: script not present` | The sibling PR with that script isn't merged. Merge open PRs and rerun with `--only <phase>` (plus `figures,summarize`). |
+| `eval_cot` skipped: no API key | Export `GEMINI_API_KEY` (or `OPENAI_API_KEY`) and rerun `--only eval_cot,summarize`, or ignore — it's a baseline, not a blocker. |
