@@ -22,6 +22,8 @@ Commits are the short SHA at time of run. Re-record if a number is regenerated.
 | R11 | **A8.1 learned hybrid, 4 families** | **0.550 / 0.683 / 0.683 / 0.000** | same as R9 | same | d65e3db |
 | R11b | A8.1 significance (hybrid > langevin, 2-prop z) | p = 0.003 / <1e-4 / <1e-4 / 0.92 (sig on 3/4; CircleLine fails) | `python scripts/plot_hard_eval.py` (post-hoc from R9-R11 counts) | — | d65e3db |
 | R12 | CoT baseline (Gemini flash-lite), N=25, k=1 | in-dist 1.000, held-out 1.000 | `GEMINI_API_KEY=… COT_N=25 python -m marc.eval.baselines.cot_baseline` | deterministic problems | 28f9b3b |
+| R13 | Cross-family (leave-one-out) learned(cross), 4 held-out | 0.683 / 0.683 / 0.000 / 0.000 (Prod/Quad/Sys/Circle); p<1e-4 on 2/4 | `python scripts/run_crossfamily_eval.py` (best-of-8, 60/family) | train seed0 0, test seed0 100000 | df60ebe |
+| R14 | MATH coverage (parser), MATH-500 sample | 0/48 = 0.000 | `python scripts/run_math_coverage.py` | fixed sample | 552fdcd |
 
 ## Notes / caveats attached to specific numbers
 - **R1/R2/R12 are saturated** (convex suite at ceiling) — not usable for H1 separation. See

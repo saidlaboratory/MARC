@@ -38,13 +38,25 @@ learned model does not help — the x↔y/sign symmetry makes the root un-infera
 constraint constants, and the polish itself is weak there (Langevin 0.033).
 `python scripts/run_hard_eval.py`
 
-## R4 · Cross-family generalization (H1 transfer) — [full run pending]
-Leave-one-family-out: train on 3 non-convex families, test the hybrid on a **held-out** 4th.
-Quick smoke (10 test/family, 20 epochs): learned(cross) beat refine+Langevin on held-out
-BilinearSystem (0.70 vs 0.30, p=0.04) and BilinearProduct (0.60 vs 0.10, p=0.01) — structural
-transfer, not memorization. *Full 60-test/200-epoch numbers with CIs to be inserted from
-`results/p_hard/crossfamily.json`.*
-`python scripts/run_crossfamily_eval.py`
+## R4 · Cross-family generalization (H1 transfer) — partial, honest
+Leave-one-family-out: train on 3 non-convex families, test the hybrid on a **held-out** 4th
+(best-of-8, 60 test/family, 200 epochs). **p** = z-test, learned(cross) > refine+Langevin.
+
+| Held-out family | trained on | refine+Langevin | **learned (cross)** | p |
+|---|---|---|---|---|
+| BilinearProduct | Sys, Quad, Circle | 0.100 [0.05,0.20] | **0.683 [0.56,0.79]** | <1e-4 ✓ |
+| QuadraticSystem | Sys, Prod, Circle | 0.300 [0.20,0.43] | **0.683 [0.56,0.79]** | <1e-4 ✓ |
+| BilinearSystem | Prod, Quad, Circle | 0.300 [0.20,0.43] | **0.000** | fails |
+| CircleLine | Sys, Prod, Quad | 0.033 [0.01,0.11] | **0.000** | fails |
+
+**Transfer is partial: strong structural generalization on 2/4 held-out families (0.683,
+p<1e-4 — the model solves a family it never trained on), failure on 2/4.** The BilinearSystem
+failure is notable because that family is solvable *in-distribution* (R3: 0.55); a smoke run
+that trained on only the two *similar* families {Product, Quadratic} recovered it (0.70),
+whereas adding the pathological CircleLine family to the training mix collapsed it to 0.00 —
+so dissimilar training families can disrupt transfer. Honest read: MARC's learned proposal
+transfers across *related* non-convex structure but is not a universal solver, and a bad
+training family hurts. `python scripts/run_crossfamily_eval.py`
 
 ## R5 · Dimension scaling — amortized inference beats classical + prior
 Bundled non-convex traps with per-instance-varying (wide, signed) roots. Learned x0-proposal

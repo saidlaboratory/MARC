@@ -1,0 +1,115 @@
+{
+  "K": 8,
+  "test_per_family": 60,
+  "epochs": 200,
+  "rows": [
+    {
+      "held_out": "BilinearSystem",
+      "trained_on": [
+        "BilinearProduct",
+        "QuadraticSystem",
+        "CircleLine"
+      ],
+      "refine_langevin": {
+        "k": 18,
+        "n": 60,
+        "rate": 0.3,
+        "ci95": [
+          0.19898010252726892,
+          0.42508946966390415
+        ]
+      },
+      "learned_cross": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "p_hybrid_gt_langevin": 0.9999979056222125
+    },
+    {
+      "held_out": "BilinearProduct",
+      "trained_on": [
+        "BilinearSystem",
+        "QuadraticSystem",
+        "CircleLine"
+      ],
+      "refine_langevin": {
+        "k": 6,
+        "n": 60,
+        "rate": 0.1,
+        "ci95": [
+          0.04664219945723587,
+          0.20149694492511044
+        ]
+      },
+      "learned_cross": {
+        "k": 41,
+        "n": 60,
+        "rate": 0.6833333333333333,
+        "ci95": [
+          0.5576599505698345,
+          0.7869429415882567
+        ]
+      },
+      "p_hybrid_gt_langevin": 2.963194352283681e-11
+    },
+    {
+      "held_out": "QuadraticSystem",
+      "trained_on": [
+        "BilinearSystem",
+        "BilinearProduct",
+        "CircleLine"
+      ],
+      "refine_langevin": {
+        "k": 18,
+        "n": 60,
+        "rate": 0.3,
+        "ci95": [
+          0.19898010252726892,
+          0.42508946966390415
+        ]
+      },
+      "learned_cross": {
+        "k": 41,
+        "n": 60,
+        "rate": 0.6833333333333333,
+        "ci95": [
+          0.5576599505698345,
+          0.7869429415882567
+        ]
+      },
+      "p_hybrid_gt_langevin": 1.3358155007369844e-05
+    },
+    {
+      "held_out": "CircleLine",
+      "trained_on": [
+        "BilinearSystem",
+        "BilinearProduct",
+        "QuadraticSystem"
+      ],
+      "refine_langevin": {
+        "k": 2,
+        "n": 60,
+        "rate": 0.03333333333333333,
+        "ci95": [
+          0.009189126490150246,
+          0.11363987528925378
+        ]
+      },
+      "learned_cross": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "p_hybrid_gt_langevin": 0.923087196523041
+    }
+  ]
+}
