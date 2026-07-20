@@ -22,3 +22,6 @@ checkpoints/
 DAVIN_P2_P3_NOTES.md
 
 .DS_Store
+
+# Claude Code agent worktrees (nested repos; committed gitlinks break Pages builds)
+.claude/
