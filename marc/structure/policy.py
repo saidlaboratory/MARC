@@ -67,11 +67,18 @@ def slot_features(
 
 class StructureEncoder(nn.Module):
     """Fixed-graph context (reused P1 encoders + BipartiteLayers, mean-pooled)
-    conditioning per-slot embeddings, with one menu-wide competition round."""
+    conditioning per-slot embeddings, with one menu-wide competition round.
 
-    def __init__(self, D: int = 64, L: int = 2, step_dim: int = 64):
+    ``ablate_context=True`` zeroes the pooled graph context vector at both of its
+    use sites (additive and competition-round) while keeping the parameter set
+    identical — the ablation exists to MEASURE whether slot scoring actually
+    relies on reading the fixed graph, so state_dicts round-trip either way."""
+
+    def __init__(self, D: int = 64, L: int = 2, step_dim: int = 64,
+                 ablate_context: bool = False):
         super().__init__()
         self.step_dim = step_dim
+        self.ablate_context = ablate_context
         self.var_encoder = VariableEncoder(D, step_dim=step_dim)
         self.fac_encoder = FactorEncoder(D, step_dim=step_dim)
         self.layers = nn.ModuleList([BipartiteLayer(D) for _ in range(L)])
@@ -106,6 +113,10 @@ class StructureEncoder(nn.Module):
         for layer in self.layers:
             h_v, h_f = layer(h_v, h_f, edge_index, edge_attr)
         ctx = self.ctx_proj(torch.cat([h_v.mean(dim=0), h_f.mean(dim=0)], dim=-1))  # [D]
+        if self.ablate_context:
+            # Zero (not remove) the context before BOTH uses: parameter set is
+            # unchanged, so checkpoints load strictly in either direction.
+            ctx = torch.zeros_like(ctx)
 
         h = self.slot_mlp(slot_feats) + ctx  # [2K, D]
         n = h.size(0)
@@ -121,10 +132,11 @@ class StructurePolicy(nn.Module):
     """Encoder + the existing StructureHead: predicts p_theta(c_0 | c_t) per slot
     plus a per-slot value (aux value / pin) for committed active slots."""
 
-    def __init__(self, D: int = 64, L: int = 2, K: int = 4):
+    def __init__(self, D: int = 64, L: int = 2, K: int = 4, ablate_context: bool = False):
         super().__init__()
         self.K = K
-        self.encoder = StructureEncoder(D=D, L=L)
+        self.ablate_context = ablate_context
+        self.encoder = StructureEncoder(D=D, L=L, ablate_context=ablate_context)
         self.head = StructureHead(D=D, num_slot_types=NUM_SLOT_TYPES)
         # ponytail: heterodata cache keyed by instance id (graphs are immutable;
         # avoids re-sympifying factor expressions every training step)
@@ -222,3 +234,13 @@ def chosen_candidate(final: PaddedGraph, logits: torch.Tensor, K: int) -> Option
     logits = logits.detach().cpu()
     scores = [float(logits[2 * j, var_t] + logits[2 * j + 1, fac_t]) for j in hits]
     return hits[scores.index(max(scores))]
+
+
+def predicted_pin(final: PaddedGraph, j: int) -> Optional[float]:
+    """Value head's regressed defining value for candidate j: final.values[2j+1]
+    iff slot 2j+1 committed FACTOR, else None."""
+    # No forward pass needed: reverse_sample already writes value-head outputs
+    # into committed slots.
+    if int(final.slot_types[2 * j + 1]) != int(SlotType.FACTOR):
+        return None
+    return float(final.values[2 * j + 1])

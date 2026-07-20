@@ -16,6 +16,7 @@ from marc.structure.policy import (
     SLOT_FEATURE_DIM,
     StructurePolicy,
     chosen_candidate,
+    predicted_pin,
     reverse_sample,
     slot_features,
 )
@@ -170,6 +171,98 @@ def test_tiny_end_to_end_fit():
     acc = hits / len(train)
     chance = 1.0 / (K + 1)
     assert acc > 2 * chance, f"train single-shot invention acc {acc:.3f} <= 2x chance"
+
+
+# --- context ablation + predicted-pin readout ---------------------------------
+
+
+def test_ablate_context_default_false_and_attribute():
+    policy = StructurePolicy(D=16, L=1, K=2)
+    assert policy.ablate_context is False
+    assert policy.encoder.ablate_context is False
+    ablated = StructurePolicy(D=16, L=1, K=2, ablate_context=True)
+    assert ablated.ablate_context is True
+    assert ablated.encoder.ablate_context is True
+
+
+def test_ablate_state_dict_round_trip():
+    """Ablation changes zero parameters: strict load works in both directions,
+    including from a trained (stepped) normal checkpoint."""
+    torch.manual_seed(0)
+    inst = _one(seed=6)
+    normal = StructurePolicy(D=16, L=1, K=4)
+    # one real training step so the checkpoint isn't just init state
+    clean = to_padded(inst)
+    noised = corrupt(clean, 3, 10, generator=torch.Generator().manual_seed(0))
+    vp, logits = normal(inst, noised, 3, 10)
+    loss = normal.head.structure_loss(logits, clean.slot_types)
+    loss.backward()
+    with torch.no_grad():
+        for p in normal.parameters():
+            if p.grad is not None:
+                p -= 1e-2 * p.grad
+    ablated = StructurePolicy(D=16, L=1, K=4, ablate_context=True)
+    ablated.load_state_dict(normal.state_dict())  # strict by default
+    normal.load_state_dict(ablated.state_dict())
+
+
+def test_ablated_output_invariant_to_fixed_graph_constants():
+    """Perturbing the fixed graph's factor constants must move the normal
+    policy's logits but leave the ablated policy's logits bit-identical —
+    the direct measurement that ctx is the only fixed-graph pathway."""
+    import dataclasses
+
+    from marc.graph.schema import FactorNode
+
+    torch.manual_seed(0)
+    inst = _one(seed=7)
+    perturbed_graph = dataclasses.replace(
+        inst.fixed_graph,
+        factors=[FactorNode(f.id, f"({f.expression}) + 0.5")
+                 for f in inst.fixed_graph.factors],
+    )
+    # new id so StructurePolicy's HeteroData cache can't serve the stale graph
+    pert = dataclasses.replace(inst, id=inst.id + "_pert", fixed_graph=perturbed_graph)
+
+    normal = StructurePolicy(D=16, L=1, K=4)
+    ablated = StructurePolicy(D=16, L=1, K=4, ablate_context=True)
+    ablated.load_state_dict(normal.state_dict())  # same weights, only ctx zeroed
+    normal.eval()
+    ablated.eval()
+
+    padded = corrupt(to_padded(inst), 4, 10, generator=torch.Generator().manual_seed(1))
+    with torch.no_grad():
+        _, ln1 = normal(inst, padded, 4, 10)
+        _, ln2 = normal(pert, padded, 4, 10)
+        _, la1 = ablated(inst, padded, 4, 10)
+        _, la2 = ablated(pert, padded, 4, 10)
+    assert not torch.allclose(ln1, ln2), "normal policy ignored the fixed graph"
+    assert torch.equal(la1, la2), "ablated policy still reads the fixed graph"
+
+
+def test_predicted_pin_reads_factor_slot_and_none_when_absent():
+    K = 3
+    types = torch.full((2 * K,), ABSENT, dtype=torch.long)
+    values = torch.zeros(2 * K)
+    types[2] = int(SlotType.VARIABLE)
+    types[3] = int(SlotType.FACTOR)
+    values[2] = 1.25
+    values[3] = -2.5
+    final = PaddedGraph(types, values)
+    assert predicted_pin(final, 1) == pytest.approx(-2.5)
+    assert predicted_pin(final, 0) is None
+    assert predicted_pin(final, 2) is None
+
+
+def test_predicted_pin_from_reverse_sample_stub():
+    inst = _one(seed=8)
+    K = len(inst.candidates)
+    stub = _Stub(K, inst.gold_idx)
+    final, _ = reverse_sample(stub, inst, T=10,
+                              generator=torch.Generator().manual_seed(0))
+    g = inst.gold_idx
+    assert predicted_pin(final, g) == pytest.approx(-2.5)
+    assert all(predicted_pin(final, j) is None for j in range(K) if j != g)
 
 
 # --- eval JSON block builder --------------------------------------------------
