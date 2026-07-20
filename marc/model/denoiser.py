@@ -28,6 +28,8 @@ class GraphDenoiser(nn.Module):
     ):
         super().__init__()
         self.step_dim = step_dim
+        # Pinned contract C1: training code dispatches batched forwards on this flag.
+        self.supports_per_graph_t = True
 
         self.var_encoder = VariableEncoder(D, num_types=num_var_types, step_dim=step_dim)
         self.fac_encoder = FactorEncoder(D, step_dim=step_dim, num_types=num_fac_types)
@@ -65,7 +67,8 @@ class GraphDenoiser(nn.Module):
             data:       HeteroData with data["variable"].x [n,1], data["factor"].x [m,1],
                         and edge type ("variable","connected_to","factor") carrying
                         edge_index [2,E] and edge_attr [E,1] (coefficient).
-            t:          [B] or scalar integer timestep(s).
+            t:          scalar/singleton timestep (applied to the whole graph), or
+                        [num_graphs] per-graph timesteps (requires a PyG Batch).
             cas_engine: optional CASEngine; residuals default to zeros when absent.
         Returns:
             eps_hat [n, 1] — predicted noise per variable node.
@@ -79,10 +82,21 @@ class GraphDenoiser(nn.Module):
         n_facs = data["factor"].x.size(0)
         device = x_var.device
 
-        t_scalar = t.view(-1)[0].long()
-        step_emb_1 = self._step_embedding(t_scalar.unsqueeze(0))  # [1, step_dim]
-        step_emb_v = step_emb_1.expand(n_vars, -1)
-        step_emb_f = step_emb_1.expand(n_facs, -1)
+        t_flat = torch.as_tensor(t, device=device).view(-1).long()
+        if t_flat.numel() <= 1:
+            step_emb_1 = self._step_embedding(t_flat[:1])  # [1, step_dim]
+            step_emb_v = step_emb_1.expand(n_vars, -1)
+            step_emb_f = step_emb_1.expand(n_facs, -1)
+        else:
+            vb = getattr(data["variable"], "batch", None)
+            fb = getattr(data["factor"], "batch", None)
+            if vb is None or fb is None:
+                raise ValueError("per-graph t requires Batch.from_data_list input")
+            if cas_engine is not None:
+                raise ValueError("cas_engine guidance is per-graph only; use scalar t")
+            emb = self._step_embedding(t_flat)  # [B, step_dim]
+            step_emb_v = emb[vb]
+            step_emb_f = emb[fb]
 
         # Constant term per factor (encodes the constraint RHS), set by build_heterodata.
         const = data["factor"].x

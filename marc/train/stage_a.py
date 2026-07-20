@@ -2,8 +2,79 @@ import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch_geometric.utils import scatter
 
 from marc.diffusion.forward import corrupt
+
+
+def stage_a_loss(
+    denoiser: nn.Module,
+    data,
+    solutions,
+    alpha_bar: torch.Tensor,
+    T: int,
+    device: str = "cpu",
+    *,
+    t: torch.Tensor = None,
+    eps: torch.Tensor = None,
+    batched: bool = None,
+) -> torch.Tensor:
+    """Stage A DSM loss (mean over per-graph MSEs).
+
+    Batched path runs ONE forward over the whole Batch with per-graph t
+    (contract C1: model exposes supports_per_graph_t). Fallback path is the
+    original per-graph Python loop. batched=None auto-selects; True/False force.
+    t ([B]) and eps ([N, 1], concatenated over graphs) may be injected for tests.
+    """
+    data = data.to(device)
+    alpha_bar = alpha_bar.to(device)
+    vb = getattr(data["variable"], "batch", None)
+
+    if batched is None:
+        batched = getattr(denoiser, "supports_per_graph_t", False) and vb is not None
+
+    if batched:
+        x0 = torch.cat([s.to(device) for s in solutions])
+        B = int(vb.max()) + 1
+        if t is None:
+            t = torch.randint(1, T + 1, (B,), device=device)
+        if eps is None:
+            eps = torch.randn_like(x0)
+        x_t = corrupt(x0, t[vb], eps, alpha_bar)
+        # Feed the corrupted values to the denoiser (it reads data["variable"].x);
+        # without this the model never sees x_t and can only predict the noise mean.
+        data["variable"].x = x_t
+        eps_hat = denoiser(data, t)
+        se = (eps_hat - eps).pow(2).squeeze(-1)
+        # Per-graph mean then mean over graphs — matches the loop's mean-of-MSEs
+        # semantics; a plain node-mean would reweight losses by graph size.
+        per_graph = scatter(se, vb, dim=0, dim_size=B, reduce="mean")
+        return per_graph.mean()
+
+    total_loss = torch.tensor(0.0, device=device)
+    n_problems = len(solutions)
+
+    # Unpack batched graph into per-problem graphs so each denoiser call
+    # sees exactly n_vars_i nodes matching its paired solution tensor.
+    try:
+        graphs = data.to_data_list()
+    except AttributeError:
+        # data is already a single HeteroData (batch_size=1 path)
+        graphs = [data] * n_problems
+
+    offset = 0
+    for i, (graph, x0) in enumerate(zip(graphs, solutions)):
+        x0 = x0.to(device)
+        t_i = t[i].view(1).to(device) if t is not None else torch.randint(1, T + 1, (1,), device=device)
+        eps_i = eps[offset : offset + x0.size(0)].to(device) if eps is not None else torch.randn_like(x0)
+        offset += x0.size(0)
+        x_t = corrupt(x0, t_i, eps_i, alpha_bar)
+        graph["variable"].x = x_t
+        eps_hat = denoiser(graph, t_i)
+        loss = nn.functional.mse_loss(eps_hat, eps_i)
+        total_loss = total_loss + loss
+
+    return total_loss / n_problems
 
 
 def train_step_A(
@@ -31,36 +102,10 @@ def train_step_A(
     optimizer.zero_grad()
 
     data, solutions = batch
-    data = data.to(device)
-    alpha_bar = alpha_bar.to(device)
-
-    total_loss = torch.tensor(0.0, device=device)
-    n_problems = len(solutions)
-
-    # Unpack batched graph into per-problem graphs so each denoiser call
-    # sees exactly n_vars_i nodes matching its paired solution tensor.
-    try:
-        graphs = data.to_data_list()
-    except AttributeError:
-        # data is already a single HeteroData (batch_size=1 path)
-        graphs = [data] * n_problems
-
-    for graph, x0 in zip(graphs, solutions):
-        x0 = x0.to(device)
-        t = torch.randint(1, T + 1, (1,), device=device)
-        eps = torch.randn_like(x0)
-        x_t = corrupt(x0, t, eps, alpha_bar)
-        # Feed the corrupted values to the denoiser (it reads graph["variable"].x);
-        # without this the model never sees x_t and can only predict the noise mean.
-        graph["variable"].x = x_t
-        eps_hat = denoiser(graph, t)
-        loss = nn.functional.mse_loss(eps_hat, eps)
-        total_loss = total_loss + loss
-
-    avg_loss = total_loss / n_problems
-    avg_loss.backward()
+    loss = stage_a_loss(denoiser, data, solutions, alpha_bar, T, device)
+    loss.backward()
     optimizer.step()
-    return avg_loss.item()
+    return loss.item()
 
 
 def train_stage_a(
