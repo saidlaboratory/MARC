@@ -1,15 +1,21 @@
 # Overnight run — runbook for Sparsh
 
-Everything below assumes a fresh Linux GPU box with the repo cloned and you in
-the repo root. The whole night is driven by one script,
-`scripts/run_overnight.py`. It never crashes on a missing script or a failed
-experiment — it records the outcome in `results/overnight/MANIFEST.json` and
-moves on. Your job is: set up, sanity-check, launch, go to sleep, tar the
-results in the morning.
+Everything below assumes a **MacBook (Apple Silicon M5, 16 GB unified memory,
+~100 GB free storage)** running macOS, with the repo cloned and you in the repo
+root. The whole night is driven by one script, `scripts/run_overnight.py`. It
+never crashes on a missing script or a failed experiment — it records the
+outcome in `results/overnight/MANIFEST.json` and moves on. Your job is: set up,
+sanity-check, launch, go to sleep, tar the results in the morning.
+
+Training runs on the Apple GPU via PyTorch **MPS** (the trainer's
+`device: auto` resolves cuda > mps > cpu, so it picks `mps` automatically).
+Mixed precision is CUDA-only in this repo — MPS runs fp32; that's expected, no
+config change needed.
 
 ## 1. Setup (~10 min)
 
-Python 3.10+ required (`python3 --version`).
+Python 3.10+ required (`python3 --version`; macOS system Python or
+`brew install python@3.12` both work).
 
 ```bash
 python3 -m venv .venv
@@ -20,32 +26,31 @@ pip install -r requirements.txt
 If a `requirements-lock.txt` exists in the repo root, prefer
 `pip install -r requirements-lock.txt` for exact pins.
 
-`pip install torch` from the default index may give you a CPU-only wheel. For
-CUDA, install torch and torch-geometric against your CUDA version explicitly —
-the standard CUDA 12.1 lines are:
+On Apple Silicon the default PyPI wheels are the right ones — **no CUDA index
+URLs, no `pyg_lib`/`torch_scatter` extras** (those are Linux/CUDA builds; plain
+`pip install torch torch_geometric` is all this repo needs).
+
+Verify MPS is available:
 
 ```bash
-pip install torch --index-url https://download.pytorch.org/whl/cu121
-pip install torch_geometric
-pip install pyg_lib torch_scatter torch_sparse \
-    -f https://data.pyg.org/whl/torch-2.9.0+cu121.html
+python3 -c "import torch; print(torch.__version__, torch.backends.mps.is_available())"
 ```
 
-Adapt the `cu121` suffix to your driver (`nvidia-smi` shows the max CUDA
-version; `cu118`/`cu124` wheels exist too), and the `torch-2.9.0` part to the
-torch version pip actually installed (`python3 -c "import torch; print(torch.__version__)"`).
-The extra pyg wheels (`pyg_lib` etc.) are optional — plain
-`pip install torch_geometric` is enough for this repo; only reach for the
-`-f` wheel index if the plain install fails to build.
-
-Verify:
-
-```bash
-python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())"
-```
-
-Expect `True`. If `False`, stop and fix the torch install — the whole night
+Expect `True`. If `False`, stop and check your torch install — the whole night
 would silently run on CPU.
+
+One env var for the real run: a few torch-geometric scatter ops may lack MPS
+kernels depending on the torch version. Exporting
+
+```bash
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+```
+
+makes torch run just those ops on CPU instead of erroring out. Harmless if
+unneeded; put it in the same shell you launch from.
+
+**Storage:** 100 GB free is far more than needed — the generated dataset,
+checkpoints, and results together are a few GB at most.
 
 ## 2. Sanity (~5 min)
 
@@ -53,15 +58,15 @@ would silently run on CPU.
 python3 -m pytest -q
 ```
 
-Expect all green (~200 tests, under a minute on CPU). **If anything is red,
-don't launch the overnight run — ping the team instead.**
+Expect all green (~330 tests, about a minute). **If anything is red, don't
+launch the overnight run — ping the team instead.**
 
 ```bash
 python3 scripts/run_overnight.py --smoke
 ```
 
 This threads tiny arguments through every phase (the test suite still runs in
-full) and should finish well under 15 minutes on CPU. Afterwards check:
+full) and should finish well under 15 minutes. Afterwards check:
 
 - `results/overnight/MANIFEST.json` — every phase `"ok"` or `"skipped"`, none
   `"failed"`.
@@ -74,7 +79,7 @@ scripts (`scripts/train_structure_policy.py`, `scripts/run_invention_eval.py` �
 menu-based structure selection, "invention" only in the code identifiers)
 live in sibling PRs. **Before the real run, merge all open PRs** so those
 phases actually execute — the run is still valid without them, but the training
-phases are the whole point of the GPU.
+phases are the whole point of the night.
 
 Phase list (the `"phase"` fields in `MANIFEST.json`): `env_check, tests,
 train_stage_a, train_stage_b, train_structure_policy, eval_p1_learned,
@@ -113,38 +118,58 @@ export one before the real run if you have it, otherwise let it skip.
 
 ## 3. The real run
 
+**Keep the MacBook plugged in and leave the lid open** (the display can turn
+off). Closing the lid sleeps the machine regardless of any tool, and that
+pauses the run. `caffeinate` prevents idle/system sleep for exactly as long as
+the run lives:
+
 ```bash
-nohup python3 scripts/run_overnight.py > overnight.out 2>&1 &
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+caffeinate -is nohup python3 scripts/run_overnight.py > overnight.out 2>&1 &
 ```
 
-Expected shape of the night — honest caveat: the training scripts come from
-sibling PRs, so nobody has timed them end-to-end on your GPU yet. Rough
-expectations:
+Close every heavy app first (browsers, Slack, Docker, Xcode) — 16 GB is
+unified memory shared between CPU, GPU, and the rest of macOS. The model
+itself is small (~27 M params at D512/L8); memory pressure will come from
+other apps, not from MARC.
+
+Expected shape of the night — honest caveats: nobody has timed the training
+scripts end-to-end on Apple Silicon, MPS is substantially slower than a
+datacenter GPU for training, and a large share of this pipeline is CPU-bound
+sympy work regardless of device. Rough expectations:
 
 - Data generation and the eval-only phases: minutes each.
-- **Stage-A training at D512/L8 dominates the night** — plan for it to take
-  most of the GPU hours. The harness gives it a 14 h timeout, Stage-B 8 h,
-  the structure policy 4 h; a phase that hits its timeout is marked `failed`
-  and the run continues with the best checkpoint written so far.
+- **Stage-A training at D512/L8 dominates the night** — the harness gives it a
+  14 h timeout, Stage-B 8 h, the structure policy 4 h; a phase that hits its
+  timeout is marked `failed` and the run continues with the best checkpoint
+  written so far.
+- **Check the pace early** (~15 min in): look at `examples_per_sec` in the
+  training log below. If projected Stage-A time blows past ~12 h, don't burn
+  the night — stop the run, drop `model.D: 512 → 256` and `model.L: 8 → 6` (or
+  halve `training.epochs_A`) in `marc/configs/train/scale.yaml`, and relaunch.
+  A finished D256 run beats a timed-out D512 one. Note what you changed.
 - The eval battery afterwards: tens of minutes to a couple of hours total.
 
-Monitoring:
+Monitoring (macOS has no `nvidia-smi`; `watch` needs `brew install watch`, so
+plain loops below):
 
 ```bash
 tail -f overnight.out                                  # harness + phase output
-tail -f checkpoints/scale_D512_L8/train_log.jsonl      # loss curve, once training starts
-watch nvidia-smi                                       # GPU utilisation
+tail -f checkpoints/scale_D512_L8/train_log.jsonl      # loss + examples_per_sec, once training starts
+sudo powermetrics --samplers gpu_power -i 5000         # GPU utilisation (Ctrl-C to stop)
 ```
 
-If `nvidia-smi` shows ~0% during a training phase, something is wrong —
-check `results/overnight/logs/train_stage_a.log`.
+Activity Monitor (Window → GPU History) works too. If GPU sits at ~0% during a
+training phase, check `results/overnight/logs/train_stage_a.log` — but note
+sympy-heavy phases (data generation, Stage-B rollouts, most evals) are
+legitimately CPU-bound; ~0% GPU there is normal.
 
-## 4. If it crashes (or the box reboots)
+## 4. If it crashes (or the Mac sleeps/reboots)
 
 Just rerun the same command:
 
 ```bash
-nohup python3 scripts/run_overnight.py > overnight.out 2>&1 &
+caffeinate -is nohup python3 scripts/run_overnight.py > overnight.out 2>&1 &
 ```
 
 Training resumes from `checkpoints/scale_D512_L8/latest.pt` and data
@@ -179,15 +204,19 @@ tar czf overnight_$(date +%Y%m%d).tar.gz \
 (`--ignore-failed-read` tolerates checkpoints that don't exist because a
 training phase was skipped.) That covers the whole `results/overnight/` dir
 (MANIFEST, SUMMARY, logs, env), every `results/**/*.json` the run touched, and
-the checkpoints + training log.
+the checkpoints + training log. If you changed `scale.yaml` (the pace fallback
+above), say so when you send it — the config is also embedded in every
+checkpoint, but say it anyway.
 
 ## 6. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| CUDA out of memory during training | Lower `training.batch_size` in `marc/configs/train/scale.yaml`, rerun (resumes from `latest.pt`). |
-| bf16 / autocast error (older GPU) | Set `training.amp: "off"` in `marc/configs/train/scale.yaml`. |
-| torch-geometric install fails to build | Use the pinned wheel line from Setup: `pip install pyg_lib torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-<your-torch>+<your-cuda>.html` |
+| `NotImplementedError: ... not implemented for MPS` during training | `export PYTORCH_ENABLE_MPS_FALLBACK=1` and rerun. If it persists, force CPU: edit `training.device: "cpu"` in `marc/configs/train/scale.yaml` — slower but correct. |
+| macOS memory pressure yellow/red, machine crawling | Close other apps; if it persists, lower `training.batch_size` in `marc/configs/train/scale.yaml` and rerun (resumes from `latest.pt`). |
+| Stage-A projected to blow the night (check `examples_per_sec` early) | Drop to D256/L6 or halve `epochs_A` in `scale.yaml` and relaunch — see §3. |
+| Run paused overnight / laptop slept | The lid was closed or `caffeinate` wasn't used. Relaunch with the §3 command; everything resumes. |
+| `mps available: False` in setup | Reinstall torch from PyPI inside the venv (`pip install --force-reinstall torch`); make sure you're on the arm64 Python, not an x86 one under Rosetta (`python3 -c "import platform; print(platform.machine())"` → `arm64`). |
 | `pytest` red on arrival | Don't run anything — ping the team. |
 | A phase says `skipped: script not present` | The sibling PR with that script isn't merged. Merge open PRs and rerun with `--only <phase>` (plus `figures,summarize`). |
 | `eval_cot` skipped: no API key | Export `GEMINI_API_KEY` (or `OPENAI_API_KEY`) and rerun `--only eval_cot,summarize`, or ignore — it's a baseline, not a blocker. |
