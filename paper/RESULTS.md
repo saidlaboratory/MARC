@@ -4,6 +4,19 @@ All numbers carry a solver label and, where applicable, N and 95% CI. Provenance
 `paper/PROVENANCE.md`. Reproduce commands are listed per result. `refine` is always a
 classical baseline, never the headline.
 
+## Headline (corrected after adding the random-restart control)
+Running the proper **random multi-start + polish** control forced two honest corrections —
+and produced a sharper, more defensible story:
+1. **The hybrid recipe (any good proposal + energy-descent polish) beats cold-start Langevin**
+   on trapped non-convex problems (R3). This is a real, useful result.
+2. **The *learned* proposal beats *random* multi-start only in high dimension** (R5 crossover:
+   random wins at n≤2, learned wins at n≥4 where random collapses to ~0). This is the genuine
+   amortized-inference contribution — learning earns its keep when the search space is too large
+   to brute-force. On small-solution families (R3) the learned proposal shows **no** advantage
+   over random restart, and we say so.
+Net: claim *"amortized learned proposals beat random search in high-dimensional non-convex
+constraint solving"*, not *"the learned solver beats classical refinement everywhere."*
+
 ---
 
 ## R1 · The learned solver converges (was 0%, diverging)
@@ -20,23 +33,27 @@ On 200 non-convex problems, deterministic energy descent is **100% trapped**; an
 0), N=200, 5 seeds. A pre-registered, falsifiable RQ answered with CIs.
 `python -m marc.eval.ablations.noise_ablation --graphs 200`
 
-## R3 · A8.1 — the learned proposal beats classical refinement on non-convex problems
-The central mechanism ablation (best-of-8, 60 held-out/family, 95% Wilson CIs). Convex linear
-systems saturate every solver at 1.000, so we use non-convex families where deterministic
-descent is trapped. **p** = one-sided two-proportion z-test (learned_hybrid > refine+Langevin).
+## R3 · A8.1 — a good proposal + polish beats cold-start refinement (but the *learned* proposal ≈ random here)
+Mechanism ablation (best-of-8, 60 held-out/family, 95% Wilson CIs) on non-convex families where
+deterministic descent is trapped. We add the **key control** — random-init + polish, best-of-K,
+same budget, no learning — because without it the comparison is against a weaker baseline.
 
-| Family | refine (cold) | refine + Langevin | **learned hybrid (ours)** | p |
-|---|---|---|---|---|
-| BilinearSystem | 0.000 | 0.300 [0.20,0.43] | **0.550 [0.42,0.67]** | 0.003 |
-| BilinearProduct | 0.000 | 0.100 [0.05,0.20] | **0.683 [0.56,0.79]** | <1e-4 |
-| QuadraticSystem | 0.000 | 0.300 [0.20,0.43] | **0.683 [0.56,0.79]** | <1e-4 |
-| CircleLine | 0.000 | 0.033 [0.01,0.11] | **0.000** | — (fails) |
+| Family | refine cold | refine+Langevin | **random-init+polish (control)** | learned hybrid | learned>random? |
+|---|---|---|---|---|---|
+| BilinearSystem | 0.000 | 0.300 | **0.550 [0.42,0.67]** | 0.550 | tie (p=0.50) |
+| BilinearProduct | 0.000 | 0.100 | **0.717 [0.59,0.81]** | 0.683 | no (random wins) |
+| QuadraticSystem | 0.000 | 0.300 | **0.683 [0.56,0.79]** | 0.683 | tie (p=0.50) |
+| CircleLine | 0.000 | 0.033 | **0.200 [0.12,0.32]** | 0.000 | no (random wins) |
 
-**Significant win on 3/4 families (p<0.01).** Directly answers "what does the learned denoiser
-add over the classical solver?". **Honest failure:** on CircleLine (`x²+y²=r, x+y=s`) the
-learned model does not help — the x↔y/sign symmetry makes the root un-inferable from the
-constraint constants, and the polish itself is weak there (Langevin 0.033).
-`python scripts/run_hard_eval.py`
+**Honest conclusion (this corrects an earlier over-claim):** on these families the learned
+proposal provides **no advantage over random multi-start + polish** — it ties on 2 and loses on
+2. The apparent "learned beats Langevin" gap is really *"diverse restart + deterministic polish
+beats cold-start Langevin"*, i.e. the **hybrid recipe** is the contribution, not the learned
+denoiser specifically. Why: solutions here are small integers in [-3,3], which random restart in
+[-5,5] hits readily, so there is nothing for learning to amortize. The learned proposal's genuine
+value appears only when the solution manifold is wide/structured enough that random restart fails
+— that is exactly the R5 regime (±[3,8] roots, where the mean-prior and random both score ~0).
+`python scripts/run_hard_eval.py` (+ random-init control, PROVENANCE R11c)
 
 ## R4 · Cross-family generalization (H1 transfer) — partial, honest
 Leave-one-family-out: train on 3 non-convex families, test the hybrid on a **held-out** 4th
@@ -58,23 +75,30 @@ so dissimilar training families can disrupt transfer. Honest read: MARC's learne
 transfers across *related* non-convex structure but is not a universal solver, and a bad
 training family hurts. `python scripts/run_crossfamily_eval.py`
 
-## R5 · Dimension scaling — amortized inference beats classical + prior
-Bundled non-convex traps with per-instance-varying (wide, signed) roots. Learned x0-proposal
-beats deterministic (0), Langevin (→0 by n=3), and a mean-prior (0) at every dimension:
+## R5 · Dimension scaling — the learned proposal beats random search *only in high dimension* (the real amortization result)
+Bundled non-convex traps with per-instance-varying (wide, signed ±[3,8]) roots. Including the
+**random multi-start + polish control** (best-of-8, same budget) — the baseline that matters:
 
-| n | deterministic | Langevin | mean-prior | learned |
-|---|---|---|---|---|
-| 1 | 0.000 | 0.225 | 0.000 | 0.675 |
-| 2 | 0.000 | 0.025 | 0.000 | 0.425 |
-| 4 | 0.000 | 0.000 | 0.000 | 0.650 |
-| 6 | 0.000 | 0.000 | 0.000 | 0.100 |
+| n | deterministic | Langevin | mean-prior | **random restart** | **learned** |
+|---|---|---|---|---|---|
+| 1 | 0.000 | 0.225 | 0.000 | **0.875** | 0.675 |
+| 2 | 0.000 | 0.025 | 0.000 | **0.700** | 0.425 |
+| 4 | 0.000 | 0.000 | 0.000 | 0.000 | **0.650** |
+| 6 | 0.000 | 0.000 | 0.000 | 0.025 | **0.100** |
 
-Langevin decays geometrically (~p^n); the learned proposal beats it throughout. **Honest
-caveat:** the learned model also degrades at n=6 (0.10) — decays slower than baselines and
-always beats the prior, but is not dimension-immune. Architectural finding: variables must be
+**The honest, sharper claim: there is a crossover.** At low dimension (n≤2), *random restart
+wins* — the solution space is small enough to brute-force, and learning buys nothing. At high
+dimension (n≥4), *random restart collapses to ~0* (it must hit all n basins simultaneously by
+chance, cost ~p^n), while the **learned proposal holds** (0.650 at n=4). This is the genuine
+amortized-inference result: the learned model earns its keep exactly when the search space is
+too large for random search. Langevin and the mean-prior are ~0 by n≥3.
+
+**Honest caveats:** the learned model still degrades at n=6 (0.10); and it *loses* to random
+restart at n≤2. The claim is specifically "amortized proposal > random search in high
+dimension," not "learned is best everywhere." Architectural finding: variables must be
 conditioned directly on incident constraint constants (message-passing LayerNorm washes the
 magnitude out); a direct constant→output skip recovers roots (mean|err| 5.4 → 0.9).
-`python scripts/run_dimension_scaling.py`
+`python scripts/run_dimension_scaling.py` (+ random-restart control, PROVENANCE R6b)
 
 ## R6 · MATH benchmark — coverage / reality check (not a solve claim)
 On a 48-problem MATH-500 sample, the template formalizer covers **0/48**; ~20% of the sample is

@@ -8,9 +8,17 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 
 ## 0. Overnight update (rigor pass) — see `paper/RESULTS.md` for the canonical, cited results
 
-- **A8.1 made rigorous:** 4 non-convex families, Wilson CIs + 2-proportion z-test. Learned
-  hybrid **significantly beats classical Langevin on 3/4** (p<0.01). Honest **CircleLine
-  failure** (0.000) reported.
+**⚠️ Two honest corrections from adding the random-multistart control (read before the meeting):**
+- **A8.1 reframed:** the learned hybrid beats *cold-start Langevin*, but a **random-init +
+  polish** control ties/beats it on all 4 families. So the contribution on these families is the
+  **hybrid recipe (proposal + polish)**, *not* the learned denoiser — the learned proposal has
+  no advantage over random multi-start when solutions are small/dense. (Nearly shipped an
+  over-claim; the control caught it.)
+- **Dimension scaling reframed (stronger + honest):** the learned proposal beats random restart
+  **only in high dimension** — random wins at n≤2 (0.875 vs 0.675), learned wins at n≥4 where
+  random collapses to ~0 (n=4: learned 0.650 vs random 0.000). *That crossover* is the real
+  amortized-inference result. New headline: "amortized learned proposals beat random search in
+  high-dim non-convex constraint solving," not "learned beats classical everywhere."
 - **Cross-family generalization (H1 transfer):** leave-one-out. Learned model **solves 2/4
   held-out families it never trained on** (0.683, p<1e-4); fails on 2/4. Partial, honest —
   a dissimilar training family (CircleLine) can disrupt transfer.

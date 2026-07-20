@@ -97,6 +97,26 @@ def hybrid_count(items, net, K):
     return ok, len(items)
 
 
+def random_count(items, K, lo=-5.0, hi=5.0):
+    """Control: K random starts + deterministic polish, best-of-K (no learning).
+    Isolates whether the learned proposal beats blind multi-start. On these
+    small-solution families it does not — random restart ties/beats learned."""
+    import random as _rnd
+    chk = Checker()
+    ok = 0
+    for g, sol in items:
+        nv = len(sol)
+        solved = False
+        for s in range(K):
+            r = _rnd.Random(7000 * s + nv)
+            x0 = [r.uniform(lo, hi) for _ in range(nv)]
+            if chk.verify(g, refine(g, x0, noise=False, seed=0).x).accepted:
+                solved = True
+                break
+        ok += int(solved)
+    return ok, len(items)
+
+
 def _fmt(k, n):
     lo, hi = wilson_interval(k, n)
     return f"{k/n:.3f} [{lo:.2f},{hi:.2f}]"
@@ -122,6 +142,7 @@ def main() -> None:
         net = train_x0(train, epochs)
         c_cold = refine_count(test, False, args.K)
         c_lang = refine_count(test, True, args.K)
+        c_rand = random_count(test, args.K)
         c_hyb = hybrid_count(test, net, args.K)
         # significant if learned lower-CI > langevin upper-CI
         hyb_lo = wilson_interval(*c_hyb)[0]
@@ -133,13 +154,15 @@ def main() -> None:
                             "ci95": wilson_interval(*c_cold)},
             "refine_langevin": {"k": c_lang[0], "n": c_lang[1], "rate": c_lang[0] / c_lang[1],
                                 "ci95": wilson_interval(*c_lang)},
+            "random_restart": {"k": c_rand[0], "n": c_rand[1], "rate": c_rand[0] / c_rand[1],
+                               "ci95": wilson_interval(*c_rand)},
             "learned_hybrid": {"k": c_hyb[0], "n": c_hyb[1], "rate": c_hyb[0] / c_hyb[1],
                                "ci95": wilson_interval(*c_hyb)},
             "hybrid_beats_langevin_sig": bool(sig),
         }
         rows.append(row)
-        print(f"{template.name:18s} {_fmt(*c_cold):>18} {_fmt(*c_lang):>22} "
-              f"{_fmt(*c_hyb):>22} {'YES' if sig else 'no':>5}", flush=True)
+        print(f"{template.name:18s} cold={_fmt(*c_cold)}  lang={_fmt(*c_lang)}  "
+              f"random={_fmt(*c_rand)}  learned={_fmt(*c_hyb)}", flush=True)
 
     n_sig = sum(r["hybrid_beats_langevin_sig"] for r in rows)
     print(f"\nlearned_hybrid CI-disjoint above refine_langevin on {n_sig}/{len(rows)} families")

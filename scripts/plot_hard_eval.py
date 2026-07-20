@@ -26,30 +26,35 @@ def main() -> None:
 
     md = ["# Hard-suite results (non-convex families)", "",
           f"_Best-of-{K}, {data['test_per_family']} held-out problems/family, "
-          f"trained {data['epochs']} epochs. 95% Wilson CIs in brackets. `refine` variants are "
-          f"classical baselines. **p** = one-sided two-proportion z-test, learned_hybrid > "
-          f"refine+Langevin._", "",
-          "| Family | refine (cold) [baseline] | refine + Langevin [baseline] | **learned hybrid (ours)** | p (hybrid>langevin) |",
-          "|---|---|---|---|---|"]
-    n_sig = 0
+          f"trained {data['epochs']} epochs. 95% Wilson CIs. `refine` and `random restart` are "
+          f"classical baselines; **random restart + polish is the control that isolates the "
+          f"learned proposal**._", "",
+          "| Family | refine cold | refine+Langevin | **random restart+polish (control)** | learned hybrid | learned>random? |",
+          "|---|---|---|---|---|---|"]
+    n_lang, n_rand = 0, 0
     for r in rows:
         h, l = r["learned_hybrid"], r["refine_langevin"]
-        z, p = two_proportion_z(h["k"], h["n"], l["k"], l["n"])
-        n_sig += int(p < 0.05 and h["rate"] > l["rate"])
-        pflag = f"**{p:.4f}**" if (p < 0.05 and h["rate"] > l["rate"]) else f"{p:.3f}"
-        md.append(f"| {r['family']} | {_cell(r['refine_cold'])} | {_cell(l)} "
-                  f"| **{_cell(h)}** | {pflag} |")
+        rnd = r.get("random_restart")
+        _, p_l = two_proportion_z(h["k"], h["n"], l["k"], l["n"])
+        n_lang += int(p_l < 0.05 and h["rate"] > l["rate"])
+        if rnd:
+            p_r = r.get("p_learned_gt_random")
+            win = "tie/no" if p_r is None or p_r >= 0.05 else "yes"
+            n_rand += int(win == "yes")
+            md.append(f"| {r['family']} | {r['refine_cold']['rate']:.3f} | {l['rate']:.3f} "
+                      f"| **{_cell(rnd)}** | {_cell(h)} | {win} (p={p_r:.2f}) |")
+        else:
+            md.append(f"| {r['family']} | {_cell(r['refine_cold'])} | {_cell(l)} | n/a | {_cell(h)} | — |")
     md += ["",
-           f"**learned_hybrid significantly beats refine+Langevin (p<0.05) on {n_sig}/{len(rows)} "
-           f"families.**",
+           f"**learned_hybrid beats refine+Langevin on {n_lang}/{len(rows)} families (p<0.05), but "
+           f"beats the random-restart control on {n_rand}/{len(rows)}.**",
            "",
-           "**Reading:** convex linear systems saturate every solver at 1.000 (no signal); these "
-           "non-convex families trap deterministic descent (0.000) and pull solvers off the "
-           "ceiling. The learned proposal + refine polish beats the best classical method on 3/4 "
-           "families (p<0.01), isolating the denoiser's contribution (A8.1). **Honest failure "
-           "case:** on CircleLine (x^2+y^2=r, x+y=s) the learned model does not help (0.000) — the "
-           "x<->y and sign symmetry makes the root un-inferable from the constraint constants, and "
-           "the polish is itself weak there (Langevin 0.033). Reported, not hidden."]
+           "**Honest reading:** the hybrid recipe (a good proposal + energy-descent polish) beats "
+           "cold-start Langevin — but a *random* init + the same polish does just as well as the "
+           "*learned* proposal on these small-solution families (learned ties on 2, loses on 2). "
+           "So the contribution here is the **hybrid recipe**, not the learned denoiser; the "
+           "learned proposal's advantage appears only in high dimension where random restart "
+           "fails (see the dimension-scaling result). CircleLine is an outright failure (0.000)."]
     FIGDIR.mkdir(parents=True, exist_ok=True)
     (FIGDIR / "hard_suite_table.md").write_text("\n".join(md))
     print(f"wrote {FIGDIR/'hard_suite_table.md'}")
