@@ -38,7 +38,7 @@ contribution is too narrow.
 | Headline = A8.1 hard-suite numbers. | Headline = the **dimension-scaling crossover** (learned > random for n≥3). A8.1 becomes "the hybrid recipe" evidence, with the random control shown. |
 | "Solves math problems." | "Numeric constraint solver; 0/48 MATH coverage; targets the constraint-shaped slice." (Reality check, not a result.) |
 | Report `refine` numbers as system results. | `refine`/`random` are baselines; always labelled; every number has N + CI/z-test. |
-| H2 (structure invention) as a result. | H2 = preliminary (Δ=0 is baked into solution-equivalent toys). |
+| "Structure invention" as a claim. | "Menu-based structure selection (with predicted defining value)" — built and trained; clean-protocol numbers pending (see §3b, `paper/REVIEW_ATTACKS.md` #2/#3). |
 
 ---
 
@@ -57,12 +57,17 @@ claim is **closed**. What remains genuinely solid is narrower: the learned solve
 hybrid recipe beats cold-start Langevin (but so does random restart). That is a **workshop-level**
 contribution.
 
-## 3b. The only remaining main-track shots (both high-risk in 7 days)
-- **Structure invention (novelty crown jewel).** Train the D3PM structure head + a family where
-  the fixed graph is *provably unsolvable without an invented auxiliary variable*, and show the
-  model invents it. "A model that invents the auxiliary quantity/lemma needed to solve" is
-  genuinely novel and main-track-shaped. Currently a null result on an untrained proxy;
-  ~3–4 days, high risk.
+## 3b. The remaining main-track shots
+- **Menu-based structure selection (with predicted defining value).** BUILT: the D3PM
+  structure policy is trained on the aux-required families (fixed graph certified
+  unsolvable without the auxiliary), and the end-to-end eval harness runs it with
+  positive/negative controls. Honest naming: the model selects one of K candidate
+  auxiliary structures and predicts its defining value — it does not synthesize
+  structure from an open vocabulary, so claim-language is "selection", not
+  "invention". **Clean-protocol numbers pending**: the preliminary run is withdrawn
+  (test seeds == validation seeds, plus a train/eval data-source mismatch in the
+  harness — both now fixed; see `paper/RESULTS.md` R8 and `paper/REVIEW_ATTACKS.md`
+  #2/#3). Regenerate under the seed-space v1 protocol before citing anything.
 - **A real (narrow) domain.** Get the model training+solving on geometry or a real
   polynomial-system slice — moves it from "synthetic toy" to "real problems." ~2–3 days, medium
   risk. Biggest credibility jump.

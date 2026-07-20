@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """P1 baseline eval: in-distribution + held-out-structure splits → metrics.json.
 
-Runs the real energy-gradient refinement solver (or Davin's learned ``solve()`` via
-``--solver davin`` / ``MARC_SOLVER``) over both structural splits and writes
+Runs the real energy-gradient refinement solver (or the learned ``solve()`` via
+``--solver learned`` / ``MARC_SOLVER``) over both structural splits and writes
 ``results/p1_baselines/metrics.json`` with §11 capability metrics and the
 generalization gap (H1).
 
 Usage:
     python scripts/run_p1_eval.py
-    python scripts/run_p1_eval.py --solver davin --k 8
-    MARC_SOLVE_PATH=marc.diffusion.solve:solve python scripts/run_p1_eval.py --solver davin
+    python scripts/run_p1_eval.py --solver learned --k 8
+    MARC_SOLVE_PATH=marc.diffusion.solve:solve python scripts/run_p1_eval.py --solver learned
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from marc.eval.solver import load_solver
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="P1 baseline eval (split metrics)")
-    parser.add_argument("--solver", default="refine", help="refine | dummy | davin")
+    parser.add_argument("--solver", default="refine", help="refine | dummy | learned")
     parser.add_argument("--n-id", type=int, default=25, help="# in-distribution problems")
     parser.add_argument("--n-ho", type=int, default=25, help="# held-out-structure problems")
     parser.add_argument("--k", type=int, default=4, help="candidates per problem (pass@k)")
