@@ -10,11 +10,13 @@ Pure functions over sequences of bool/float — no model, no CAS dependency.
   entrapment_reduction  — entrapment without noise − with noise (RQ2 ablation).
   perturbation_robustness — solve-rate drop when constants are perturbed.
   derivation_verifiability — fraction of accepted solutions that formally verify.
+  wilson_interval        — 95% Wilson score CI for a binomial solve rate.
 """
 
 from __future__ import annotations
 
-from typing import Callable, Sequence
+import math
+from typing import Callable, Sequence, Tuple
 
 
 def solve_rate(results: Sequence[bool]) -> float:
@@ -22,6 +24,20 @@ def solve_rate(results: Sequence[bool]) -> float:
     if len(results) == 0:
         raise ValueError("results must be non-empty")
     return sum(bool(r) for r in results) / len(results)
+
+
+def wilson_interval(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
+    """95% Wilson score interval for a binomial proportion k successes in n trials.
+
+    Preferred over the normal approximation for small n and rates near 0/1 (exactly
+    our regime). Returns (low, high), both clamped to [0, 1)."""
+    if n == 0:
+        raise ValueError("n must be positive")
+    p = k / n
+    denom = 1 + z * z / n
+    center = (p + z * z / (2 * n)) / denom
+    half = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / denom
+    return max(0.0, center - half), min(1.0, center + half)
 
 
 def pass_at_k(results_per_problem: Sequence[Sequence[bool]], k: int) -> float:

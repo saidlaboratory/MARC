@@ -351,3 +351,53 @@ class BilinearProductTemplate:
 
 #: The hard non-convex template family (A1 de-saturation tier).
 HARD_TEMPLATES = [BilinearSystemTemplate(), BilinearProductTemplate()]
+
+
+@dataclass
+class QuadraticSystemTemplate:
+    """Non-convex quadratic system:  x^2 + y = a,  x^2 - y = b.
+
+    The x^2 terms make E non-convex with a sign-symmetric pair of roots (±x*, y*);
+    cold-start descent stalls between the two branches."""
+
+    name: str = "QuadraticSystem"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        rng = random.Random(seed)
+        x_star = rng.choice(_NONZERO)
+        y_star = rng.choice(_NONZERO)
+        a, b = x_star * x_star + y_star, x_star * x_star - y_star
+        variables = [VariableNode("x", value=0.0), VariableNode("y", value=0.0)]
+        factors = [FactorNode("eq1", f"x**2+y-({a})"), FactorNode("eq2", f"x**2-y-({b})")]
+        edges = [Edge("x", "eq1", 1.0), Edge("y", "eq1", 1.0),
+                 Edge("x", "eq2", 1.0), Edge("y", "eq2", 1.0)]
+        graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+        return graph, {"x": float(x_star), "y": float(y_star)}
+
+
+@dataclass
+class CircleLineTemplate:
+    """Circle-line intersection:  x^2 + y^2 = r,  x + y = s (non-convex, ≤2 real roots)."""
+
+    name: str = "CircleLine"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        rng = random.Random(seed)
+        x_star = rng.choice(_NONZERO)
+        y_star = rng.choice(_NONZERO)
+        while y_star == x_star:
+            y_star = rng.choice(_NONZERO)
+        r, s = x_star * x_star + y_star * y_star, x_star + y_star
+        variables = [VariableNode("x", value=0.0), VariableNode("y", value=0.0)]
+        factors = [FactorNode("eq1", f"x**2+y**2-({r})"), FactorNode("eq2", f"x+y-({s})")]
+        edges = [Edge("x", "eq1", 1.0), Edge("y", "eq1", 1.0),
+                 Edge("x", "eq2", 1.0), Edge("y", "eq2", 1.0)]
+        graph = FactorGraph(variables=variables, factors=factors, edges=edges)
+        return graph, {"x": float(x_star), "y": float(y_star)}
+
+
+#: Extended hard family list (A8.1 robustness — 4 non-convex families).
+HARD_TEMPLATES_EXT = [
+    BilinearSystemTemplate(), BilinearProductTemplate(),
+    QuadraticSystemTemplate(), CircleLineTemplate(),
+]
