@@ -2,6 +2,7 @@ torch
 torch-geometric
 sympy
 numpy
+scipy
 matplotlib
 pytest
 pyyaml

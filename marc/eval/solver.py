@@ -23,7 +23,11 @@ import tempfile
 import warnings
 from typing import Any, Callable, List, Protocol, Sequence, Tuple, runtime_checkable
 
-from marc.refine.iterative import refine
+import numpy as np
+import sympy as sp
+
+from marc.cas.checker import _residual_and_kind
+from marc.refine.iterative import build_residual_jac, refine
 
 
 @runtime_checkable
@@ -142,6 +146,128 @@ class GradientRefinementSolver:
         but also returns the per-candidate RefineTrace diagnostics."""
         traces = [self._refine_once(problem) for _ in range(k)]
         return [t.x for t in traces], [_trace_info(t) for t in traces]
+
+
+class ScipySolver:
+    """Classical baseline: Levenberg–Marquardt / trust-region via scipy least_squares.
+
+    The "why didn't you compare against Newton/LM?" column. Uses the analytic
+    residual + Jacobian compiled by :func:`build_residual_jac` and the same
+    multi-start protocol as :class:`GradientRefinementSolver`: each of the k
+    candidates is one solve from an independent Gaussian init at ``init_scale``
+    (per-problem ``metadata["init_scale"]`` honoured), so pass@k genuinely improves
+    with k. ``method="lm"`` on square/overdetermined systems (scipy's requirement
+    for LM), ``"trf"`` otherwise.
+    """
+
+    def __init__(
+        self,
+        *,
+        init_scale: float = 3.0,
+        tol: float = 1e-6,
+        seed: int | None = 0,
+        name: str = "lm",
+    ) -> None:
+        try:
+            from scipy.optimize import least_squares
+        except ImportError as exc:
+            raise RuntimeError(
+                f"ScipySolver needs scipy (listed in requirements.txt): {exc}. "
+                "pip install scipy, or use --solver refine."
+            ) from exc
+        self._least_squares = least_squares
+        self.init_scale = init_scale
+        self.tol = tol
+        self.seed = seed
+        self.name = name
+        self._rng = np.random.default_rng(seed)
+
+    def _init(self, problem: Any) -> np.ndarray:
+        n = len(problem.graph.variables)
+        scale = problem.metadata.get("init_scale", self.init_scale)
+        return self._rng.standard_normal(n) * scale
+
+    def sample(self, problem: Any, k: int) -> List[List[float]]:
+        return self.sample_with_info(problem, k)[0]
+
+    def sample_with_info(
+        self, problem: Any, k: int
+    ) -> Tuple[List[List[float]], List[dict]]:
+        """``sample`` plus per-candidate ``{n_steps (nfev), final_energy, converged}``."""
+        r_fn, j_fn, n = build_residual_jac(problem.graph)
+        m = len(problem.graph.factors)
+        fun = lambda x: np.asarray(r_fn(*x), dtype=float).reshape(m)
+        jac = lambda x: np.asarray(j_fn(*x), dtype=float).reshape(m, n)
+        method = "lm" if m >= n else "trf"  # scipy's "lm" requires m >= n
+        cands: List[List[float]] = []
+        infos: List[dict] = []
+        for _ in range(k):
+            x0 = self._init(problem)
+            try:
+                res = self._least_squares(fun, x0, jac=jac, method=method)
+            except ValueError:
+                # e.g. non-finite residual at the init (sqrt of a negative on
+                # non-polynomial factors): count this start as a failed candidate
+                # rather than crash a whole eval run
+                cands.append([float(v) for v in x0])
+                infos.append({"n_steps": 0, "final_energy": float("inf"), "converged": False})
+                continue
+            energy = 0.5 * float(np.sum(res.fun ** 2))  # E = 1/2 sum r^2, as elsewhere
+            cands.append([float(v) for v in res.x])
+            infos.append(
+                {
+                    "n_steps": int(res.nfev),
+                    "final_energy": energy,
+                    "converged": bool(energy <= self.tol),
+                }
+            )
+        return cands, infos
+
+
+class ExactLinearSolver:
+    """Exact classical baseline for linear systems (numpy solves these exactly).
+
+    ``sympy.linear_eq_to_matrix`` extracts (A, b) from the equality residuals;
+    ``numpy.linalg.lstsq`` solves — exact (to machine precision) on consistent
+    linear systems, minimum-norm least-squares otherwise. Deterministic, so the k
+    candidates are k copies of the one solution (pass@k == pass@1, the honest
+    result — same convention as FunctionSolver). On NONLINEAR input sympy raises
+    (``NonlinearError``, a ``ValueError`` subclass); per the Solver protocol this
+    returns NO candidates (``[]``) rather than crashing, so nonlinear eval rows
+    simply score 0 without special-casing. Inequality factors likewise yield no
+    candidates — this is a linear-equality solver only.
+    """
+
+    def __init__(self, *, tol: float = 1e-6, name: str = "exact") -> None:
+        self.tol = tol
+        self.name = name
+
+    def sample(self, problem: Any, k: int) -> List[List[float]]:
+        return self.sample_with_info(problem, k)[0]
+
+    def sample_with_info(
+        self, problem: Any, k: int
+    ) -> Tuple[List[List[float]], List[dict]]:
+        graph = problem.graph
+        symbols = [sp.Symbol(v.id) for v in graph.variables]
+        residuals = []
+        for f in graph.factors:
+            g, kind = _residual_and_kind(sp.sympify(f.expression))
+            if kind != "eq":
+                return [], []  # inequality: not a linear system of equations
+            residuals.append(g)
+        try:
+            A, b = sp.linear_eq_to_matrix(residuals, symbols)
+        except (ValueError, sp.PolynomialError):
+            # sympy NonlinearError (ValueError subclass): system is not linear
+            return [], []
+        A = np.asarray(A, dtype=float)
+        b = np.asarray(b, dtype=float).reshape(-1)
+        x, *_ = np.linalg.lstsq(A, b, rcond=None)
+        energy = 0.5 * float(np.sum((A @ x - b) ** 2))
+        cand = [float(v) for v in x]
+        info = {"n_steps": 1, "final_energy": energy, "converged": bool(energy <= self.tol)}
+        return [list(cand) for _ in range(k)], [dict(info) for _ in range(k)]
 
 
 def _cas_engine_for(graph: Any):
@@ -294,7 +420,9 @@ def load_solver(name: str | None = None, **kwargs: Any) -> Solver:
 
     Names: ``"refine"`` (default, real gradient solver), ``"dummy"`` (oracle-ish
     sanity solver), ``"learned"``/``"davin"`` (the diffusion ``solve()`` + a
-    checkpoint). ``None`` reads ``MARC_SOLVER`` (default ``"refine"``). The learned
+    checkpoint), ``"lm"`` (scipy Levenberg–Marquardt classical baseline),
+    ``"exact"`` (exact linear-system solver; no candidates on nonlinear input).
+    ``None`` reads ``MARC_SOLVER`` (default ``"refine"``). The learned
     path raises a clear, actionable error when torch_geometric or the checkpoint is
     missing, so a green P1 run is never produced by a placeholder.
     """
@@ -308,5 +436,9 @@ def load_solver(name: str | None = None, **kwargs: Any) -> Solver:
         return DummySolver(**kwargs)
     if name in ("learned", "davin"):
         return LearnedSolver(**kwargs)
+    if name == "lm":
+        return ScipySolver(**kwargs)
+    if name == "exact":
+        return ExactLinearSolver(**kwargs)
 
-    raise ValueError(f"unknown solver '{name}' (expected refine|dummy|learned)")
+    raise ValueError(f"unknown solver '{name}' (expected refine|dummy|learned|lm|exact)")

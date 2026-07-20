@@ -52,6 +52,29 @@ def build_energy_fns(
     return e_fn, g_fn, len(symbols)
 
 
+def build_residual_jac(
+    graph: FactorGraph,
+) -> tuple[Callable[..., list], Callable[..., list], int]:
+    """Compile (residual, jacobian, n_vars) callables for least-squares solvers.
+
+    Same conventions as :func:`build_energy_fns`: per-factor residuals in
+    ``graph.factors`` order (equality g; inequality hinge ``Max(0, g)``, whose
+    derivative sympy expresses via Heaviside — subgradient at the kink), symbols in
+    ``graph.variables`` order, values passed positionally. ``residual(*x)`` returns
+    the length-m residual vector; ``jacobian(*x)`` the m-by-n matrix dr_i/dx_j.
+    """
+    symbols = [sp.Symbol(v.id) for v in graph.variables]
+    residuals = []
+    for f in graph.factors:
+        g, kind = _residual_and_kind(sp.sympify(f.expression))
+        residuals.append(g if kind == "eq" else sp.Max(0, g))
+    jac = [[sp.diff(r, s) for s in symbols] for r in residuals]
+
+    r_fn = sp.lambdify(symbols, residuals, "numpy")
+    j_fn = sp.lambdify(symbols, jac, "numpy")
+    return r_fn, j_fn, len(symbols)
+
+
 @dataclass
 class RefineTrace:
     """Outcome of one refinement run."""

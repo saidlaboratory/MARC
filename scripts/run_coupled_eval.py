@@ -13,6 +13,9 @@ baseline, not just win because random fails. If it clears that bar at high n, it
 real joint amortized inference (a main-track-relevant result). If it ties random, the
 earlier advantage was an independence artifact — reported honestly either way.
 
+Also reports an ``lm`` column: classical scipy Levenberg–Marquardt with the analytic
+Jacobian, K Gaussian multi-starts, best-of-K — the classical-solver baseline.
+
 Run:  python scripts/run_coupled_eval.py [--quick]
 Writes results/p_coupled/coupled.json.
 """
@@ -30,6 +33,8 @@ from marc.data.coupled import make_chain
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
 from marc.eval.metrics import wilson_interval, two_proportion_z
+from marc.eval.runner import Problem
+from marc.eval.solver import ScipySolver
 from marc.refine.iterative import refine
 from marc.diffusion.schedule import cosine_beta_schedule
 from marc.diffusion.forward import corrupt
@@ -83,6 +88,18 @@ def random_count(items, K):
     return ok, len(items)
 
 
+def lm_count(items, K):
+    """Classical baseline: scipy Levenberg–Marquardt (analytic Jacobian), K Gaussian
+    multi-starts, best-of-K. The chain is nonlinear, so the registered
+    ExactLinearSolver returns no candidates and gets no column here."""
+    chk = Checker(); ok = 0
+    solver = ScipySolver(seed=0)
+    for g, sol in items:
+        cands = solver.sample(Problem(id="lm", graph=g, solution=list(sol)), K)
+        ok += int(any(chk.verify(g, c).accepted for c in cands))
+    return ok, len(items)
+
+
 def hybrid_count(items, net, K):
     chk = Checker(); ok = 0
     with torch.no_grad():
@@ -109,7 +126,7 @@ def main() -> None:
     ntrain = 60 if args.quick else 300
 
     print(f"Coupled chained bilinear — best-of-{args.K}, {args.test} test/n")
-    print(f"{'n':>3} {'langevin':>9} {'random':>9} {'learned':>9} {'p(l>rand)':>10}")
+    print(f"{'n':>3} {'langevin':>9} {'random':>9} {'lm':>9} {'learned':>9} {'p(l>rand)':>10} {'p(l>lm)':>9}")
     rows = []
     for n in ns:
         train = gen(n, ntrain, seed0=0)
@@ -117,14 +134,19 @@ def main() -> None:
         net = train_x0(train, epochs)
         cl = langevin_count(test, args.K)
         cr = random_count(test, args.K)
+        clm = lm_count(test, args.K)
         ch = hybrid_count(test, net, args.K)
         _, p = two_proportion_z(ch[0], ch[1], cr[0], cr[1])
+        _, p_lm = two_proportion_z(ch[0], ch[1], clm[0], clm[1])
         rows.append({"n": n,
                      "langevin": {"rate": cl[0] / cl[1], "ci95": wilson_interval(*cl)},
                      "random": {"rate": cr[0] / cr[1], "ci95": wilson_interval(*cr)},
+                     "lm": {"k": clm[0], "n": clm[1], "rate": clm[0] / clm[1], "ci95": wilson_interval(*clm)},
                      "learned": {"k": ch[0], "n": ch[1], "rate": ch[0] / ch[1], "ci95": wilson_interval(*ch)},
-                     "p_learned_gt_random": p})
-        print(f"{n:>3} {cl[0]/cl[1]:>9.3f} {cr[0]/cr[1]:>9.3f} {ch[0]/ch[1]:>9.3f} {p:>10.4f}", flush=True)
+                     "p_learned_gt_random": p,
+                     "p_learned_gt_lm": p_lm})
+        print(f"{n:>3} {cl[0]/cl[1]:>9.3f} {cr[0]/cr[1]:>9.3f} {clm[0]/clm[1]:>9.3f} "
+              f"{ch[0]/ch[1]:>9.3f} {p:>10.4f} {p_lm:>9.4f}", flush=True)
 
     out = Path("results/p_coupled"); out.mkdir(parents=True, exist_ok=True)
     (out / "coupled.json").write_text(json.dumps({"K": args.K, "test_per_n": args.test,

@@ -7,6 +7,8 @@ descent is trapped, and isolates the learned denoiser's contribution:
   * refine_cold      — energy descent from a cold (zero) start, best-of-K
   * refine_langevin  — annealed-noise descent from the cold start, best-of-K
   * learned_hybrid   — GraphDenoiser proposes x0, then refine() polishes it, best-of-K
+  * lm               — classical scipy Levenberg–Marquardt (analytic Jacobian),
+                       K Gaussian multi-starts, best-of-K (the "why not Newton/LM?" column)
 
 If learned_hybrid's CI is disjoint from (above) refine_langevin's, the diffusion proposal
 is a statistically significant win — the paper's central claim (answers "what does the
@@ -27,7 +29,9 @@ import torch.nn as nn
 from marc.data.templates import HARD_TEMPLATES_EXT
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
-from marc.eval.metrics import wilson_interval
+from marc.eval.metrics import two_proportion_z, wilson_interval
+from marc.eval.runner import Problem
+from marc.eval.solver import ScipySolver
 from marc.refine.iterative import refine
 from marc.diffusion.schedule import cosine_beta_schedule
 from marc.diffusion.forward import corrupt
@@ -117,6 +121,20 @@ def random_count(items, K, lo=-5.0, hi=5.0):
     return ok, len(items)
 
 
+def lm_count(items, K):
+    """Classical baseline: scipy Levenberg–Marquardt with the analytic Jacobian,
+    K independent Gaussian multi-starts, best-of-K — the "why not Newton/LM?"
+    column. ExactLinearSolver is registered too, but these families are nonlinear
+    so it returns no candidates; it gets no column here."""
+    chk = Checker()
+    solver = ScipySolver(seed=0)
+    ok = 0
+    for g, sol in items:
+        cands = solver.sample(Problem(id="lm", graph=g, solution=list(sol)), K)
+        ok += int(any(chk.verify(g, c).accepted for c in cands))
+    return ok, len(items)
+
+
 def _fmt(k, n):
     lo, hi = wilson_interval(k, n)
     return f"{k/n:.3f} [{lo:.2f},{hi:.2f}]"
@@ -134,7 +152,7 @@ def main() -> None:
     families = HARD_TEMPLATES_EXT[:2] if args.quick else HARD_TEMPLATES_EXT
 
     print(f"Hard-suite eval — best-of-{args.K}, {args.test} test/family, 95% Wilson CIs")
-    print(f"{'family':18s} {'refine_cold':>18} {'refine_langevin':>22} {'learned_hybrid':>22} {'sig?':>5}")
+    print(f"{'family':18s} {'refine_cold':>18} {'refine_langevin':>22} {'lm':>18} {'learned_hybrid':>22} {'sig?':>5}")
     rows = []
     for template in families:
         train = gen(template, ntrain, seed0=0)
@@ -143,6 +161,7 @@ def main() -> None:
         c_cold = refine_count(test, False, args.K)
         c_lang = refine_count(test, True, args.K)
         c_rand = random_count(test, args.K)
+        c_lm = lm_count(test, args.K)
         c_hyb = hybrid_count(test, net, args.K)
         # significant if learned lower-CI > langevin upper-CI
         hyb_lo = wilson_interval(*c_hyb)[0]
@@ -156,13 +175,16 @@ def main() -> None:
                                 "ci95": wilson_interval(*c_lang)},
             "random_restart": {"k": c_rand[0], "n": c_rand[1], "rate": c_rand[0] / c_rand[1],
                                "ci95": wilson_interval(*c_rand)},
+            "lm": {"k": c_lm[0], "n": c_lm[1], "rate": c_lm[0] / c_lm[1],
+                   "ci95": wilson_interval(*c_lm)},
             "learned_hybrid": {"k": c_hyb[0], "n": c_hyb[1], "rate": c_hyb[0] / c_hyb[1],
                                "ci95": wilson_interval(*c_hyb)},
             "hybrid_beats_langevin_sig": bool(sig),
+            "p_learned_gt_lm": two_proportion_z(c_hyb[0], c_hyb[1], c_lm[0], c_lm[1])[1],
         }
         rows.append(row)
         print(f"{template.name:18s} cold={_fmt(*c_cold)}  lang={_fmt(*c_lang)}  "
-              f"random={_fmt(*c_rand)}  learned={_fmt(*c_hyb)}", flush=True)
+              f"random={_fmt(*c_rand)}  lm={_fmt(*c_lm)}  learned={_fmt(*c_hyb)}", flush=True)
 
     n_sig = sum(r["hybrid_beats_langevin_sig"] for r in rows)
     print(f"\nlearned_hybrid CI-disjoint above refine_langevin on {n_sig}/{len(rows)} families")
