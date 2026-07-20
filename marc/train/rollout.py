@@ -44,7 +44,7 @@ Trajectory dict:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 
@@ -53,6 +53,19 @@ from marc.diffusion.schedule import cosine_beta_schedule
 from marc.graph.pyg import build_heterodata
 
 _LOG_2PI = math.log(2.0 * math.pi)
+
+# GRPO calls run_rollout N times per update; regenerating the schedule each call
+# is pure waste. Read-only after creation, so sharing the tensor is safe.
+_SCHEDULE_CACHE: Dict[Tuple[int, str], torch.Tensor] = {}
+
+
+def _cached_alpha_bar(T: int, device: str = "cpu") -> torch.Tensor:
+    """alpha_bar of the cosine schedule of length T, cached per (T, device)."""
+    key = (T, str(device))
+    if key not in _SCHEDULE_CACHE:
+        _, alpha_bar = cosine_beta_schedule(T)
+        _SCHEDULE_CACHE[key] = alpha_bar.to(device)
+    return _SCHEDULE_CACHE[key]
 
 
 def _energy(cas: Optional[Any], x: torch.Tensor) -> Optional[float]:
@@ -97,8 +110,7 @@ def run_rollout(
     """
     n = len(G.variables)
     data = build_heterodata(G).to(device)
-    _, alpha_bar = cosine_beta_schedule(schedule_T)
-    alpha_bar = alpha_bar.to(device)
+    alpha_bar = _cached_alpha_bar(schedule_T, device)
     step_indices = _schedule_indices(K, schedule_T)
 
     x = torch.randn(n, 1, device=device, generator=generator)
