@@ -24,6 +24,7 @@ class SlotType(IntEnum):
 
     ABSENT = 0
     VARIABLE = 1
+    FACTOR = 2
 
 
 #: Integer type index for an empty slot (the D3PM absorbing state).
