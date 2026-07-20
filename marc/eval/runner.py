@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -16,6 +17,7 @@ from marc.eval.metrics import (
     generalization_gap,
     pass_at_k,
     perturbation_robustness,
+    restart_budget_curve,
     solve_rate,
 )
 
@@ -81,6 +83,9 @@ class _SplitRun:
     candidates: list[list[float]]
     stages: list[str]
     perturbed_results: list[bool]
+    wall_ms: list[float]              # main solve() wall-clock per problem
+    first_success_indices: list[int | None]  # which restart succeeded (None if none)
+    infos: list[dict | None]          # first candidate's solve info (None if unavailable)
 
     def per_problem(self) -> list[dict[str, Any]]:
         return [
@@ -92,10 +97,16 @@ class _SplitRun:
                 "max_residual": mr,
                 "reject_stage": st,
                 "perturbed_accepted": pr,
+                "wall_ms": w,
+                "first_success_index": fsi,
+                "n_steps": (info or {}).get("n_steps"),
+                "final_energy": (info or {}).get("final_energy"),
+                "energies": (info or {}).get("energies"),
             }
-            for p, r, x, mr, st, pr in zip(
+            for p, r, x, mr, st, pr, w, fsi, info in zip(
                 self.problems, self.results, self.candidates,
                 self.max_residuals, self.stages, self.perturbed_results,
+                self.wall_ms, self.first_success_indices, self.infos,
             )
         ]
 
@@ -122,11 +133,28 @@ def _evaluate_split(
     candidates: list[list[float]] = []
     stages: list[str] = []
     perturbed_results: list[bool] = []
+    wall_ms: list[float] = []
+    first_success_indices: list[int | None] = []
+    infos: list[dict | None] = []
+
+    sample_with_info = getattr(solver, "sample_with_info", None)
 
     for p in problems:
-        samples = solver.sample(p, n_samples)
+        t0 = time.perf_counter()
+        if sample_with_info is not None:
+            samples, sample_infos = sample_with_info(p, n_samples)
+        else:
+            samples = solver.sample(p, n_samples)
+            sample_infos = None
+        wall_ms.append((time.perf_counter() - t0) * 1000.0)
+        infos.append(sample_infos[0] if sample_infos else None)
+
         sample_results = [checker.verify(p.graph, x) for x in samples]
-        attempts.append([r.accepted for r in sample_results])
+        accepted = [r.accepted for r in sample_results]
+        attempts.append(accepted)
+        first_success_indices.append(
+            next((i for i, a in enumerate(accepted) if a), None)
+        )
 
         first = sample_results[0]
         results.append(first.accepted)
@@ -151,6 +179,7 @@ def _evaluate_split(
     return _SplitRun(
         problems, results, attempts, max_residuals,
         candidates, stages, perturbed_results,
+        wall_ms, first_success_indices, infos,
     )
 
 
@@ -187,9 +216,15 @@ def run_eval(
         "generalization_gap": generalization_gap(train_results, test_results),
         "entrapment_rate": entrapment_rate(run.max_residuals),
         "perturbation_robustness": perturbation_robustness(results, run.perturbed_results),
+        "wall_ms_total": sum(run.wall_ms),
+        "wall_ms_mean": sum(run.wall_ms) / len(run.wall_ms),
+        "restart_curve": restart_budget_curve(run.first_success_indices, n_samples),
         "problem_ids": [p.id for p in problems],
         "per_problem": [
-            {k: pp[k] for k in ("id", "accepted", "candidate", "max_residual", "reject_stage")}
+            {k: pp[k] for k in (
+                "id", "accepted", "candidate", "max_residual", "reject_stage",
+                "wall_ms", "first_success_index", "n_steps", "final_energy", "energies",
+            )}
             for pp in run.per_problem()
         ],
     }
@@ -202,6 +237,9 @@ def _split_summary(run: _SplitRun, n_samples: int) -> dict[str, Any]:
         "solve_rate": solve_rate(run.results),
         "pass_at_k": pass_at_k(run.attempts, n_samples),
         "perturbation_robustness": perturbation_robustness(run.results, run.perturbed_results),
+        "wall_ms_total": sum(run.wall_ms),
+        "wall_ms_mean": sum(run.wall_ms) / len(run.wall_ms),
+        "restart_curve": restart_budget_curve(run.first_success_indices, n_samples),
     }
 
 
