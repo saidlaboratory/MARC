@@ -69,11 +69,44 @@ full) and should finish well under 15 minutes on CPU. Afterwards check:
 - `results/overnight/logs/` has one log per executed phase.
 
 Phases skipped with reason `"script not present — sibling PR not merged"` are
-**normal**: the trainer (`scripts/train_scale.py`) and the structure-invention
-scripts (`scripts/train_structure_policy.py`, `scripts/run_invention_eval.py`)
+**normal**: the trainer (`scripts/train_scale.py`) and the structure-selection
+scripts (`scripts/train_structure_policy.py`, `scripts/run_invention_eval.py` —
+menu-based structure selection, "invention" only in the code identifiers)
 live in sibling PRs. **Before the real run, merge all open PRs** so those
 phases actually execute — the run is still valid without them, but the training
 phases are the whole point of the GPU.
+
+Phase list (the `"phase"` fields in `MANIFEST.json`): `env_check, tests,
+train_stage_a, train_stage_b, train_structure_policy, eval_p1_learned,
+eval_p1_refine, eval_main, eval_main_learned, eval_hard, eval_crossfamily,
+eval_coupled, eval_dimension_scaling, eval_geometry, eval_h2,
+eval_structure_toys, eval_invention, eval_invention_heldout,
+eval_math_coverage, eval_cot, figures, summarize`. Notes on the newer ones:
+
+- `eval_main_learned` — the main table with `--solver learned` (separate output
+  dir `results/p2_main_learned/`); `eval_main` stays the classical `refine` row.
+  Skipped if no denoiser checkpoint exists.
+- `eval_invention` — evals the structure policy on the SAME data source the
+  training phase actually used (the harness tracks whether the `aux_required`
+  → `toys` fallback fired, so train/eval never mismatch).
+- `eval_invention_heldout` — evals ONLY the `shared` pattern, which training
+  excludes by default (`--exclude-family shared`): the cross-pattern
+  generalization number, written to `results/p5_invention/invention_heldout.json`.
+  Skipped with a reason if training fell back to `toys` or the eval script
+  doesn't support `--families` yet.
+
+Running a script standalone (outside the harness)? Prefix `PYTHONPATH=.` —
+`python3 scripts/foo.py` puts `scripts/` (not the repo root) on `sys.path`, and
+not every script self-fixes `import marc`:
+
+```bash
+PYTHONPATH=. python3 scripts/plot_hard_eval.py
+```
+
+**Red flag — invalid invention numbers:** `results/p5_invention` numbers from
+runs before the seed-protocol fix are **invalid** (eval seeds overlapped
+validation seeds, and eval data could mismatch training data). Only cite runs
+whose JSON has a `seed_hygiene` block with `overlap_instances: 0`.
 
 `eval_cot` is skipped unless `GEMINI_API_KEY` or `OPENAI_API_KEY` is exported —
 export one before the real run if you have it, otherwise let it skip.

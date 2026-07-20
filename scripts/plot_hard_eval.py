@@ -41,8 +41,9 @@ def main() -> None:
             p_r = r.get("p_learned_gt_random")
             win = "tie/no" if p_r is None or p_r >= 0.05 else "yes"
             n_rand += int(win == "yes")
+            p_str = "n/a" if p_r is None else f"{p_r:.2f}"
             md.append(f"| {r['family']} | {r['refine_cold']['rate']:.3f} | {l['rate']:.3f} "
-                      f"| **{_cell(rnd)}** | {_cell(h)} | {win} (p={p_r:.2f}) |")
+                      f"| **{_cell(rnd)}** | {_cell(h)} | {win} (p={p_str}) |")
         else:
             md.append(f"| {r['family']} | {_cell(r['refine_cold'])} | {_cell(l)} | n/a | {_cell(h)} | — |")
     md += ["",

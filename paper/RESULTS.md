@@ -140,3 +140,15 @@ chance. Neither holds under coupling. So on realistic (coupled) constraint syste
 diffusion model provides **no advantage over random search + refinement**. This closes the
 "amortized learned proposal beats classical search" route to a main-track claim. Reported, not
 hidden. `python scripts/run_coupled_eval.py`
+
+## R8 · Menu-based structure selection (H2) — **preliminary numbers withdrawn — contaminated eval (test==val seeds); regeneration pending under seed-space v1 protocol**
+The trained structure policy (menu-based structure selection with predicted defining value —
+the honest name for what the code's "invention" identifiers do: pick one of K candidate
+auxiliary structures and predict its defining value) has been trained and evaluated end-to-end,
+but the preliminary run's eval seeds overlapped the validation seeds used for checkpoint
+selection, **and** the harness evaluated a different data source (`toys`) than training
+(`aux_required`). Those numbers are void and are deliberately not recorded here — do not cite
+them. Clean numbers regenerate under the seed-space v1 protocol (disjoint seed ranges, a
+`seed_hygiene` block with `overlap_instances: 0` in the results JSON) via the fixed overnight
+harness (`eval_invention` + the held-out-pattern `eval_invention_heldout`).
+`python3 scripts/run_invention_eval.py --ckpt checkpoints/structure_policy.pt --out results/p5_invention/invention.json --data aux_required`

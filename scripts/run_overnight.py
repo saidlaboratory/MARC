@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -48,9 +49,11 @@ SMOKE_TIMEOUT = 15 * 60  # per-phase cap in --smoke
 PHASE_ORDER = [
     "env_check", "tests",
     "train_stage_a", "train_stage_b", "train_structure_policy",
-    "eval_p1_learned", "eval_p1_refine", "eval_main", "eval_hard",
+    "eval_p1_learned", "eval_p1_refine", "eval_main", "eval_main_learned",
+    "eval_hard",
     "eval_crossfamily", "eval_coupled", "eval_dimension_scaling",
-    "eval_geometry", "eval_h2", "eval_structure_toys", "eval_invention",
+    "eval_geometry", "eval_h2", "eval_structure_toys",
+    "eval_invention", "eval_invention_heldout",
     "eval_math_coverage", "eval_cot",
     "figures", "summarize",
 ]
@@ -64,6 +67,45 @@ OUTPUT_DIRS = ["results", "checkpoints", "paper/figures"]
 # ------------------------------------------------------------------- utilities
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+_HELP_CACHE: dict[str, str] = {}
+
+
+def script_help(script: str) -> str:
+    """`--help` text of a repo script ('' on any failure). Cached per run.
+
+    Sibling PRs change CLI flags mid-flight; composing args from the script's
+    actual --help (instead of assuming) keeps an unknown flag from failing a
+    phase — unsupported flags are simply dropped.
+    """
+    if script not in _HELP_CACHE:
+        text = ""
+        try:
+            env = {**os.environ, "PYTHONPATH": str(ROOT) + (
+                os.pathsep + os.environ["PYTHONPATH"]
+                if os.environ.get("PYTHONPATH") else "")}
+            r = subprocess.run(
+                ["python3", script, "--help"], cwd=ROOT, env=env,
+                capture_output=True, text=True, timeout=120,
+            )
+            if r.returncode == 0:
+                text = r.stdout + r.stderr
+        except Exception:
+            pass
+        _HELP_CACHE[script] = text
+    return _HELP_CACHE[script]
+
+
+def supported_flags(script: str, *flag_groups: list[str]) -> list[str]:
+    """Concatenate each [--flag, value...] group whose flag appears in --help."""
+    help_text = script_help(script)
+    out: list[str] = []
+    for group in flag_groups:
+        # word-boundary match so "--n" doesn't false-positive on "--no-…"
+        if group and re.search(re.escape(group[0]) + r"(?![\w-])", help_text):
+            out += group
+    return out
 
 
 def git_commit() -> str:
@@ -286,7 +328,8 @@ def phase_summarize(manifest: Manifest) -> None:
         "",
         "## What to look at first",
         "",
-        "1. `results/p5_invention/invention.json` — H2 structure invention (the crown jewel).",
+        "1. `results/p5_invention/invention.json` — menu-based structure selection (H2); "
+        "`invention_heldout.json` is the held-out-pattern number.",
         "2. `results/p_coupled/coupled.json` — coupled-family scaling.",
         "3. `results/p_hard/hard_eval.json` — hard-suite headline table.",
         "",
@@ -339,13 +382,45 @@ def phase_summarize(manifest: Manifest) -> None:
 
 
 # ------------------------------------------------------------------------ main
-def build_phases(smoke: bool, manifest: Manifest) -> list[dict]:
-    """Ordered phase specs. cmd=None means inline. Lazy fields resolved at run."""
+def build_phases(smoke: bool, manifest: Manifest, state: dict) -> list[dict]:
+    """Ordered phase specs. cmd=None means inline. Lazy fields resolved at run.
+
+    ``state["invention_data"]`` is filled in by the main loop after
+    train_structure_policy finishes: the data source the policy actually trained
+    on ("aux_required", or "toys" if the fallback fired). The invention evals
+    build their cmd lazily so they eval the SAME source — eval'ing toys against
+    an aux_required-trained policy (or vice versa) is a source mismatch, not a
+    result.
+    """
     S = smoke
+    TRAIN_SP = "scripts/train_structure_policy.py"
+    INV_EVAL = "scripts/run_invention_eval.py"
 
     def p1(solver: str, out: str) -> list[str]:
         cmd = ["python3", "scripts/run_p1_eval.py", "--solver", solver, "--out", out]
         return cmd + (["--n-id", "2", "--n-ho", "2", "--k", "2"] if S else [])
+
+    def invention_cmd(out: str, families: list[str] | None = None) -> list[str]:
+        data = state.get("invention_data") or "toys"
+        cmd = ["python3", INV_EVAL,
+               "--ckpt", "checkpoints/structure_policy.pt", "--out", out,
+               "--data", data]
+        cmd += supported_flags(
+            INV_EVAL,
+            ["--families"] + families if families else [],
+            ["--eval-seeds", "2" if S else "5"],
+            ["--n", "6"] if S else [],
+            ["--k-refine", "2"] if S else [],
+        )
+        return cmd
+
+    def heldout_skip() -> str | None:
+        if state.get("invention_data") != "aux_required":
+            return ("policy trained on fallback 'toys' data — no held-out "
+                    "'shared' pattern to eval")
+        if not supported_flags(INV_EVAL, ["--families"]):
+            return "run_invention_eval.py does not support --families yet"
+        return None
 
     return [
         {"name": "env_check", "inline": phase_env_check},
@@ -361,12 +436,16 @@ def build_phases(smoke: bool, manifest: Manifest) -> list[dict]:
                  "marc/configs/train/scale.yaml", "--stage", "b",
                  "--resume", "latest", "--out-dir", "checkpoints/scale_D512_L8"]
                 + (["--smoke"] if S else [])},
-        {"name": "train_structure_policy", "script": "scripts/train_structure_policy.py",
-         "cmd": ["python3", "scripts/train_structure_policy.py",
-                 "--data", "aux_required", "--epochs", "2" if S else "200",
-                 "--device", "auto", "--out", "checkpoints/structure_policy.pt"],
+        {"name": "train_structure_policy", "script": TRAIN_SP,
+         # --exclude-family shared = the held-out-pattern protocol by default
+         # (eval_invention_heldout evals the excluded pattern); guarded so an
+         # older script without the flag still trains.
+         "cmd": lambda: ["python3", TRAIN_SP,
+                         "--data", "aux_required", "--epochs", "2" if S else "200",
+                         "--device", "auto", "--out", "checkpoints/structure_policy.pt"]
+                        + supported_flags(TRAIN_SP, ["--exclude-family", "shared"]),
          # aux_required data may not have merged; retried with --data toys on failure
-         "retry_cmd": ["python3", "scripts/train_structure_policy.py",
+         "retry_cmd": ["python3", TRAIN_SP,
                        "--data", "toys", "--epochs", "2" if S else "200",
                        "--device", "auto", "--out", "checkpoints/structure_policy.pt"]},
         {"name": "eval_p1_learned", "needs_ckpt": True,
@@ -377,6 +456,12 @@ def build_phases(smoke: bool, manifest: Manifest) -> list[dict]:
          "cmd": ["python3", "scripts/run_main_eval.py"]
                 + (["--n", "2", "--k", "2", "--noise-graphs", "4",
                     "--skip-ablations"] if S else [])},
+        # the learned-solver row of the main table (house rule: refine above is
+        # the classical row, never the system). Ablations already covered above.
+        {"name": "eval_main_learned", "needs_ckpt": True,
+         "cmd": ["python3", "scripts/run_main_eval.py", "--solver", "learned",
+                 "--out", "results/p2_main_learned", "--skip-ablations"]
+                + (["--n", "2", "--k", "2"] if S else [])},
         {"name": "eval_hard",
          "cmd": ["python3", "scripts/run_hard_eval.py"] + (["--quick"] if S else [])},
         {"name": "eval_crossfamily",
@@ -393,10 +478,17 @@ def build_phases(smoke: bool, manifest: Manifest) -> list[dict]:
                 + (["--n", "2", "--k", "2", "--steps", "50"] if S else [])},
         {"name": "eval_structure_toys",
          "cmd": ["python3", "scripts/run_structure_toys.py"]},
-        {"name": "eval_invention", "script": "scripts/run_invention_eval.py",
-         "cmd": ["python3", "scripts/run_invention_eval.py",
-                 "--ckpt", "checkpoints/structure_policy.pt",
-                 "--out", "results/p5_invention/invention.json"]},
+        # both invention evals: --data matches what training actually used
+        # (see build_phases docstring), extra flags composed from --help.
+        {"name": "eval_invention", "script": INV_EVAL,
+         "requires_ok": "train_structure_policy",
+         "cmd": lambda: invention_cmd("results/p5_invention/invention.json")},
+        # cross-pattern generalization: eval ONLY the pattern excluded from
+        # training ('shared') — the held-out-pattern number.
+        {"name": "eval_invention_heldout", "script": INV_EVAL,
+         "requires_ok": "train_structure_policy", "skip_if": heldout_skip,
+         "cmd": lambda: invention_cmd(
+             "results/p5_invention/invention_heldout.json", families=["shared"])},
         {"name": "eval_math_coverage",
          "cmd": ["python3", "scripts/run_math_coverage.py"]},
         {"name": "eval_cot", "needs_api_key": True,
@@ -426,7 +518,8 @@ def main() -> int:
             ap.error(f"unknown phase {name!r}; known: {', '.join(PHASE_ORDER)}")
 
     manifest = Manifest(smoke=args.smoke)
-    phases = build_phases(args.smoke, manifest)
+    state: dict = {"invention_data": None}
+    phases = build_phases(args.smoke, manifest, state)
     assert [p["name"] for p in phases] == PHASE_ORDER
     tests_red = False
 
@@ -436,8 +529,14 @@ def main() -> int:
 
         def done(status: str, reason: str = "") -> None:
             cmd = spec.get("cmd") or (spec.get("cmds") or [["(inline)"]])[0]
-            cmd_str = " && ".join(shlex.join(c) for c in spec["cmds"]) \
-                if "cmds" in spec else shlex.join(cmd) if spec.get("cmd") else "(inline)"
+            if "cmds" in spec:
+                cmd_str = " && ".join(shlex.join(c) for c in spec["cmds"])
+            elif callable(cmd):  # lazy cmd, phase gated out before resolution
+                cmd_str = "(resolved at run time)"
+            elif spec.get("cmd"):
+                cmd_str = shlex.join(cmd)
+            else:
+                cmd_str = "(inline)"
             outputs = new_outputs(t0) if status == "ok" else []
             manifest.record(name, cmd_str, status, reason, time.time() - t0, outputs)
             print(f"[overnight] {name}: {status}"
@@ -462,6 +561,12 @@ def main() -> int:
         if req and manifest.status(req) != "ok":
             done("skipped", f"{req} not ok")
             continue
+        skip_fn = spec.get("skip_if")
+        if skip_fn:
+            why = skip_fn()
+            if why:
+                done("skipped", why)
+                continue
         if spec.get("needs_api_key") and not (
                 os.environ.get("GEMINI_API_KEY") or os.environ.get("OPENAI_API_KEY")):
             done("skipped", "no API key")
@@ -492,8 +597,11 @@ def main() -> int:
                 done("failed", f"{type(e).__name__}: {e}")
             continue
 
+        if callable(spec.get("cmd")):  # lazy cmd — depends on earlier phases
+            spec["cmd"] = spec["cmd"]()
         cmds = spec.get("cmds") or [spec["cmd"]]
         status, reasons = "ok", []
+        used_cmd = cmds[-1]
         for i, cmd in enumerate(cmds):
             phase_key = name if len(cmds) == 1 else f"{name}_{i}"
             s, r = run_cmd(phase_key, cmd, timeout, env_extra)
@@ -504,9 +612,15 @@ def main() -> int:
         if status == "failed" and "retry_cmd" in spec:
             status, reason2 = run_cmd(f"{name}_retry", spec["retry_cmd"],
                                       timeout, env_extra)
+            used_cmd = spec["retry_cmd"]
             reason = (f"first attempt failed ({reason}); retry with --data toys "
                       + ("succeeded" if status == "ok" else f"failed ({reason2})"))
         done(status, reason)
+        if name == "train_structure_policy" and status == "ok":
+            # which data source actually trained? the invention evals must match.
+            state["invention_data"] = (
+                used_cmd[used_cmd.index("--data") + 1]
+                if "--data" in used_cmd else "toys")
 
         if name == "tests" and status == "failed":
             if args.force:

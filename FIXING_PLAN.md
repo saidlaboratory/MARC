@@ -83,7 +83,7 @@ Every flaw below has: evidence (file refs), why it matters, the fix, effort, and
 
 **Effort:** 1 day (mostly API wall-clock; resume cache exists). Budget API spend. **Owner:** Akash (built the CoT baseline).
 
-### A7 · H2 (structure invention) is a null result on an untrained proxy ‖ P0 (framing) / P2 (science)
+### A7 · H2 (menu-based structure selection) was a null result on an untrained proxy ‖ P0 (framing) / P2 (science) — **science fix now BUILT, clean numbers pending**
 
 **Evidence:** `results/p3_h2/h2_report.md` — fixed vs. structure solve rate Δ = 0.00 on all three toys; the "structure model" is energy-guided best-of-k with an oracle, not the D3PM head (`marc/model/structure_head.py` exists but was never trained).
 
@@ -91,6 +91,8 @@ Every flaw below has: evidence (file refs), why it matters, the fix, effort, and
 
 **Fix (deadline-realistic):** reframe, don't oversell. In the paper: H2 gets a "preliminary evidence" subsection — usage rates show the search exploits auxiliary structure when present; solve-rate parity is expected because the augmented graph is solution-equivalent by construction (the report says this). Explicitly list trained structure diffusion as future work.
 **Fix (real, P2):** train the D3PM sampler over `StructureHead`, and build at least one toy family where the fixed graph is *unsolvable* without the auxiliary (current toys keep solution sets identical, so Δ=0 is baked in — this is a design flaw in the eval, not just the model). That family is what would make H2 falsifiable.
+
+**Status update: DONE (built).** The aux-required families exist (`marc/data/aux_required.py`, fixed graph certified inconsistent without the auxiliary) and the structure policy is trained end-to-end (`scripts/train_structure_policy.py` + `scripts/run_invention_eval.py`). Honest naming per the review-attack list: this is **menu-based structure selection (with predicted defining value)**, not open-vocabulary invention. Clean-protocol numbers are pending — the preliminary run is withdrawn (contaminated eval; `paper/RESULTS.md` R8, `paper/REVIEW_ATTACKS.md` #3).
 
 **Effort now:** 0 (writing only). **Owner:** whoever drafts §H2 (Quang).
 
@@ -111,8 +113,8 @@ Every flaw below has: evidence (file refs), why it matters, the fix, effort, and
 
 ## B. Scope & infrastructure gaps (be honest, don't fix by July 27)
 
-### B1 · No GPU-scale training ‖ P2
-`roadmap.md` calls the D=512/L=8 full Stage-A+B plan (`results/p4_scale/scaling_notes.md`) "the single highest-leverage next step." True, but not in 8 days unless a GPU materializes today. If one does: launch the scripted plan immediately and let it run in the background — a mid-week checkpoint that beats D=256 upgrades every table. Otherwise: paper states scale explicitly and cites the scaling notes as the plan.
+### B1 · No GPU-scale training ‖ P2 — **DONE**
+`roadmap.md` calls the D=512/L=8 full Stage-A+B plan (`results/p4_scale/scaling_notes.md`) "the single highest-leverage next step." Status: **done** — the overnight harness (`scripts/run_overnight.py`, RUNBOOK_SPARSH.md) drives GPU Stage-A/B training at D512/L8 with resume, and the training phases have run on GPU.
 
 ### B2 · NL parser covers 3 sentence templates ‖ P2
 `marc/nl/parser.py` is real but closed-vocabulary. Paper must say "template-based formalization for three problem shapes; general autoformalization out of scope (CONCEPT.md defers it by design)." Do not demo NL input without that caveat.
@@ -192,4 +194,4 @@ Look at the hard-suite grid:
 
 ## Post-deadline (v2) queue
 
-In leverage order, per `roadmap.md`: (1) GPU-scale Stage-A/B (B1) → re-run every table; (2) train D3PM structure diffusion + an aux-*required* toy family so H2 is falsifiable (A7); (3) geometry training template if it missed the deadline (A3); (4) Lean gate (B3); (5) LLM-assisted autoformalization with checker verification (B2).
+In leverage order, per `roadmap.md`: (1) ~~GPU-scale Stage-A/B (B1)~~ **DONE** → re-run every table; (2) ~~train D3PM structure diffusion + an aux-*required* toy family so H2 is falsifiable (A7)~~ **DONE (built — menu-based structure selection; clean-protocol numbers pending, see A7)**; (3) geometry training template if it missed the deadline (A3); (4) Lean gate (B3); (5) LLM-assisted autoformalization with checker verification (B2).
