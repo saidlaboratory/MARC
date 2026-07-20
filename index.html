@@ -33,7 +33,10 @@ a{color:inherit}
 .blob.b{width:460px;height:460px;background:radial-gradient(circle,rgba(91,200,214,.4),transparent 70%);top:34%;right:-140px}
 
 .wrap{max-width:1100px;margin:0 auto;padding-left:28px;padding-right:28px}
-section{padding:clamp(110px,13vh,150px) 0;position:relative}
+section{position:relative}
+/* longhand on section.wrap: outranks any class-only shorthand, so the
+   vertical rhythm can never be zeroed by a cascade collision again */
+section.wrap{padding-top:clamp(130px,15vh,180px);padding-bottom:clamp(130px,15vh,180px)}
 .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);display:inline-flex;align-items:center;gap:10px}
 .eyebrow::before{content:"";width:26px;height:1px;background:var(--amber);display:inline-block;opacity:.7}
 h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.08;letter-spacing:-.01em}
@@ -137,7 +140,7 @@ footer{border-top:1px solid var(--line);padding:60px 0 70px;margin-top:40px}
   .duo,.ledger{grid-template-columns:1fr}
   .rung{grid-template-columns:44px 1fr}
   .rung .badge{grid-column:2}
-  section{padding:88px 0}
+  section.wrap{padding-top:96px;padding-bottom:96px}
 }
 </style>
 </head>
