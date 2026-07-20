@@ -19,6 +19,8 @@ training:
   grad_clip: 1.0
   warmup_frac: 0.03  # fraction of Stage-A steps spent in linear LR warmup
   num_workers: 2
+  ema: true          # keep an EMA shadow of the weights (ema_state_dict in checkpoints)
+  ema_decay: 0.999
 
 data:
   n_train: 10000   # TOTAL training-set target across all templates
@@ -32,6 +34,10 @@ data:
     - "BilinearProduct"
     - "QuadraticSystem"
     - "CircleLine"
+    - "CoupledChain4"
+    - "CoupledChain6"
+  # AuxRequired_* templates are registered but deliberately NOT in this mix:
+  # the aux-required family trains the structure policy, not the value denoiser.
   dir: "results/scale/train_data"
   seed: 42
 

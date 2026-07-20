@@ -11,6 +11,8 @@ from torch_geometric.data import Batch, HeteroData
 
 from marc.data.collate import collate_fn
 from marc.diffusion.schedule import cosine_beta_schedule
+from marc.model.denoiser import GraphDenoiser
+from marc.train import stage_a
 from marc.train.trainer import (
     CSV_HEADER,
     DEFAULTS,
@@ -21,6 +23,7 @@ from marc.train.trainer import (
     resolve_device,
     resolve_templates,
     stage_a_loss_local,
+    template_registry,
     train_stage_a_scaled,
 )
 
@@ -82,8 +85,9 @@ def tiny_cfg(epochs_a=2):
     return cfg
 
 
-def run_tiny_training(out_dir, epochs_a=2, model=None, resume_path=None):
+def run_tiny_training(out_dir, epochs_a=2, model=None, resume_path=None, ema=True):
     cfg = tiny_cfg(epochs_a)
+    cfg["training"]["ema"] = ema
     items = [make_item() for _ in range(4)]
     loader = DataLoader(items, batch_size=2, collate_fn=collate_fn)
     _, alpha_bar = cosine_beta_schedule(cfg["training"]["T"])
@@ -154,6 +158,31 @@ def test_all_unknown_templates_raises():
             resolve_templates(["Bogus"])
 
 
+def test_registry_includes_instance_registered_families():
+    reg = template_registry()
+    assert reg["CoupledChain4"].n == 4
+    assert reg["CoupledChain6"].n == 6
+    aux = sorted(k for k in reg if k.startswith("AuxRequired_"))
+    assert "AuxRequired_offset" in aux and len(aux) >= 3
+    resolved = resolve_templates(["CoupledChain4", "CoupledChain6", "AuxRequired_offset"])
+    assert [t.name for t in resolved] == ["CoupledChain4", "CoupledChain6", "AuxRequired_offset"]
+    # unknown names still warn+skip alongside the new families
+    with pytest.warns(UserWarning, match="unknown template 'Bogus'"):
+        resolved = resolve_templates(["CoupledChain4", "Bogus"])
+    assert [t.name for t in resolved] == ["CoupledChain4"]
+
+
+def test_scale_yaml_loads_and_templates_resolve():
+    cfg = load_config(str(REPO_YAML))
+    names = cfg["data"]["templates"]
+    assert "CoupledChain4" in names and "CoupledChain6" in names
+    # aux-required trains the structure policy, not the value denoiser
+    assert not any(n.startswith("AuxRequired") for n in names)
+    assert [t.name for t in resolve_templates(names)] == names  # all resolve, order kept
+    assert cfg["training"]["ema"] is True
+    assert cfg["training"]["ema_decay"] == 0.999
+
+
 # ---------------------------------------------------------------------------
 # Stage-A loss seam (cross-unit contract C1)
 # ---------------------------------------------------------------------------
@@ -188,6 +217,30 @@ def test_stage_a_loss_flagged_model_plain_heterodata_falls_back():
     model = PerGraphStub(expected_num_graphs=1)
     loss = stage_a_loss_local(model, data, [solution], alpha_bar, 100, "cpu")
     assert torch.isfinite(loss)
+
+
+def test_trainer_batched_loss_matches_canonical_stage_a_loss():
+    # Import parity: the trainer's loss IS marc.train.stage_a.stage_a_loss —
+    # per-graph MSE then mean over graphs. Unequal graph sizes so the pre-#57
+    # flat node-mean would give a different number.
+    torch.manual_seed(0)
+    items = [make_item(n_vars=2), make_item(n_vars=4), make_item(n_vars=2)]
+    data, solutions = collate_fn(items)
+    _, alpha_bar = cosine_beta_schedule(100)
+    model = GraphDenoiser(D=16, L=1, step_dim=8)
+    assert model.supports_per_graph_t
+    t = torch.tensor([7, 42, 99])
+    eps = torch.randn(sum(s.size(0) for s in solutions), 1)
+
+    kw = dict(t=t, eps=eps)
+    l_trainer = stage_a_loss_local(model, copy.deepcopy(data), solutions, alpha_bar, 100, "cpu", **kw)
+    l_canon = stage_a.stage_a_loss(model, copy.deepcopy(data), solutions, alpha_bar, 100, "cpu", **kw)
+    assert torch.allclose(l_trainer, l_canon)
+    # batched path == per-graph loop on the same fixed (t, eps)
+    l_loop = stage_a.stage_a_loss(
+        model, copy.deepcopy(data), solutions, alpha_bar, 100, "cpu", batched=False, **kw
+    )
+    assert torch.allclose(l_trainer, l_loop, rtol=1e-4, atol=1e-5)
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +283,27 @@ def test_logs_schema(tmp_path):
     csv_lines = (tmp_path / "train_log.csv").read_text().splitlines()
     assert csv_lines[0] == CSV_HEADER
     assert len(csv_lines) == 3  # header + 2 epoch rows
+
+
+# ---------------------------------------------------------------------------
+# EMA
+# ---------------------------------------------------------------------------
+
+def test_ema_in_checkpoint_and_diverges_from_raw(tmp_path):
+    run_tiny_training(tmp_path, epochs_a=2)
+    ckpt = torch.load(tmp_path / "latest.pt", weights_only=False)
+    assert "ema_state_dict" in ckpt
+    raw, ema = ckpt["model_state_dict"], ckpt["ema_state_dict"]
+    assert set(raw) == set(ema)
+    # after 4 optimizer steps the 0.999-decay shadow lags the raw weights
+    assert any(not torch.allclose(raw[k], ema[k]) for k in raw)
+    assert "ema_state_dict" in torch.load(tmp_path / "best.pt", weights_only=False)
+
+
+def test_ema_disabled_omits_checkpoint_key(tmp_path):
+    run_tiny_training(tmp_path, epochs_a=1, ema=False)
+    for name in ("latest.pt", "best.pt"):
+        assert "ema_state_dict" not in torch.load(tmp_path / name, weights_only=False)
 
 
 # ---------------------------------------------------------------------------
@@ -285,3 +359,4 @@ def test_smoke_cli(tmp_path):
     assert (out_dir / "smoke_data" / "manifest.json").exists()
     ckpt = torch.load(out_dir / "latest.pt", weights_only=False)
     assert ckpt["model_kwargs"] == {"D": 32, "L": 2, "step_dim": 16}
+    assert "ema_state_dict" in ckpt  # EMA defaults on; smoke checkpoint carries it
