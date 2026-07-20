@@ -1,5 +1,10 @@
 # AAAI readiness — honest verdict, reframe, next steps
 
+> **Superseded for writing purposes (2026-07-21):** the project adopted the **orchestrator reframe**
+> (learned structure proposals + classical value solvers + checker). Start from [OUTLINE.md](OUTLINE.md)
+> (the team writing guide) and [README.md](README.md) (the framing); this file remains the
+> point-in-time readiness verdict that motivated the reframe.
+
 **Date:** 2026-07-20 · **Deadline:** 2026-07-27 (7 days) · **Canonical results:** `paper/RESULTS.md`
 + `paper/PROVENANCE.md`. Everything else in `paper/*.md` is working notes (consolidate — see §5).
 
