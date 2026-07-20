@@ -1,5 +1,5 @@
 # Scaling config: D=512, L=8 — Quang P4
-# Use with: python scripts/run_scale_experiment.py --config marc/configs/train/scale.yaml
+# Use with: python3 scripts/train_scale.py --config marc/configs/train/scale.yaml --out-dir checkpoints/scale_D512_L8
 
 model:
   D: 512           # hidden dimension (baseline=128, mid=256, large=512)
@@ -13,14 +13,26 @@ training:
   batch_size: 32
   lr_A: 3.0e-4
   lr_B: 1.0e-4
-  device: "cuda"   # change to "cpu" for smoke-test runs
+  device: "auto"   # auto = cuda > mps > cpu; or set cuda/mps/cpu explicitly
+  seed: 42
+  amp: "auto"      # bf16 autocast iff cuda supports it; true/false to force
+  grad_clip: 1.0
+  warmup_frac: 0.03  # fraction of Stage-A steps spent in linear LR warmup
+  num_workers: 2
 
 data:
-  n_train: 10000   # problems per template in training set
-  n_test: 2000     # problems per template in test set
+  n_train: 10000   # TOTAL training-set target across all templates
+  n_test: 2000
   templates:
     - "LinearSystem2x2"
     - "LinearSystem3x3"
+    - "TriangleDistance"
+    - "PointSlope"
+    - "BilinearSystem"
+    - "BilinearProduct"
+    - "QuadraticSystem"
+    - "CircleLine"
+  dir: "results/scale/train_data"
   seed: 42
 
 grpo:
@@ -30,6 +42,7 @@ grpo:
   eps_clip: 0.2    # PPO clip ratio
   steps: 40        # DDIM steps per rollout
   guidance_weight: 1.0
+  problems_subset: 256  # cap on problems used for GRPO fine-tuning
 
 checkpointing:
   dir: "checkpoints/scale_D512_L8"
