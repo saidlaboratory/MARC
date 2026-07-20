@@ -118,3 +118,25 @@ quantifies scope honestly. `python scripts/run_math_coverage.py`
   (`paper/related_work.md`).
 - MARC targets continuous algebraic constraint solving; it does **not** do general MATH/olympiad
   reasoning.
+
+## R7 · Coupled high-dim families — the learned advantage does NOT survive coupling (honest negative)
+The main-track stress test. Coupled chained bilinear (`x_i+x_{i+1}=s_i, x_i·x_{i+1}=p_i`), where
+the solution is a *joint* object (not per-variable marginals) and random restart does **not**
+collapse in dimension (the chain lets the polish propagate). Best-of-8, 60 test/n.
+
+| n | langevin | random restart | learned | learned > random? |
+|---|---|---|---|---|
+| 2 | 0.167 | 0.483 | 0.233 | no (loses) |
+| 3 | 0.100 | 0.600 | 0.533 | no |
+| 4 | 0.050 | 0.517 | 0.517 | no (tie) |
+| 6 | 0.000 | 0.367 | 0.333 | no |
+| 8 | 0.000 | 0.467 | 0.483 | no |
+
+**Conclusion (decisive, honest):** on coupled systems the learned proposal **ties or loses to
+random restart at every dimension (0/5 significant wins).** The R5 high-dim advantage was largely
+an **independence artifact** — it needs (i) per-variable-separable solutions the model can
+memorize as marginals, and (ii) random restart collapsing because it must hit all n basins by
+chance. Neither holds under coupling. So on realistic (coupled) constraint systems, the learned
+diffusion model provides **no advantage over random search + refinement**. This closes the
+"amortized learned proposal beats classical search" route to a main-track claim. Reported, not
+hidden. `python scripts/run_coupled_eval.py`
