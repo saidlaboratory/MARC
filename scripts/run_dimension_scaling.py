@@ -132,7 +132,7 @@ def main() -> None:
     ntrain = 40 if args.quick else 200
 
     print(f"H1 dimension scaling — best-of-{args.K}, {args.test} test/n, epochs={epochs}")
-    print(f"{'n':>3} {'determ':>8} {'langevin':>9} {'mean_prior':>11} {'learned_x0':>11}")
+    print(f"{'n':>3} {'determ':>8} {'langevin':>9} {'mean_prior':>11} {'random':>8} {'learned_x0':>11}")
     rows = []
     for n in ns:
         train = suite(n, ntrain, seed=100 + n)
@@ -145,6 +145,18 @@ def main() -> None:
         lang = sum(any(close(descend(c, init, noise=True, seed=s), sol) for s in range(args.K))
                    for g, sol, init, c in tec) / len(tec)
         mean = sum(close(descend(c, [tmean] * len(sol)), sol) for g, sol, init, c in tec) / len(tec)
+        # random multi-start + polish control: the baseline that isolates the learned
+        # proposal's value. Learned only beats this in high dimension (the amortization result).
+        import random as _rnd
+        rand = 0
+        for g, sol, init, c in tec:
+            nv = len(sol); solved = False
+            for s in range(args.K):
+                rr = _rnd.Random(9000 * s + nv)
+                if close(descend(c, [rr.uniform(-8, 8) for _ in range(nv)]), sol):
+                    solved = True; break
+            rand += int(solved)
+        rand = rand / len(tec)
         okL = 0
         with torch.no_grad():
             for g, sol, init, c in tec:
@@ -161,9 +173,10 @@ def main() -> None:
                 okL += int(solved)
         learned = okL / len(tec)
 
-        row = {"n": n, "deterministic": det, "langevin": lang, "mean_prior": mean, "learned_x0": learned}
+        row = {"n": n, "deterministic": det, "langevin": lang, "mean_prior": mean,
+               "random_restart": rand, "learned_x0": learned}
         rows.append(row)
-        print(f"{n:>3} {det:>8.3f} {lang:>9.3f} {mean:>11.3f} {learned:>11.3f}", flush=True)
+        print(f"{n:>3} {det:>8.3f} {lang:>9.3f} {mean:>11.3f} {rand:>8.3f} {learned:>11.3f}", flush=True)
 
     out_dir = Path("results/p_scaling")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -188,6 +201,7 @@ def _plot(rows) -> None:
         ("deterministic", "o", "#888888", "deterministic"),
         ("langevin", "s", "#d62728", "Langevin (noise)"),
         ("mean_prior", "^", "#2ca02c", "mean prior"),
+        ("random_restart", "v", "#9467bd", "random restart"),
         ("learned_x0", "D", "#1f77b4", "learned (ours)"),
     ]:
         ax.plot(ns, [r[key] for r in rows], marker=mk, color=col, label=lab, linewidth=2)

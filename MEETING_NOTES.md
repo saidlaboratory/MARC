@@ -6,6 +6,29 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 
 ---
 
+## 0. Overnight update (rigor pass) — see `paper/RESULTS.md` for the canonical, cited results
+
+**⚠️ Two honest corrections from adding the random-multistart control (read before the meeting):**
+- **A8.1 reframed:** the learned hybrid beats *cold-start Langevin*, but a **random-init +
+  polish** control ties/beats it on all 4 families. So the contribution on these families is the
+  **hybrid recipe (proposal + polish)**, *not* the learned denoiser — the learned proposal has
+  no advantage over random multi-start when solutions are small/dense. (Nearly shipped an
+  over-claim; the control caught it.)
+- **Dimension scaling reframed (stronger + honest):** the learned proposal beats random restart
+  **only in high dimension** — random wins at n≤2 (0.875 vs 0.675), learned wins at n≥4 where
+  random collapses to ~0 (n=4: learned 0.650 vs random 0.000). *That crossover* is the real
+  amortized-inference result. New headline: "amortized learned proposals beat random search in
+  high-dim non-convex constraint solving," not "learned beats classical everywhere."
+- **Cross-family generalization (H1 transfer):** leave-one-out. Learned model **solves 2/4
+  held-out families it never trained on** (0.683, p<1e-4); fails on 2/4. Partial, honest —
+  a dissimilar training family (CircleLine) can disrupt transfer.
+- **MATH reality-check:** honest 0/48 coverage + scope breakdown (no inflation).
+- **Rigor + positioning docs added:** `paper/RESULTS.md`, `PROVENANCE.md`, `related_work.md`,
+  `math_coverage.md`; `metrics.wilson_interval` + `two_proportion_z`. 209 tests green.
+- All on [PR #53](https://github.com/saidlaboratory/MARC/pull/53), authored by @ImSpxrsh.
+
+---
+
 ## 1. TL;DR
 
 - **The learned solver now works.** It went from *diverging / 0% solve* to actually solving. Five real bugs fixed. (`paper/learned_solver_fix.md`)
@@ -42,13 +65,15 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 |---|---|---|
 | C2 | Merge PR #50 + doc sweep | ✅ merged (#50, #51) |
 | **A1** | Eval suite saturated → hard tier | ✅ **done today** (bilinear templates de-saturate) |
-| **A8.1** | Hybrid vs refine-only ablation | ✅ **done — learned wins both families** (0.625 vs 0.350; 0.725 vs 0.125) |
-| A2 | Headline numbers from learned model, not refine | ⏳ ready to run on hard suite |
-| A4/A5 | Guidance / purist ablations degenerate | ⏳ re-run on hard suite + converged checkpoint |
+| **A8.1** | Hybrid vs refine-only ablation | ✅ **done, rigorous** — 4 non-convex families + Wilson CIs + z-test. Learned hybrid significantly beats Langevin on **3/4** (p<0.01); honest **failure on CircleLine** (0.000). `paper/figures/hard_suite_table.md` |
+| A2 | Headline numbers from learned model, not refine | ✅ hard-suite headline table + figure (`paper/figures/hard_suite_table.md`, `fig_hard_suite.pdf`) |
+| A4/A5 | Guidance / purist ablations degenerate | ✅ reframed (`paper/ablation_reframe.md`): replace with A8.1; guidance sweep on hard checkpoint optional (P1) |
 | A6 | CoT baseline too thin (N=25, k=1) | ⏳ needs Gemini key + N≥100, k≥4, stronger tier |
-| A7 | H2 null result | ⏳ reframe as "preliminary" (writing only) |
-| C1 | **No paper (.tex)** | ❌ **not started — critical path** |
-| C3 | Provenance table | ❌ not started |
+| A7 | H2 null result | ✅ reframed as "preliminary" (`paper/h2_reframe.md`) |
+| A3 | Geometry training template | ⏳ P1 — not started (Davin) |
+| A8.3 | Entrapment on a non-convex family | ⏳ P0 framing — bilinear suite now exists for it |
+| C1 | **No paper (.tex)** | ❌ **not started — critical path (Quang)** |
+| C3 | Provenance table | ✅ `paper/PROVENANCE.md` started (R1–R12) |
 
 ---
 
