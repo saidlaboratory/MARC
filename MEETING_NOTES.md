@@ -6,6 +6,21 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 
 ---
 
+## 0. Overnight update (rigor pass) — see `paper/RESULTS.md` for the canonical, cited results
+
+- **A8.1 made rigorous:** 4 non-convex families, Wilson CIs + 2-proportion z-test. Learned
+  hybrid **significantly beats classical Langevin on 3/4** (p<0.01). Honest **CircleLine
+  failure** (0.000) reported.
+- **Cross-family generalization (H1 transfer):** leave-one-out. Learned model **solves 2/4
+  held-out families it never trained on** (0.683, p<1e-4); fails on 2/4. Partial, honest —
+  a dissimilar training family (CircleLine) can disrupt transfer.
+- **MATH reality-check:** honest 0/48 coverage + scope breakdown (no inflation).
+- **Rigor + positioning docs added:** `paper/RESULTS.md`, `PROVENANCE.md`, `related_work.md`,
+  `math_coverage.md`; `metrics.wilson_interval` + `two_proportion_z`. 209 tests green.
+- All on [PR #53](https://github.com/saidlaboratory/MARC/pull/53), authored by @ImSpxrsh.
+
+---
+
 ## 1. TL;DR
 
 - **The learned solver now works.** It went from *diverging / 0% solve* to actually solving. Five real bugs fixed. (`paper/learned_solver_fix.md`)
