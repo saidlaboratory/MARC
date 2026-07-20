@@ -43,12 +43,14 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 | C2 | Merge PR #50 + doc sweep | ✅ merged (#50, #51) |
 | **A1** | Eval suite saturated → hard tier | ✅ **done today** (bilinear templates de-saturate) |
 | **A8.1** | Hybrid vs refine-only ablation | ✅ **done — learned wins both families** (0.625 vs 0.350; 0.725 vs 0.125) |
-| A2 | Headline numbers from learned model, not refine | ⏳ ready to run on hard suite |
-| A4/A5 | Guidance / purist ablations degenerate | ⏳ re-run on hard suite + converged checkpoint |
+| A2 | Headline numbers from learned model, not refine | ✅ hard-suite headline table + figure (`paper/figures/hard_suite_table.md`, `fig_hard_suite.pdf`) |
+| A4/A5 | Guidance / purist ablations degenerate | ✅ reframed (`paper/ablation_reframe.md`): replace with A8.1; guidance sweep on hard checkpoint optional (P1) |
 | A6 | CoT baseline too thin (N=25, k=1) | ⏳ needs Gemini key + N≥100, k≥4, stronger tier |
-| A7 | H2 null result | ⏳ reframe as "preliminary" (writing only) |
-| C1 | **No paper (.tex)** | ❌ **not started — critical path** |
-| C3 | Provenance table | ❌ not started |
+| A7 | H2 null result | ✅ reframed as "preliminary" (`paper/h2_reframe.md`) |
+| A3 | Geometry training template | ⏳ P1 — not started (Davin) |
+| A8.3 | Entrapment on a non-convex family | ⏳ P0 framing — bilinear suite now exists for it |
+| C1 | **No paper (.tex)** | ❌ **not started — critical path (Quang)** |
+| C3 | Provenance table | ✅ `paper/PROVENANCE.md` started (R1–R12) |
 
 ---
 
