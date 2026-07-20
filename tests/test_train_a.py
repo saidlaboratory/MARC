@@ -3,7 +3,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch_geometric.data import HeteroData, Batch
 from marc.diffusion.schedule import cosine_beta_schedule
-from marc.train.stage_a import train_step_A, train_stage_a
+from marc.model.denoiser import GraphDenoiser
+from marc.train.stage_a import stage_a_loss, train_step_A, train_stage_a
 
 
 # Minimal stub denoiser for testing — does NOT depend on marc.model
@@ -67,6 +68,65 @@ def test_train_stage_a_smoke(tmp_path):
         epochs=2,
         checkpoint_dir=str(tmp_path / "ckpts"),
         lr=1e-3,
+    )
+    assert trained is model
+    assert (tmp_path / "ckpts" / "epoch_1.pt").exists()
+    assert (tmp_path / "ckpts" / "epoch_2.pt").exists()
+
+
+def make_real_batch(sizes, n_facs=2, seed=0):
+    """(Batch, solutions) with full edge attrs so the real GraphDenoiser runs."""
+    torch.manual_seed(seed)
+    data_list, solutions = [], []
+    for n in sizes:
+        d = HeteroData()
+        d["variable"].x = torch.randn(n, 1)
+        d["factor"].x = torch.randn(n_facs, 1)
+        src = torch.arange(n).repeat_interleave(n_facs)
+        dst = torch.arange(n_facs).repeat(n)
+        d["variable", "connected_to", "factor"].edge_index = torch.stack([src, dst])
+        d["variable", "connected_to", "factor"].edge_attr = torch.randn(n * n_facs, 1)
+        data_list.append(d)
+        solutions.append(torch.randn(n, 1))
+    return Batch.from_data_list(data_list), solutions
+
+
+def test_stage_a_loss_batched_matches_loop():
+    _, alpha_bar = cosine_beta_schedule(100)
+    torch.manual_seed(0)
+    model = GraphDenoiser(D=32, L=2, step_dim=16)
+    sizes = [2, 3, 5]
+    data, solutions = make_real_batch(sizes)
+    t = torch.tensor([10, 40, 90])
+    eps = torch.randn(sum(sizes), 1)
+    loss_b = stage_a_loss(model, data, solutions, alpha_bar, T=100, t=t, eps=eps, batched=True)
+    loss_l = stage_a_loss(model, data, solutions, alpha_bar, T=100, t=t, eps=eps, batched=False)
+    assert torch.allclose(loss_b, loss_l, atol=1e-5), f"{loss_b.item()} != {loss_l.item()}"
+
+
+def test_train_step_real_denoiser_updates_weights():
+    _, alpha_bar = cosine_beta_schedule(100)
+    model = GraphDenoiser(D=32, L=2, step_dim=16)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+    batch = make_real_batch([2, 3])
+    before = model.output_head.weight.clone().detach()
+    loss = train_step_A(model, batch, alpha_bar, T=100, optimizer=optimizer)
+    assert isinstance(loss, float)
+    assert not torch.allclose(before, model.output_head.weight)
+
+
+def test_train_stage_a_real_denoiser_end_to_end(tmp_path):
+    _, alpha_bar = cosine_beta_schedule(100)
+    model = GraphDenoiser(D=32, L=2, step_dim=16)
+    dataset = [make_real_batch([2, 3], seed=i) for i in range(2)]
+    loader = DataLoader(dataset, batch_size=None, collate_fn=lambda x: x)
+    trained = train_stage_a(
+        model,
+        loader,
+        alpha_bar,
+        T=100,
+        epochs=2,
+        checkpoint_dir=str(tmp_path / "ckpts"),
     )
     assert trained is model
     assert (tmp_path / "ckpts" / "epoch_1.pt").exists()
