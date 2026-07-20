@@ -25,7 +25,6 @@ import warnings
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 import yaml
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
@@ -33,13 +32,10 @@ from torch.utils.data import DataLoader
 from marc.data.collate import collate_fn
 from marc.data.dataset import MARCDataset
 from marc.data.generator import ProblemGenerator
-from marc.diffusion.forward import corrupt
 from marc.diffusion.schedule import cosine_beta_schedule
 from marc.model.denoiser import GraphDenoiser
+from marc.train.stage_a import stage_a_loss
 from marc.train.stage_b import train_stage_b
-
-# NOTE: no imports from marc.train.stage_a — that file is being rewritten by
-# another unit; the Stage-A loss math is reproduced in stage_a_loss_local.
 
 DEFAULTS = {
     "model": {"D": 512, "L": 8, "step_dim": 64},
@@ -56,6 +52,8 @@ DEFAULTS = {
         "grad_clip": 1.0,
         "warmup_frac": 0.03,
         "num_workers": 2,
+        "ema": True,
+        "ema_decay": 0.999,
     },
     "data": {
         "n_train": 10000,  # TOTAL problems across all templates
@@ -168,6 +166,24 @@ def template_registry() -> dict:
             continue  # needs constructor args; not a plain template
         key = getattr(instance, "name", None) or attr[: -len("Template")]
         registry[key] = instance
+
+    # Families outside marc.data.templates register ready-made INSTANCES: the
+    # scan can't see them, and AuxRequiredTemplate needs a positional `pattern`
+    # (a zero-arg construction attempt would be silently skipped as TypeError).
+    try:
+        from marc.data.coupled import CoupledChainTemplate
+
+        for inst in (CoupledChainTemplate(), CoupledChainTemplate(6)):
+            registry[inst.name] = inst  # CoupledChain4 / CoupledChain6
+    except ImportError:
+        pass
+    try:
+        from marc.data.aux_required import AUX_REQUIRED_TEMPLATES
+
+        for inst in AUX_REQUIRED_TEMPLATES:
+            registry[inst.name] = inst  # AuxRequired_offset / _coupled / _shared
+    except ImportError:
+        pass
     return registry
 
 
@@ -288,9 +304,12 @@ class RunLogger:
 
 
 def save_checkpoint(path, *, epoch, global_step, stage, model, model_kwargs, config,
-                    loss, wall_time, optimizer=None, scheduler=None) -> None:
+                    loss, wall_time, optimizer=None, scheduler=None,
+                    ema_state_dict=None) -> None:
     """Atomic (tmp + os.replace). Carries model_state_dict + model_kwargs so
-    LearnedSolver reconstructs the exact architecture."""
+    LearnedSolver reconstructs the exact architecture. model_state_dict is
+    always the RAW weights; when EMA is on, the shadow weights ride along
+    under the additive key ema_state_dict."""
     payload = {
         "epoch": epoch,
         "global_step": global_step,
@@ -303,49 +322,51 @@ def save_checkpoint(path, *, epoch, global_step, stage, model, model_kwargs, con
         "loss": loss,
         "wall_time": wall_time,
     }
+    if ema_state_dict is not None:
+        payload["ema_state_dict"] = ema_state_dict
     tmp = f"{path}.tmp"
     torch.save(payload, tmp)
     os.replace(tmp, path)
+
+
+class EMA:
+    """Exponential moving average of model weights.
+
+    Parameters follow shadow = decay*shadow + (1-decay)*param after every
+    optimizer step; buffers (and non-float state) are copied verbatim.
+    """
+
+    def __init__(self, model, decay: float = 0.999):
+        self.decay = float(decay)
+        self._param_keys = {k for k, _ in model.named_parameters()}
+        self.shadow = {k: v.detach().clone() for k, v in model.state_dict().items()}
+
+    @torch.no_grad()
+    def update(self, model) -> None:
+        for k, v in model.state_dict().items():
+            if k in self._param_keys and v.dtype.is_floating_point:
+                self.shadow[k].mul_(self.decay).add_(v, alpha=1.0 - self.decay)
+            else:
+                self.shadow[k].copy_(v)
+
+    def state_dict(self) -> dict:
+        return self.shadow
+
+    def load_state_dict(self, state: dict) -> None:
+        for k, v in state.items():
+            if k in self.shadow:
+                self.shadow[k].copy_(v)
 
 
 # ---------------------------------------------------------------------------
 # Stage A
 # ---------------------------------------------------------------------------
 
-def stage_a_loss_local(model, data, solutions, alpha_bar, T: int, device: str):
-    """DSM loss for one collated batch. THE SEAM (cross-unit contract C1):
-
-    If the model advertises ``supports_per_graph_t`` AND the batch carries a
-    per-node graph index, corrupt with a per-graph timestep vector and do ONE
-    batched forward. Dispatch is attribute-based ONLY — on today's main a
-    vector t does not raise (forward takes t.view(-1)[0]), it silently trains
-    wrong, so try/except detection is forbidden.
-
-    Otherwise: the per-graph loop, math copied from main's train_step_A
-    (minus the optimizer; no import — that file is being rewritten).
-    """
-    vb = getattr(data["variable"], "batch", None)
-    if vb is not None and getattr(model, "supports_per_graph_t", False):
-        x0 = torch.cat([s.to(device) for s in solutions], dim=0)
-        num_graphs = int(vb.max().item()) + 1
-        t = torch.randint(1, T + 1, (num_graphs,), device=device)
-        eps = torch.randn_like(x0)
-        # corrupt already handles per-element t; index it out per node.
-        data["variable"].x = corrupt(x0, t[vb], eps, alpha_bar)
-        return F.mse_loss(model(data, t), eps)
-
-    total = torch.tensor(0.0, device=device)
-    try:
-        graphs = data.to_data_list()
-    except AttributeError:
-        graphs = [data] * len(solutions)
-    for graph, x0 in zip(graphs, solutions):
-        x0 = x0.to(device)
-        t = torch.randint(1, T + 1, (1,), device=device)
-        eps = torch.randn_like(x0)
-        graph["variable"].x = corrupt(x0, t, eps, alpha_bar)
-        total = total + F.mse_loss(model(graph, t), eps)
-    return total / max(len(solutions), 1)
+# The canonical Stage-A DSM loss (marc.train.stage_a): per-graph MSE then mean
+# over graphs, auto-dispatching batched-vs-loop on supports_per_graph_t (C1).
+# The pre-#57 local copy used a flat node-mean in the batched branch, which
+# reweighted losses by graph size — do not reintroduce it.
+stage_a_loss_local = stage_a_loss
 
 
 def train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir, logger,
@@ -366,6 +387,7 @@ def train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir, logger,
     print(f"[amp] {'bf16 autocast' if amp_on else 'fp32'} (amp={tr['amp']!r}, device={device})")
 
     start_epoch, global_step, best_loss = 0, 0, float("inf")
+    resume_ema_state = None
     if resume_path:
         ckpt = torch.load(resume_path, map_location=device, weights_only=False)
         if ckpt.get("stage") not in (None, "a"):
@@ -380,7 +402,14 @@ def train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir, logger,
         # ponytail: epoch-granular resume; best_loss restarts from the resumed
         # epoch's loss, so best.pt may briefly regress after a resume.
         best_loss = float(ckpt.get("loss", float("inf")))
+        resume_ema_state = ckpt.get("ema_state_dict")
         print(f"[resume] {resume_path} -> continuing at epoch {start_epoch + 1}")
+
+    ema = None
+    if tr.get("ema", True):
+        ema = EMA(model, tr.get("ema_decay", 0.999))
+        if resume_ema_state:
+            ema.load_state_dict(resume_ema_state)
 
     run_start = time.time()
     for epoch in range(start_epoch, epochs):
@@ -402,6 +431,8 @@ def train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir, logger,
             gn = float(clip_grad_norm_(model.parameters(), grad_clip))
             lr_now = optimizer.param_groups[0]["lr"]  # lr actually used this step
             optimizer.step()
+            if ema is not None:
+                ema.update(model)
             scheduler.step()
 
             global_step += 1
@@ -430,6 +461,7 @@ def train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir, logger,
             epoch=epoch + 1, global_step=global_step, stage="a", model=model,
             model_kwargs=model_kwargs, config=cfg, loss=epoch_loss,
             wall_time=time.time() - run_start, optimizer=optimizer, scheduler=scheduler,
+            ema_state_dict=ema.state_dict() if ema is not None else None,
         )
         save_checkpoint(os.path.join(out_dir, "latest.pt"), **ckpt_kw)
         if (epoch + 1) % save_every == 0:
@@ -520,7 +552,13 @@ def main(argv=None) -> None:
         description="Config-driven Stage-A (DSM) / Stage-B (GRPO) trainer for the scale run.",
         epilog=(
             "NOTE: on current main, Stage-B GRPO carries a known log-prob bug; "
-            "recommend --stage a unless the Stage-B fix has merged."
+            "recommend --stage a unless the Stage-B fix has merged. "
+            "EMA (training.ema, default on, decay training.ema_decay): Stage-A "
+            "checkpoints carry the shadow weights under the additive key "
+            "'ema_state_dict'; 'model_state_dict' is always the raw weights "
+            "(LearnedSolver compat). Eval scripts wanting EMA weights should "
+            "load ckpt['ema_state_dict'] explicitly; Stage-B init prefers EMA "
+            "when enabled."
         ),
     )
     parser.add_argument("--config", required=True, help="path to a train yaml (e.g. marc/configs/train/scale.yaml)")
@@ -556,17 +594,31 @@ def main(argv=None) -> None:
                     "step_dim": cfg["model"]["step_dim"]}
     model = GraphDenoiser(**model_kwargs)
 
+    ema_on = bool(cfg["training"].get("ema", True))
     if args.stage in ("a", "ab"):
         loader = build_loader(train_pairs, cfg, device)
         model = train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir,
                                      logger, model_kwargs, resume_path=resume_path)
+        if args.stage == "ab" and ema_on:
+            latest = os.path.join(out_dir, "latest.pt")
+            if os.path.exists(latest):
+                ema_state = torch.load(latest, map_location=device,
+                                       weights_only=False).get("ema_state_dict")
+                if ema_state:
+                    model.load_state_dict(ema_state)
+                    print("[stage b] initialized from Stage-A EMA weights")
     else:  # stage b only — needs Stage-A weights from somewhere
         init_path = resume_path or os.path.join(out_dir, "latest.pt")
         if os.path.exists(init_path):
             ckpt = torch.load(init_path, map_location="cpu", weights_only=False)
-            state = ckpt.get("model_state_dict", ckpt) if isinstance(ckpt, dict) else ckpt
+            if isinstance(ckpt, dict):
+                # prefer EMA weights for Stage-B init when present and enabled
+                state = (ema_on and ckpt.get("ema_state_dict")) or ckpt.get("model_state_dict", ckpt)
+                which = "EMA" if state is ckpt.get("ema_state_dict") else "raw"
+            else:
+                state, which = ckpt, "raw"
             model.load_state_dict(state)
-            print(f"[stage b] initialized from {init_path}")
+            print(f"[stage b] initialized from {init_path} ({which} weights)")
         else:
             warnings.warn("Stage B starting from RANDOM weights (no --resume and no latest.pt)")
         model = model.to(device)
@@ -576,6 +628,9 @@ def main(argv=None) -> None:
                     model_kwargs)
 
     print(f"[trainer] done — checkpoints in {out_dir}")
+    if ema_on and args.stage in ("a", "ab"):
+        print("[trainer] EMA on — Stage-A checkpoints carry ema_state_dict "
+              "(model_state_dict is raw; eval can load ema_state_dict explicitly)")
 
 
 if __name__ == "__main__":
