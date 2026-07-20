@@ -3,190 +3,56 @@
 The diffusion reverse process is treated as a finite-horizon MDP:
   State  : (x_k, G) — current variable values + factor graph
   Action : one denoising step sampled from N(eps_hat, I)
-  Reward : terminal checker reward B + energy-shaping per step
+  Reward : terminal checker reward B + potential-based energy shaping
 
-GRPO optimizer: sample N rollouts per problem, compute group-relative
-advantage, optimise clipped surrogate + KL leash to reference policy.
-
-    R = B * I[checker accepts x_K] + sum_k (E(x_{k-1}) - E(x_k))
-
-    J = E[min(rho_i A_i, clip(rho_i, 1-eps, 1+eps) A_i) - beta KL(pi||pi_ref)]
-    where
-        rho_i = pi_theta(o_i|q) / pi_theta_old(o_i|q)
-        A_i   = (R_i - mean(R)) / (std(R) + 1e-8)
+GRPO update, per problem (TECHNICAL_GUIDE §8.2):
+  1. Sample N trajectories ONCE via ``marc.train.rollout.run_rollout`` — it
+     records per-step states, actions, the behavioral log-prob, per-state
+     energies, and the checker verdict.
+  2. Score each with ``marc.train.reward.compute_reward`` (the conservative
+     ``Checker`` is the authoritative terminal gate); group-normalize:
+         A_i = (R_i - mean(R)) / (std(R) + 1e-8)
+  3. new_lp_i = ``recompute_log_prob`` under the current policy — replays the
+     RECORDED per-step states, so the policy is conditioned on x_k at every
+     step (the earlier inline version fed a static input to all steps, which
+     made the gradient meaningless).
+  4. old_lp_i = the log-prob recorded at sampling time (frozen behavioral term).
+  5. KL leash: ref-policy log-prob of the SAME trajectories, cached under
+     no_grad — no separate ref rollouts (the earlier version re-sampled ref
+     trajectories and compared log-probs of different trajectories: a
+     meaningless KL at 2x the compute).
+  6. Clipped surrogate + beta * KL, gradient clipping, Adam step:
+         rho_i = exp(clamp(new_lp_i - old_lp_i, -20, 20))
+         J = E[min(rho_i A_i, clip(rho_i, 1-eps, 1+eps) A_i)] - beta KL
 
 Gradient flow note:
-The policy is modelled as N(eps_hat(x, t; theta), I) over the noise
-residual.  The sampled action at each step is:
-    epsilon_sample = eps_hat + z,   z ~ N(0, I)
-so
-    log p_theta(epsilon_sample | x, t) = -0.5 ||z||^2  +  const
-and the gradient w.r.t. theta flows through eps_hat via the squared
-residual  ||epsilon_sample - eps_hat||^2 / 2.
+The policy is N(eps_hat(x_k, t; theta), I) over the noise residual, so
+    log p_theta(epsilon | x_k, t) = -0.5 ||epsilon - eps_hat||^2 + const
+and the gradient w.r.t. theta flows through eps_hat.
 """
 
-import math
 import os
-from typing import Any, Dict, List, Optional
+import warnings
+from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
+from torch.nn.utils import clip_grad_norm_
 
-# Precomputed constant used in every Gaussian log-prob evaluation.
-_LOG_2PI = math.log(2 * math.pi)
-
-
-# ---------------------------------------------------------------------------
-# Trajectory sampling
-# ---------------------------------------------------------------------------
-
-def sample_trajectory(
-    policy: nn.Module,
-    data,
-    n_vars: int,
-    alpha_bar: torch.Tensor,
-    steps: int = 40,
-    device: str = "cpu",
-) -> Dict[str, Any]:
-    """Sample one stochastic denoising trajectory without gradients.
-
-    The policy is treated as predicting the *mean* eps_hat of a Gaussian
-    action distribution N(eps_hat, I).  At each step we draw:
-
-        z ~ N(0, I)
-        epsilon_sample = eps_hat + z       <- actual noise used in DDIM step
-        log p(epsilon_sample | x, t; theta) = -0.5 ||z||^2  + const(n_vars)
-
-    The stored ``eps_hats`` and ``raw_noises`` (z values) allow
-    ``_compute_log_prob_with_grad`` to recompute differentiable log-probs
-    for the policy-gradient update.
-
-    Returns:
-        "x_final"         : [n_vars, 1] tensor — final variable assignment
-        "log_prob"        : scalar tensor — sum of log-probs (no grad)
-        "energy_trajectory": list[float]
-        "eps_hats"        : list of detached [n_vars, 1] tensors per step
-        "raw_noises"      : list of [n_vars, 1] tensors (z) per step
-    """
-    policy.eval()
-    data = data.to(device)
-    x = torch.randn(n_vars, 1, device=device)
-
-    total_log_prob = torch.zeros((), device=device)
-    energy_traj: List[float] = []
-    eps_hats: List[torch.Tensor] = []
-    raw_noises: List[torch.Tensor] = []
-
-    with torch.no_grad():
-        for step in reversed(range(steps)):
-            t = torch.tensor([step + 1], device=device)
-            eps_hat = policy(data, t).detach()  # [n_vars, 1]
-            eps_hats.append(eps_hat)
-
-            abar_t = alpha_bar[step]
-            abar_prev = alpha_bar[step - 1] if step > 0 else torch.ones(1, device=device)
-
-            # Predicted x0 from current x and eps_hat
-            x0_pred = (x - (1 - abar_t).sqrt() * eps_hat) / abar_t.sqrt()
-            x0_pred = x0_pred.clamp(-10, 10)
-
-            sigma_t = ((1 - abar_prev) / (1 - abar_t)).sqrt() * (1 - abar_t / abar_prev).sqrt()
-
-            # Action: sample z ~ N(0, I) and add to eps_hat
-            z = torch.randn_like(x)
-            raw_noises.append(z)
-            epsilon_sample = eps_hat + z
-
-            # Log-prob under N(eps_hat, I):  -0.5 ||z||^2 + const
-            log_p = -0.5 * (z ** 2).sum() - 0.5 * n_vars * _LOG_2PI
-            total_log_prob = total_log_prob + log_p
-
-            # DDIM step using epsilon_sample
-            direction = (1 - abar_prev - sigma_t ** 2).clamp(min=0).sqrt() * epsilon_sample
-            x = abar_prev.sqrt() * x0_pred + direction + sigma_t * z
-
-    return {
-        "x_final": x.detach(),
-        "log_prob": total_log_prob.detach(),
-        "energy_trajectory": energy_traj,
-        "eps_hats": eps_hats,
-        "raw_noises": raw_noises,
-    }
-
-
-def _compute_log_prob_with_grad(
-    policy: nn.Module,
-    data,
-    n_vars: int,
-    epsilon_samples: List[torch.Tensor],
-    steps: int,
-    device: str,
-) -> torch.Tensor:
-    """Re-compute trajectory log-prob under current policy WITH gradients.
-
-    The policy outputs eps_hat, the *mean* of a Gaussian action distribution
-    N(eps_hat, I).  The sampled actions (epsilon_samples = eps_hat_old + z)
-    are fixed from the rollout; gradient flows through the new eps_hat via:
-
-        log p_theta(epsilon_sample) = -0.5 ||epsilon_sample - eps_hat_new||^2 + const
-    """
-    policy.train()
-    data = data.to(device)
-
-    total_log_prob = torch.zeros((), device=device)
-    eps_iter = iter(epsilon_samples)
-
-    for step in reversed(range(steps)):
-        t = torch.tensor([step + 1], device=device)
-        eps_hat_new = policy(data, t)  # grad enabled
-
-        residual = next(eps_iter) - eps_hat_new
-        log_p = -0.5 * (residual ** 2).sum() - 0.5 * n_vars * _LOG_2PI
-        total_log_prob = total_log_prob + log_p
-
-    return total_log_prob
-
-
-def _epsilon_samples(traj: Dict[str, Any]) -> List[torch.Tensor]:
-    """Return the list of sampled actions: epsilon = eps_hat_old + z."""
-    return [eh + z for eh, z in zip(traj["eps_hats"], traj["raw_noises"])]
-
-
-def compute_reward(
-    trajectory: Dict[str, Any],
-    cas_engine,
-    variable_ids: List[str],
-    B: float = 10.0,
-    use_energy_shaping: bool = True,
-) -> float:
-    """Compute reward for a trajectory.
-
-    R = B * I[checker accepts x_final] + shaping
-    shaping = -E(x_final)  (reward low-energy solutions)
-    """
-    x_final = trajectory["x_final"]
-    x_vals = x_final.squeeze().tolist()
-    if isinstance(x_vals, float):
-        x_vals = [x_vals]
-
-    terminal_reward = B if cas_engine.accepts(x_vals) else 0.0
-
-    if use_energy_shaping:
-        final_energy = cas_engine.energy(x_vals)
-        return terminal_reward + (-final_energy)
-
-    return terminal_reward
+from marc.cas.checker import Checker
+from marc.train.reward import compute_reward
+from marc.train.rollout import recompute_log_prob, run_rollout
 
 
 def grpo_step(
     policy: nn.Module,
     ref_policy: Optional[nn.Module],
-    data,
-    n_vars: int,
+    G,
     cas_engine,
-    variable_ids: List[str],
     alpha_bar: torch.Tensor,
     optimizer: torch.optim.Optimizer,
+    *,
+    checker=None,
     N: int = 8,
     B: float = 10.0,
     beta: float = 0.01,
@@ -194,83 +60,111 @@ def grpo_step(
     steps: int = 40,
     device: str = "cpu",
     purist: bool = False,
+    grad_clip: float = 1.0,
+    entropy_coef: float = 0.0,
+    generator: Optional[torch.Generator] = None,
 ) -> Dict[str, float]:
-    """One GRPO update step for a single problem.
+    """One GRPO update for a single ``FactorGraph`` problem.
 
-    1. Sample N rollouts (no grad) — records epsilon_samples per step
-    2. Compute rewards R_1,...,R_N
-    3. Compute group-relative advantage A_i = (R_i - mean(R)) / (std(R) + 1e-8)
-    4. Re-compute log p_theta(epsilon_samples) WITH grad via Gaussian likelihood
-    5. Clipped PPO surrogate + KL penalty
-    6. Backprop and step
+    Args:
+        policy:      the model being fine-tuned.
+        ref_policy:  frozen reference model for the KL leash (None to skip).
+        G:           the ``FactorGraph`` to solve (rollouts build their own data).
+        cas_engine:  ``CASEngine`` — per-state energy for shaping (skipped when
+                     ``purist``, where shaping is unused).
+        alpha_bar:   cumulative alpha schedule [T]; its length sets schedule_T.
+        optimizer:   optimizer over ``policy.parameters()``.
+        checker:     conservative ``Checker`` — authoritative terminal gate and
+                     source of the ``accept_rate`` stat (None → no terminal reward).
+        N:           rollouts per update (the GRPO group).
+        B:           terminal reward magnitude.
+        beta:        KL penalty coefficient.
+        eps_clip:    PPO clip range for the importance ratio.
+        steps:       denoising steps per rollout (episode horizon K).
+        purist:      terminal reward only — no energy shaping, no energy evals.
+        grad_clip:   max gradient norm.
+        entropy_coef: accepted for API completeness; adds NO term (see below).
+        generator:   optional torch.Generator for reproducible rollouts.
+
+    Returns:
+        {"loss", "pg_loss", "kl", "mean_reward", "accept_rate", "grad_norm"}
     """
-    policy.train()
-    data = data.to(device)
+    if entropy_coef < 0:
+        raise ValueError(f"entropy_coef must be >= 0, got {entropy_coef}")
+    if entropy_coef:
+        # ponytail: entropy const under fixed variance; becomes real only if sigma becomes learnable
+        warnings.warn(
+            "entropy_coef has no effect: the policy is N(eps_hat, I) with fixed "
+            "variance, so its entropy does not depend on theta.",
+            stacklevel=2,
+        )
 
-    # --- Phase 1: rollouts (no grad) ---
+    # --- 1. Sampling pass, ONCE (no grad; behavioral policy) ---
     trajectories = [
-        sample_trajectory(policy, data, n_vars, alpha_bar, steps, device)
+        run_rollout(
+            policy,
+            G,
+            K=steps,
+            cas=None if purist else cas_engine,
+            checker=checker,
+            schedule_T=alpha_bar.numel(),
+            device=device,
+            generator=generator,
+        )
         for _ in range(N)
     ]
 
+    # --- 2. Rewards and group-relative advantages ---
     rewards = torch.tensor(
         [
-            compute_reward(traj, cas_engine, variable_ids, B=B, use_energy_shaping=not purist)
+            compute_reward(traj, G, checker, cas_engine, B=B, use_shaping=not purist)
             for traj in trajectories
         ],
         dtype=torch.float,
         device=device,
     )
+    advantages = (rewards - rewards.mean()) / (rewards.std() + 1e-8)
 
-    mean_r = rewards.mean()
-    std_r = rewards.std() + 1e-8
-    advantages = (rewards - mean_r) / std_r
+    # --- 3/4. Log-probs: recorded behavioral vs. current policy on replayed states ---
+    old_lp = torch.stack([traj["log_prob"] for traj in trajectories]).detach()
+    new_lp = torch.stack(
+        [recompute_log_prob(policy, G, traj, device=device) for traj in trajectories]
+    )
 
-    # --- Phase 2: differentiable log-probs under current policy ---
-    new_log_probs = torch.stack([
-        _compute_log_prob_with_grad(
-            policy, data, n_vars, _epsilon_samples(traj), steps, device,
-        )
-        for traj in trajectories
-    ])
-
-    old_log_probs = torch.stack([traj["log_prob"] for traj in trajectories])
-
-    # Clipped surrogate (PPO/GRPO style)
-    rhos = torch.exp(new_log_probs - old_log_probs.detach())
-    surr1 = rhos * advantages
-    surr2 = rhos.clamp(1 - eps_clip, 1 + eps_clip) * advantages
-    pg_loss = -torch.min(surr1, surr2).mean()
-
-    # KL penalty against frozen reference policy
+    # --- 5. KL leash on the SAME trajectories (cached; no ref rollouts) ---
     if ref_policy is not None:
         with torch.no_grad():
-            ref_trajs = [
-                sample_trajectory(ref_policy, data, n_vars, alpha_bar, steps, device)
-                for _ in range(N)
-            ]
-        # log-probs under ref policy, detached (no grad through ref)
-        ref_log_probs = torch.stack([
-            _compute_log_prob_with_grad(
-                ref_policy, data, n_vars, _epsilon_samples(rt), steps, device,
-            ).detach()
-            for rt in ref_trajs
-        ])
-        kl = (new_log_probs - ref_log_probs).mean()
+            ref_lp = torch.stack(
+                [recompute_log_prob(ref_policy, G, traj, device=device) for traj in trajectories]
+            )
+        kl = (new_lp - ref_lp).mean()
     else:
-        kl = torch.tensor(0.0, device=device)
+        kl = torch.zeros((), device=device)
 
+    # --- 6. Clipped surrogate. log_ratio sums steps*n Gaussian terms — clamp
+    # before exp so a large policy move can't overflow rho. ---
+    log_ratio = (new_lp - old_lp).clamp(-20.0, 20.0)
+    rho = log_ratio.exp()
+    pg_loss = -torch.min(
+        rho * advantages,
+        rho.clamp(1 - eps_clip, 1 + eps_clip) * advantages,
+    ).mean()
     loss = pg_loss + beta * kl
 
+    # --- 7. Update ---
     optimizer.zero_grad()
     loss.backward()
+    grad_norm = clip_grad_norm_(policy.parameters(), grad_clip)
     optimizer.step()
 
-    accept_count = sum(1 for r in rewards if r >= B * 0.9)
+    accept_rate = sum(1 for traj in trajectories if traj["accepted"]) / N
     return {
         "loss": loss.item(),
-        "mean_reward": mean_r.item(),
-        "accept_rate": accept_count / N,
+        "pg_loss": pg_loss.item(),
+        "kl": kl.item(),
+        "mean_reward": rewards.mean().item(),
+        "accept_rate": accept_rate,
+        "grad_norm": float(grad_norm),
     }
 
 
@@ -287,16 +181,23 @@ def train_stage_b(
     checkpoint_dir: str = "checkpoints/stage_b",
     device: str = "cpu",
     purist: bool = False,
+    *,
+    steps: int = 20,
+    grad_clip: float = 1.0,
+    seed: Optional[int] = None,
+    entropy_coef: float = 0.0,
+    eps_clip: float = 0.2,
+    checker=None,
 ) -> nn.Module:
     """Full Stage B GRPO training loop.
 
-    Iterates over problems, applying grpo_step for each.
+    Iterates over problems, applying ``grpo_step`` for each.
     Saves epoch checkpoints to checkpoint_dir.
 
     Args:
         policy: the model to fine-tune
         ref_policy: frozen Stage-A reference model (None to skip KL leash)
-        problems: list of (FactorGraph, solution_dict, CASEngine) tuples
+        problems: list of (FactorGraph, solution_or_None, CASEngine) tuples
         alpha_bar: cumulative alpha schedule [T]
         epochs: number of training epochs
         N: rollouts per problem
@@ -306,9 +207,14 @@ def train_stage_b(
         checkpoint_dir: directory to save epoch checkpoints
         device: torch device string
         purist: if True, use terminal reward only (no energy shaping)
+        steps: denoising steps per rollout (20 preserves the historical default)
+        grad_clip: max gradient norm per update
+        seed: if set, seeds torch globally and each rollout group deterministically
+        entropy_coef: forwarded to grpo_step (no-op; see grpo_step)
+        eps_clip: PPO clip range
+        checker: authoritative terminal gate; defaults to ``Checker()``
     """
-    from marc.graph.pyg import build_heterodata
-
+    checker = checker or Checker()
     os.makedirs(checkpoint_dir, exist_ok=True)
     optimizer = torch.optim.Adam(policy.parameters(), lr=lr)
     policy = policy.to(device)
@@ -318,17 +224,22 @@ def train_stage_b(
         for p in ref_policy.parameters():
             p.requires_grad_(False)
 
+    if seed is not None:
+        torch.manual_seed(seed)
+
     for epoch in range(epochs):
         epoch_stats = []
-        for graph, _solution, cas_engine in problems:
-            data = build_heterodata(graph)
-            variable_ids = [v.id for v in graph.variables]
-            n_vars = len(variable_ids)
+        for problem_idx, (graph, _solution, cas_engine) in enumerate(problems):
+            generator = None
+            if seed is not None:
+                generator = torch.Generator(device=device)
+                generator.manual_seed(seed + epoch * 1_000_003 + problem_idx * 97)
 
             stats = grpo_step(
-                policy, ref_policy, data, n_vars, cas_engine, variable_ids,
-                alpha_bar, optimizer, N=N, B=B, beta=beta,
-                steps=20, device=device, purist=purist,
+                policy, ref_policy, graph, cas_engine, alpha_bar, optimizer,
+                checker=checker, N=N, B=B, beta=beta, eps_clip=eps_clip,
+                steps=steps, device=device, purist=purist, grad_clip=grad_clip,
+                entropy_coef=entropy_coef, generator=generator,
             )
             epoch_stats.append(stats)
 
