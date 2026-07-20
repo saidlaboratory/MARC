@@ -9,6 +9,7 @@
       "deterministic": 0.0,
       "langevin": 0.225,
       "mean_prior": 0.0,
+      "random_restart": 0.875,
       "learned_x0": 0.675
     },
     {
@@ -16,6 +17,7 @@
       "deterministic": 0.0,
       "langevin": 0.025,
       "mean_prior": 0.0,
+      "random_restart": 0.7,
       "learned_x0": 0.425
     },
     {
@@ -23,6 +25,7 @@
       "deterministic": 0.0,
       "langevin": 0.0,
       "mean_prior": 0.0,
+      "random_restart": 0.05,
       "learned_x0": 0.55
     },
     {
@@ -30,6 +33,7 @@
       "deterministic": 0.0,
       "langevin": 0.0,
       "mean_prior": 0.0,
+      "random_restart": 0.0,
       "learned_x0": 0.65
     },
     {
@@ -37,6 +41,7 @@
       "deterministic": 0.0,
       "langevin": 0.0,
       "mean_prior": 0.0,
+      "random_restart": 0.025,
       "learned_x0": 0.1
     }
   ]

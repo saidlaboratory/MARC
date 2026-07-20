@@ -14,8 +14,8 @@ Commits are the short SHA at time of run. Re-record if a number is regenerated.
 | R3 | Entrapment: deterministic entrapment rate | 1.000 | `python -m marc.eval.ablations.noise_ablation --graphs 200` | seeds 0-4 | 0748a8d |
 | R4 | Entrapment: Langevin entrapment rate | 0.475 | same as R3 | seeds 0-4 | 0748a8d |
 | R5 | Entrapment reduction (off - on) | 0.525 ± 0.086 (95% CI) | same as R3 | seeds 0-4 | 0748a8d |
-| R6 | Dimension scaling (learned, n=1,2,4,6) | 0.675 / 0.425 / 0.650 / 0.100 | `python scripts/run_dimension_scaling.py` | train 100+n, test 90000+n | 2d48235 |
-| R6b | **Dimension scaling (random-restart CONTROL, n=1,2,4,6)** | **0.875 / 0.700 / 0.000 / 0.025** | same as R6 (control added to script) | same seeds | 6d70762 |
+| R6 | Dimension scaling (learned, n=1,2,3,4,6) | 0.675 / 0.425 / 0.550 / 0.650 / 0.100 | `python scripts/run_dimension_scaling.py` | train 100+n, test 90000+n | 2d48235 |
+| R6b | **Dimension scaling (random-restart CONTROL, n=1,2,3,4,6)** | **0.875 / 0.700 / 0.050 / 0.000 / 0.025** (crossover at n=3) | same as R6 (control added to script) | same seeds | 6d70762 |
 | R7 | Dimension scaling (Langevin, n=1..6) | 0.225 / 0.025 / 0 / 0 / 0 | same as R6 | same | 2d48235 |
 | R8 | Dimension scaling (mean-prior, all n) | 0.000 | same as R6 | same | 2d48235 |
 | R9 | Hard suite (A1): refine cold, 4 families | 0.000 (all; CI [0,0.06]) | `python scripts/run_hard_eval.py` (best-of-8, 60/family) | test seed0 100000 | d65e3db |

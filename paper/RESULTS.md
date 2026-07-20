@@ -83,15 +83,17 @@ Bundled non-convex traps with per-instance-varying (wide, signed ±[3,8]) roots.
 |---|---|---|---|---|---|
 | 1 | 0.000 | 0.225 | 0.000 | **0.875** | 0.675 |
 | 2 | 0.000 | 0.025 | 0.000 | **0.700** | 0.425 |
+| 3 | 0.000 | 0.000 | 0.000 | 0.050 | **0.550** |
 | 4 | 0.000 | 0.000 | 0.000 | 0.000 | **0.650** |
 | 6 | 0.000 | 0.000 | 0.000 | 0.025 | **0.100** |
 
-**The honest, sharper claim: there is a crossover.** At low dimension (n≤2), *random restart
-wins* — the solution space is small enough to brute-force, and learning buys nothing. At high
-dimension (n≥4), *random restart collapses to ~0* (it must hit all n basins simultaneously by
-chance, cost ~p^n), while the **learned proposal holds** (0.650 at n=4). This is the genuine
-amortized-inference result: the learned model earns its keep exactly when the search space is
-too large for random search. Langevin and the mean-prior are ~0 by n≥3.
+**The honest, sharper claim: there is a clean crossover at n=3.** At low dimension (n≤2),
+*random restart wins* (0.875 vs 0.675) — the solution space is small enough to brute-force, and
+learning buys nothing. At **n≥3 random restart collapses** (0.050 → 0.000; it must hit all n
+basins simultaneously by chance, cost ~p^n), while the **learned proposal holds** (0.550 at n=3,
+0.650 at n=4). This is the genuine amortized-inference result: the learned model earns its keep
+exactly when the search space is too large for random search. Langevin and the mean-prior are ~0
+by n≥3.
 
 **Honest caveats:** the learned model still degrades at n=6 (0.10); and it *loses* to random
 restart at n≤2. The claim is specifically "amortized proposal > random search in high
