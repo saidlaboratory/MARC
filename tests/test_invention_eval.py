@@ -131,14 +131,17 @@ def test_evaluate_full_schema_and_pooling(mod):
     assert res["arms"]["enumeration"]["solve"]["k"] == sum(
         ps["enumeration"]["solve_k"] for ps in res["per_seed"])
     assert res["samplers"]["reverse"]["invention_rate"]["n"] == 4  # 2 seeds x n=2
-    # declared Holm family: base 4 tests when guarded arms are absent
+    # declared Holm family: the 4 base tests, plus the guarded policy_value arm
+    # (reverse:policy_value_vs_random) which is active here because _GoldStub
+    # supplies a callable predicted_pin (pv_active = callable(predicted_pin)).
     ch = res["comparisons_holm"]
     assert ch["method"] == "holm" and ch["alpha"] == 0.05
     assert set(ch["tests"]) == {
         "reverse:policy_vs_random", "reverse:policy_vs_fixed",
         "single_shot:policy_vs_random", "single_shot:policy_vs_fixed",
+        "reverse:policy_value_vs_random",
     }
-    assert ch["m"] == 4
+    assert ch["m"] == 5  # 4 base + 1 guarded policy_value arm (pv active here)
     for t in ch["tests"].values():
         assert set(t) == {"z", "p", "p_holm", "significant_05"}
         assert t["p_holm"] >= t["p"]
