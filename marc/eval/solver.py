@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 import tempfile
 import warnings
-from typing import Any, Callable, List, Protocol, Sequence, runtime_checkable
+from typing import Any, Callable, List, Protocol, Sequence, Tuple, runtime_checkable
 
 from marc.refine.iterative import refine
 
@@ -32,6 +32,25 @@ class Solver(Protocol):
 
     def sample(self, problem: Any, k: int) -> List[List[float]]:
         ...
+
+
+def _downsample(values: Sequence[float], max_points: int = 50) -> List[float]:
+    """Even-stride downsample to <= max_points, always keeping first and last."""
+    if len(values) <= max_points:
+        return list(values)
+    step = (len(values) - 1) / (max_points - 1)
+    return [values[round(i * step)] for i in range(max_points)]
+
+
+def _trace_info(trace: Any) -> dict:
+    """Per-solve diagnostics from a RefineTrace (the data the runner used to discard)."""
+    return {
+        "n_steps": len(trace.energies) - 1,
+        "best_energy": float(trace.best_energy),
+        "final_energy": float(trace.final_energy),
+        "converged": bool(trace.converged),
+        "energies": _downsample([float(e) for e in trace.energies]),
+    }
 
 
 class FunctionSolver:
@@ -100,22 +119,29 @@ class GradientRefinementSolver:
         scale = problem.metadata.get("init_scale", self.init_scale)
         return (self._rng.standard_normal(n) * scale).tolist()
 
+    def _refine_once(self, problem: Any):
+        return refine(
+            problem.graph,
+            self._init(problem),
+            steps=self.steps,
+            lr=self.lr,
+            sigma0=self.sigma0,
+            noise=self.noise,
+            polish_steps=self.polish_steps,
+            polish_lr=self.polish_lr,
+            seed=int(self._rng.integers(0, 2 ** 31 - 1)),
+        )
+
     def sample(self, problem: Any, k: int) -> List[List[float]]:
-        out: List[List[float]] = []
-        for _ in range(k):
-            trace = refine(
-                problem.graph,
-                self._init(problem),
-                steps=self.steps,
-                lr=self.lr,
-                sigma0=self.sigma0,
-                noise=self.noise,
-                polish_steps=self.polish_steps,
-                polish_lr=self.polish_lr,
-                seed=int(self._rng.integers(0, 2 ** 31 - 1)),
-            )
-            out.append(trace.x)
-        return out
+        return [self._refine_once(problem).x for _ in range(k)]
+
+    def sample_with_info(
+        self, problem: Any, k: int
+    ) -> Tuple[List[List[float]], List[dict]]:
+        """Like ``sample`` (same RNG stream, identical candidates for the same seed)
+        but also returns the per-candidate RefineTrace diagnostics."""
+        traces = [self._refine_once(problem) for _ in range(k)]
+        return [t.x for t in traces], [_trace_info(t) for t in traces]
 
 
 def _cas_engine_for(graph: Any):
@@ -212,8 +238,18 @@ class LearnedSolver:
         self.denoiser.eval()
 
     def sample(self, problem: Any, k: int) -> List[List[float]]:
+        return self.sample_with_info(problem, k)[0]
+
+    def sample_with_info(
+        self, problem: Any, k: int
+    ) -> Tuple[List[List[float]], List[dict]]:
+        """``sample`` plus what's cheaply available per candidate: the polish
+        refine()'s RefineTrace diagnostics (``source: "polish"``), or
+        ``{"diverged": true}`` when every rollout diverged, or ``{}`` with
+        polish disabled (the diffusion path keeps no per-step energies)."""
         cas_engine = _cas_engine_for(problem.graph)
         out: List[List[float]] = []
+        infos: List[dict] = []
         with self._torch.no_grad():
             for _ in range(k):
                 x = self._solve(
@@ -228,24 +264,29 @@ class LearnedSolver:
                 if x is None:
                     # every rollout this call diverged to a non-finite energy
                     out.append(None)
+                    infos.append({"diverged": True})
                     continue
                 cand = [float(v) for v in x.squeeze(-1).reshape(-1).tolist()]
+                info: dict = {}
                 if self.polish:
-                    cand = self._polish(problem.graph, cand)
+                    trace = self._polish(problem.graph, cand)
+                    cand = trace.x
+                    info = {**_trace_info(trace), "source": "polish"}
                 out.append(cand)
-        return out
+                infos.append(info)
+        return out, infos
 
-    def _polish(self, graph: Any, x0: List[float]) -> List[float]:
+    def _polish(self, graph: Any, x0: List[float]):
         """Diffusion proposes, energy-descent disposes: refine the (possibly coarse
         or diverged) diffusion candidate to strict tolerance. Reuses the same
-        Langevin refinement as the baseline solver, seeded at the diffusion output."""
+        Langevin refinement as the baseline solver, seeded at the diffusion output.
+        Returns the full RefineTrace; callers take ``.x`` for the candidate."""
         from marc.refine.iterative import refine
 
         # guard against non-finite diffusion outputs before handing to the polisher
         if not all(abs(v) < 1e6 for v in x0):
             x0 = [0.0 for _ in x0]
-        trace = refine(graph, x0, noise=True, seed=0)
-        return trace.x
+        return refine(graph, x0, noise=True, seed=0)
 
 
 def load_solver(name: str | None = None, **kwargs: Any) -> Solver:

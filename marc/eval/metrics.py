@@ -11,12 +11,13 @@ Pure functions over sequences of bool/float — no model, no CAS dependency.
   perturbation_robustness — solve-rate drop when constants are perturbed.
   derivation_verifiability — fraction of accepted solutions that formally verify.
   wilson_interval        — 95% Wilson score CI for a binomial solve rate.
+  restart_budget_curve   — solve rate vs. restart budget k (pass@1..k with CIs).
 """
 
 from __future__ import annotations
 
 import math
-from typing import Callable, Sequence, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
 
 def solve_rate(results: Sequence[bool]) -> float:
@@ -57,6 +58,30 @@ def two_proportion_z(k1: int, n1: int, k2: int, n2: int) -> Tuple[float, float]:
     # one-sided normal tail via erfc
     p = 0.5 * math.erfc(z / math.sqrt(2))
     return z, p
+
+
+def restart_budget_curve(
+    first_success_indices: Sequence[Optional[int]],
+    k_max: int,
+) -> List[dict]:
+    """Solve rate as a function of restart budget, from which-restart-succeeded.
+
+    ``first_success_indices[i]`` is the 0-based index of the first accepted
+    candidate for problem i (None if none succeeded). Returns
+    ``[{"k": j, "n": n, "rate": r, "ci95": [lo, hi]}]`` for j = 1..k_max, where
+    rate is the fraction of problems solved within the first j restarts and the
+    CI is the Wilson interval — the pass@1..K curve for free."""
+    n = len(first_success_indices)
+    if n == 0:
+        raise ValueError("first_success_indices must be non-empty")
+    if k_max < 1:
+        raise ValueError("k_max must be >= 1")
+    curve: List[dict] = []
+    for j in range(1, k_max + 1):
+        solved = sum(1 for i in first_success_indices if i is not None and i < j)
+        lo, hi = wilson_interval(solved, n)
+        curve.append({"k": j, "n": n, "rate": solved / n, "ci95": [lo, hi]})
+    return curve
 
 
 def pass_at_k(results_per_problem: Sequence[Sequence[bool]], k: int) -> float:
