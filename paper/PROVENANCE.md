@@ -17,9 +17,10 @@ Commits are the short SHA at time of run. Re-record if a number is regenerated.
 | R6 | Dimension scaling (learned, n=1..6) | 0.675 / 0.425 / 0.550 / 0.650 / 0.100 | `python scripts/run_dimension_scaling.py` | train 100+n, test 90000+n | 2d48235 |
 | R7 | Dimension scaling (Langevin, n=1..6) | 0.225 / 0.025 / 0 / 0 / 0 | same as R6 | same | 2d48235 |
 | R8 | Dimension scaling (mean-prior, all n) | 0.000 | same as R6 | same | 2d48235 |
-| R9 | Hard suite (A1): refine cold, both families | 0.000 / 0.000 | `python scripts/run_hard_eval.py` | test seed0 100000 | 306306c |
-| R10 | Hard suite: refine+Langevin, both families | 0.350 / 0.125 | same as R9 | same | 306306c |
-| R11 | **A8.1 learned hybrid, both families** | **0.625 / 0.725** | same as R9 | same | 306306c |
+| R9 | Hard suite (A1): refine cold, 4 families | 0.000 (all; CI [0,0.06]) | `python scripts/run_hard_eval.py` (best-of-8, 60/family) | test seed0 100000 | d65e3db |
+| R10 | Hard suite: refine+Langevin, 4 families | 0.300 / 0.100 / 0.300 / 0.033 | same as R9 | same | d65e3db |
+| R11 | **A8.1 learned hybrid, 4 families** | **0.550 / 0.683 / 0.683 / 0.000** | same as R9 | same | d65e3db |
+| R11b | A8.1 significance (hybrid > langevin, 2-prop z) | p = 0.003 / <1e-4 / <1e-4 / 0.92 (sig on 3/4; CircleLine fails) | `python scripts/plot_hard_eval.py` (post-hoc from R9-R11 counts) | — | d65e3db |
 | R12 | CoT baseline (Gemini flash-lite), N=25, k=1 | in-dist 1.000, held-out 1.000 | `GEMINI_API_KEY=… COT_N=25 python -m marc.eval.baselines.cot_baseline` | deterministic problems | 28f9b3b |
 
 ## Notes / caveats attached to specific numbers

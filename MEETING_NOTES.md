@@ -42,7 +42,7 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 |---|---|---|
 | C2 | Merge PR #50 + doc sweep | ✅ merged (#50, #51) |
 | **A1** | Eval suite saturated → hard tier | ✅ **done today** (bilinear templates de-saturate) |
-| **A8.1** | Hybrid vs refine-only ablation | ✅ **done — learned wins both families** (0.625 vs 0.350; 0.725 vs 0.125) |
+| **A8.1** | Hybrid vs refine-only ablation | ✅ **done, rigorous** — 4 non-convex families + Wilson CIs + z-test. Learned hybrid significantly beats Langevin on **3/4** (p<0.01); honest **failure on CircleLine** (0.000). `paper/figures/hard_suite_table.md` |
 | A2 | Headline numbers from learned model, not refine | ✅ hard-suite headline table + figure (`paper/figures/hard_suite_table.md`, `fig_hard_suite.pdf`) |
 | A4/A5 | Guidance / purist ablations degenerate | ✅ reframed (`paper/ablation_reframe.md`): replace with A8.1; guidance sweep on hard checkpoint optional (P1) |
 | A6 | CoT baseline too thin (N=25, k=1) | ⏳ needs Gemini key + N≥100, k≥4, stronger tier |

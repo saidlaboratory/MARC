@@ -1,19 +1,132 @@
 {
   "K": 8,
-  "test_per_family": 40,
+  "test_per_family": 60,
   "epochs": 250,
+  "n_significant": 2,
   "rows": [
     {
       "family": "BilinearSystem",
-      "refine_cold": 0.0,
-      "refine_langevin": 0.35,
-      "learned_hybrid": 0.625
+      "refine_cold": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "refine_langevin": {
+        "k": 18,
+        "n": 60,
+        "rate": 0.3,
+        "ci95": [
+          0.19898010252726892,
+          0.42508946966390415
+        ]
+      },
+      "learned_hybrid": {
+        "k": 33,
+        "n": 60,
+        "rate": 0.55,
+        "ci95": [
+          0.42491714548981496,
+          0.6690654614623918
+        ]
+      },
+      "hybrid_beats_langevin_sig": false
     },
     {
       "family": "BilinearProduct",
-      "refine_cold": 0.0,
-      "refine_langevin": 0.125,
-      "learned_hybrid": 0.725
+      "refine_cold": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "refine_langevin": {
+        "k": 6,
+        "n": 60,
+        "rate": 0.1,
+        "ci95": [
+          0.04664219945723587,
+          0.20149694492511044
+        ]
+      },
+      "learned_hybrid": {
+        "k": 41,
+        "n": 60,
+        "rate": 0.6833333333333333,
+        "ci95": [
+          0.5576599505698345,
+          0.7869429415882567
+        ]
+      },
+      "hybrid_beats_langevin_sig": true
+    },
+    {
+      "family": "QuadraticSystem",
+      "refine_cold": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "refine_langevin": {
+        "k": 18,
+        "n": 60,
+        "rate": 0.3,
+        "ci95": [
+          0.19898010252726892,
+          0.42508946966390415
+        ]
+      },
+      "learned_hybrid": {
+        "k": 41,
+        "n": 60,
+        "rate": 0.6833333333333333,
+        "ci95": [
+          0.5576599505698345,
+          0.7869429415882567
+        ]
+      },
+      "hybrid_beats_langevin_sig": true
+    },
+    {
+      "family": "CircleLine",
+      "refine_cold": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "refine_langevin": {
+        "k": 2,
+        "n": 60,
+        "rate": 0.03333333333333333,
+        "ci95": [
+          0.009189126490150246,
+          0.11363987528925378
+        ]
+      },
+      "learned_hybrid": {
+        "k": 0,
+        "n": 60,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.06017393047793289
+        ]
+      },
+      "hybrid_beats_langevin_sig": false
     }
   ]
 }

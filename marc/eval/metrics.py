@@ -40,6 +40,25 @@ def wilson_interval(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
     return max(0.0, center - half), min(1.0, center + half)
 
 
+def two_proportion_z(k1: int, n1: int, k2: int, n2: int) -> Tuple[float, float]:
+    """Two-proportion z-test for p1 > p2 (pooled). Returns (z, one_sided_p).
+
+    Use this for solve-rate comparisons rather than checking whether two 95% CIs
+    overlap — non-overlapping 95% CIs is a much stricter bar (~p<0.006) and can miss
+    genuine differences. p1 - p2 significant at 0.05 one-sided when z > 1.645."""
+    if n1 == 0 or n2 == 0:
+        raise ValueError("n1, n2 must be positive")
+    p1, p2 = k1 / n1, k2 / n2
+    pool = (k1 + k2) / (n1 + n2)
+    se = math.sqrt(pool * (1 - pool) * (1 / n1 + 1 / n2))
+    if se == 0:
+        return 0.0, 0.5
+    z = (p1 - p2) / se
+    # one-sided normal tail via erfc
+    p = 0.5 * math.erfc(z / math.sqrt(2))
+    return z, p
+
+
 def pass_at_k(results_per_problem: Sequence[Sequence[bool]], k: int) -> float:
     """Fraction of problems with at least one accepted attempt among the first k (pass@k)."""
     if len(results_per_problem) == 0:
