@@ -4,20 +4,20 @@
 
 ### **M**athematical **A**I **R**easoning **C**ore
 
-*Denoising diffusion over constraint graphs for verifiable mathematical reasoning*
+*A learned structural prior over constraint graphs — neural proposals for **what to add** to a problem, classical solvers for the values, an exact checker for the truth.*
 
 <br />
 
-[![Status](https://img.shields.io/badge/status%20v0.1-research%20draft-blue?style=for-the-badge)](https://github.com/saidlaboratory/MARC)
-[![Phase](https://img.shields.io/badge/phase-P4%20Scope%20%26%20Scale-blue?style=for-the-badge)](#roadmap)
+[![Status](https://img.shields.io/badge/status%20v0.2-orchestrator%20reframe-blue?style=for-the-badge)](https://github.com/saidlaboratory/MARC)
+[![Phase](https://img.shields.io/badge/phase-structure%20invention%20ladder-blue?style=for-the-badge)](#the-invention-ladder)
 [![Domain](https://img.shields.io/badge/domain-mathematical%20reasoning-6366f1?style=for-the-badge)](#motivation)
 [![License](https://img.shields.io/badge/license-TBD-888?style=for-the-badge)](#)
 
 <br />
 
-**Quang Bui, Sparsh Roy, Akash Gundimeda, Davin Yin** · SAID Laboratory · June 2026
+**Quang Bui, Sparsh Roy, Akash Gundimeda, Davin Yin** · SAID Laboratory · July 2026
 
-[Overview](#overview) · [Approach](#approach) · [Roadmap](#roadmap) · [Evaluation](#evaluation) · [Prior Art](#prior-art)
+[Overview](#overview) · [What we measured](#what-we-measured-and-what-it-changed) · [The bet](#the-bet-division-of-labor) · [Invention ladder](#the-invention-ladder) · [Evaluation](#evaluation) · [Repo tour](#repo-tour) · [Prior art](#prior-art)
 
 </div>
 
@@ -25,272 +25,167 @@
 
 ## Overview
 
-> **MARC does not reason by emitting a left-to-right chain of tokens.**  
-> It represents a problem as a **constraint graph** and solves it by **iteratively denoising that graph toward a globally consistent state** — a learned, stochastic relaxation in which each refinement step is a round of message passing over the graph.
+> **MARC is an orchestrator, not a solver.**
+> It represents a problem as a **constraint graph** and learns the one decision classical methods cannot make: **what structure to add** — the auxiliary variable, substitution, or defining relation that turns an unsolvable graph into a solvable one. Values are then found by classical solvers, and every answer must pass an exact symbolic checker.
 
-The design intent is a model that *derives* answers under verification rather than *recalls* them, spending learned capacity on mathematical structure instead of brittle token-level arithmetic.
+The division of labor is the thesis:
 
-### The central bet
+| Decision | Who makes it | Why |
+|---|---|---|
+| **What structure to add** (auxiliary variable `d = x − y`, its defining factor, where it enters) | **Learned policy** (discrete diffusion over structure slots) | No gradient exists over this choice; enumeration is combinatorial; a learned prior amortizes it |
+| **What values satisfy the constraints** | **Classical solvers** (Levenberg–Marquardt, Langevin refinement, exact linear solve) | Near-unbeatable on smooth algebraic systems — we measured it, twice |
+| **Is the answer true** | **Exact checker** (numeric gate + symbolic-exact gate) | Verification is the only training signal and the only termination condition |
 
-MARC fuses two reasoning paradigms into one mechanism:
+One sentence for the whole project: *MARC is a neural mathematician's instinct for "introduce `d = x − y`," bolted onto solvers that finish the job and a checker that keeps everyone honest.*
 
-| Paradigm | What it contributes |
-|----------|---------------------|
-| **Constraint-graph relaxation** | A structured, checkable object to refine |
-| **Denoising diffusion** | Stochastic exploration that escapes locally-consistent-but-globally-wrong fixed points |
+---
 
-Together: **denoising diffusion over a constraint graph.**
+## What we measured, and what it changed
+
+MARC v0.1 bet on **value diffusion**: a learned denoiser iteratively refining node *values* toward consistency. We tested that bet with pre-registered controls and it lost — publicly, with confidence intervals. The reframe is not a pivot away from evidence; it is what the evidence chose:
+
+| Finding | Result | Consequence |
+|---|---|---|
+| **Noise reduces entrapment** (RQ2) | Deterministic descent traps 100% vs. 47.5% with Langevin noise; reduction 0.525 ± 0.086, N=200, CI excludes 0 | Real — but it argues for *stochasticity in search*, not for a learned denoiser |
+| **Learned value proposals vs. random restart** (coupled families, R7) | Learned **ties or loses at every dimension** once solutions are coupled; the earlier high-dim win was a separability artifact | The "learned proposal beats classical search" route is **closed** |
+| **Classical baseline strength** | Levenberg–Marquardt with restarts saturates the hard nonlinear families at 1.000 | Raw solve rate can never be MARC's claim |
+| **GNN numerical capacity** | The denoiser could not overfit `Ax = b` on four fixed systems from raw coefficients | Propagating precise numbers through message passing is a structural limitation, not a tuning problem |
+| **Structure selection** (trained policy over candidate augmentations) | Beats random-slot and no-context controls at small scale; clean-protocol regeneration pending | **The one learned component that beat its controls** — the live bet |
+
+Full evidence ledger: [`paper/RESULTS.md`](paper/RESULTS.md) · every number's command/seed/commit: [`paper/PROVENANCE.md`](paper/PROVENANCE.md) · standing review-attack checklist: [`paper/REVIEW_ATTACKS.md`](paper/REVIEW_ATTACKS.md).
+
+**Results integrity rules (house law):** classical solvers (`refine`, `lm`, `exact`) are always labeled baselines; every rate carries N and a Wilson CI; every comparison carries a z-test; structure-selection numbers are citable **only** from runs whose JSON records `seed_hygiene.overlap_instances: 0`. Numbers predating the seed-protocol fix are withdrawn and must not be cited.
+
+---
+
+## The bet (division of labor)
+
+### Why structure, not values
+
+Solving a constraint system involves two different kinds of decision:
+
+- **Continuous:** *what values satisfy these equations.* Smooth, gradient-rich, and owned by sixty years of numerical analysis. Learning adds nothing here — our controls confirmed it.
+- **Discrete:** *what representation makes the problem tractable at all.* Which auxiliary quantity to introduce, which substitution linearizes the system, which lemma bridges the gap. No gradient exists over this space; enumeration grows combinatorially; and classical solvers have **nothing** — a solver cannot decide to invent `d = x − y`.
+
+A learned prior over the discrete space amortizes a cost that *grows* with problem difficulty: one forward pass versus exponentially many candidate-solve attempts. That economics is the opposite of the value-diffusion bet, whose advantage shrank as baselines got the same compute.
+
+The external precedent is strong: **AlphaGeometry** (Nature, 2024) is exactly this architecture — a neural model proposes the auxiliary constructions no deduction engine can derive; a symbolic engine does the rest. MARC builds the same phenomenon in a **general constraint-graph substrate** rather than geometry-specific machinery.
 
 ### System at a glance
 
 ```mermaid
 flowchart LR
     P["Problem"] --> G["Constraint Graph"]
-    G --> D["Denoiser\n(GNN message passing)"]
-    D --> CAS["CAS Residuals\n(exact guidance)"]
-    CAS --> D
-    D --> C{"Checker\n(residuals → 0?)"}
-    C -->|no| D
-    C -->|yes| S["Verified Solution"]
+    G --> S["Structure Policy\n(discrete diffusion over\naugmentation slots)"]
+    S -->|"proposed augmentation:\naux var + defining factor"| A["Augmented Graph"]
+    A --> V["Classical Value Solver\n(LM / Langevin refine / exact)"]
+    V --> C{"Checker\n(numeric + symbolic-exact)"}
+    C -->|reject| S
+    C -->|accept| OK["Verified Solution"]
 ```
 
-| Component | Role |
-|-----------|------|
-| **Constraint graph** | Structured representation of variables and relations |
-| **Denoiser (GNN)** | Iterative refinement via message passing |
-| **CAS** | Exact per-constraint residuals as guidance signal |
-| **Checker** | Terminal gate at inference; sole training reward source |
+| Component | Role | Where |
+|-----------|------|-------|
+| **Constraint graph** | Variables + factor nodes (relations); the shared substrate | `marc/graph/` |
+| **Structure policy** | Absorbing-D3PM reverse process over padded structure slots; proposes which augmentation to instantiate (ABSENT → active) and predicts its defining value | `marc/structure/` |
+| **Classical value solvers** | Levenberg–Marquardt (`lm`), Langevin refinement (`refine`), exact linear (`exact`) — always the value-finders, always labeled baselines | `marc/refine/`, `marc/eval/solver.py` |
+| **Checker** | Two-stage gate: numeric tolerance, then symbolic-exact acceptance; sole reward source and sole termination condition | `marc/cas/checker.py` |
+| **CAS** | Exact residuals/energy/gradients (SymPy) | `marc/cas/` |
 
 ---
 
-## Motivation
+## The invention ladder
 
-Current LLM mathematical reasoning is dominated by chain-of-thought (CoT) post-trained with reinforcement learning from verifiable rewards (RLVR). This works — but three problems motivate a different substrate:
+We climb from selection toward generation, one falsifiable rung at a time. Each rung keeps the same end-to-end verification: a proposal only counts if the augmented graph **actually solves and passes the checker**.
 
-| Problem | Why it matters |
-|---------|----------------|
-| **Memorization & contamination** | Benchmark performance often reflects exposure to solutions, not genuine derivation |
-| **Faithfulness** | Verbalized chains frequently post-hoc rationalize the answer rather than reflect actual computation |
-| **Arithmetic brittleness** | Token-level models compute poorly; CoT capacity is consumed tracking digits, not structure |
+| Rung | What the policy does | Status |
+|:---:|---|---|
+| **1 · Menu selection** | Pick the correct augmentation from K procedurally generated candidates (exactly one solvable; hard negatives share the gold's structure with a wrong constant) | **Built + trained**; clean-protocol numbers pending the overnight run |
+| **2 · Predicted defining value** | The policy's value head supplies the defining constant itself — the candidate space becomes continuous; the menu only provides insertion structure | **Built** (`predicted_pin`); evaluated as the `policy_value` arm |
+| **3 · Compositional / multi-aux** | Choose insertion set and defining relation independently; multiple simultaneous auxiliaries (the padded-slot schema already supports >1 active slot) | Designed, not built |
+| **4 · Free-form generation** | Emit the defining expression itself — invention proper | The prize; out of scope until rungs 1–3 hold |
 
-> CoT is *not* mere retrieval — its intermediate tokens act as a scratchpad that extends effective compute depth. MARC's goal is not to remove reasoning, but to **relocate** computation into a structured, verifiable substrate and **offload** mechanical arithmetic to an exact engine.
+**Naming discipline:** until rung 4, the honest term is **menu-based structure selection (with predicted defining value)** — "invention" appears only in code identifiers and in describing the ladder's endpoint.
 
-**Why mathematics first.** Answers and derivations are *verifiable*. A CAS or proof kernel supplies objective signal with no human annotation — the tightest possible loop between generation and verification.
-
----
-
-## Hypotheses
-
-<table>
-<tr>
-<td width="50%" valign="top">
-
-**H1 — Derive, don't recall**
-
-A model that refines a structured constraint graph toward checker-verified consistency will generalize to unseen problem structure better than a token-level CoT model of comparable scale, because it cannot fall back on recalling token sequences.
-
-</td>
-<td width="50%" valign="top">
-
-**H2 — Invent intermediate objects**
-
-Allowing the refinement process to modify the graph's *structure* (not only its values) enables the system to introduce auxiliary quantities, lemmas, and substitutions that a fixed constraint network cannot express.
-
-</td>
-</tr>
-</table>
-
-### Research questions
-
-1. Can learned, noise-driven iterative refinement of a constraint graph reliably converge to checker-accepted solutions?
-2. Does injected noise reduce entrapment in inconsistent local fixed points vs. deterministic message passing?
-3. What corruption process and noise schedule suit the discrete/symbolic parts of a constraint graph?
-4. Is full probabilistic diffusion necessary, or does *learned iterative refinement with injected noise* suffice?
-5. Does training only against a checker (no reference solutions) yield derive-not-recall behavior?
+**Problem families.** Aux-required families where the *fixed* graph is certifiably unsolvable and only the correct augmentation makes it solvable: linear patterns (`offset`/`coupled`/`shared`, exact rank certificates) and nonlinear patterns (`vieta`: `u = x − y`; `quad_link`: `u = x²`) with **empirical certificates** (a candidate is "unsolvable" iff a 12-restart solver probe fails — recorded per instance as an empirical claim, not a theorem). Gold insertion-structure is randomized per instance so family signatures can't be shortcut.
 
 ---
 
-## Approach
+## Hypotheses (v0.2 — revised under evidence)
 
-### 1 · Representation — the constraint graph
+**H-Structure (the live bet).** A trained structural prior over constraint-graph augmentations selects/generates the representation change needed for solver success at above-control rates (vs. random slot, vs. no-graph-context, vs. always-none), transfers across held-out patterns, and does so at a fraction of enumeration cost — with the advantage growing as the candidate space grows.
 
-A problem is encoded as a (hyper)graph with two node types:
+**H-Value (resolved, negative).** Learned value proposals do not beat random multi-start on coupled systems (R7) and cannot beat LM anywhere we tested. We keep this result in every paper we write — it is the motivation, measured.
 
-```
-  [x]──────[eq₁: x + y = 5]──────[y]
-                │
-           [eq₂: x² + y² = 13]
-                │
-              [z]  ← variable node (known or unknown)
-```
-
-- **Variable nodes** — quantities and objects, each carrying a current (possibly noisy) value or embedding
-- **Factor nodes** — relations the solution must satisfy: equations, inequalities, identities, applicability conditions
-
-The clean target is a fully consistent assignment where every factor's residual is zero. Consistency is a **global** property — no privileged step order.
-
-### 2 · The denoiser — message passing as refinement
-
-The refinement operator is a graph neural network. One step = one round of message passing, trained as a **denoiser**: given a corrupted graph, it produces an update toward a consistent configuration.
-
-> Message passing and denoising are the same operation — local updates propagated over a structure and iterated to convergence — described in two vocabularies. MARC uses one to implement the other.
-
-### 3 · Guidance — the calculator (CAS)
-
-At each step, the CAS computes the **exact residual** of every factor. These residuals steer denoising toward the constraint surface — the analogue of classifier guidance in conditional diffusion. The model never performs arithmetic itself; it learns *which* constraints to attack and *how* to move.
-
-### 4 · Termination — the checker
-
-Denoising continues until residuals vanish and a formal/symbolic checker accepts the candidate. Failed samples are resampled or refined — verification makes best-of-N safe and cheap.
-
-### Two variants
-
-| Variant | Scope | Status |
-|---------|-------|--------|
-| **Value diffusion** | Fixed topology; only node *values* are noised and denoised | **MVP — build first** |
-| **Structure diffusion** | Graph topology is also noised: edges and intermediate nodes added/removed | Ambitious extension — tests H2 |
-
----
-
-## MVP example
-
-**Problem:** Nonlinear system in unknowns `x, y, z`.
-
-| Step | What happens |
-|------|--------------|
-| **Encode** | One variable node per unknown/constant; one factor node per equation |
-| **Corrupt** | Start from a valid assignment; add scheduled Gaussian noise to values |
-| **Denoise** | GNN takes noisy graph + CAS residuals; predicts update; iterate high → low noise |
-| **Verify** | Stop when residuals vanish; checker confirms every equation is satisfied |
-
-The same template extends to geometry (coordinates as variables, relations as factors) and word problems once parsed into quantities and relations.
-
----
-
-## Training
-
-```mermaid
-flowchart TD
-    A["Procedural problem generation"] --> B["Formalize → constraint graph"]
-    B --> C["Stage A: Denoising / refinement\n(corruption-and-reverse)"]
-    C --> D["Stage B: Checker fine-tuning\n(RLVR — reward = checker acceptance)"]
-    D --> E["Evaluate on held-out structure"]
-```
-
-**Data.** Procedurally generated problems with known solutions, formalized into constraint graphs. Procedural generation is essential: it lets us hold out *structure*, not just specific numbers.
-
-| Stage | Objective |
-|-------|-----------|
-| **A — Denoising** | Train GNN by corruption-and-reverse on valid graphs (score matching or simpler iterative refinement with noise) |
-| **B — Checker fine-tuning** | RLVR (e.g. GRPO) rewarding only checker-accepted derivations — no reference solution required |
-
-**Anti-memorization design.** Evaluate on held-out problem *structure*; test length and compositional generalization (train small, test large); perturb constants so memorized answers fail. Only a real procedure generalizes.
+**Retained from v0.1:** verification-gated training (the checker is the only reward), procedural generation with *structural* holdout (train patterns ≠ test patterns, not just fresh constants), and derive-not-recall evaluation discipline.
 
 ---
 
 ## Evaluation
 
-### Capability metrics
+What we measure, per run (`scripts/run_invention_eval.py`):
 
-Solve rate (pass@1, pass@k) on formalizable suites — grade-school and competition word problems, algebra, equation systems, geometry — plus internal synthetic suites with controllable structure.
+| Metric | Question it answers |
+|---|---|
+| **Invention rate** vs. gold, + solve rate of the applied choice | Does the policy pick structure that *works end-to-end*? |
+| **Random-slot / no-context / always-none controls** | Is it better than chance? Does it actually read the graph? |
+| **Enumeration arm** (try every candidate, first accept wins) | The exact-solver ceiling — expected 1.00 — and its **cost** (solver calls, wall-clock) |
+| **Amortization** (policy forwards + 1 solve vs. ~K/2 solves) | The economics of the bet, measured not asserted |
+| **Cross-pattern holdout** (`--exclude-family`) | Generalization beyond memorizing a family's canonical augmentation |
+| **Hard-negative confusion** | Is the policy reading constants, or matching insertion topology? |
+| **Seed hygiene** (train/val/test ranges disjoint, asserted at load) | The eval refuses to run on contaminated seeds — protocol, not promise |
+| Multi-seed pooled Wilson CIs + Holm-corrected comparisons | Statistical honesty by default |
 
-### Hypothesis-testing metrics *(more important than raw solve rate)*
+Value-solver context rows (never headlines): `refine`, `lm`, `random`, `exact` on the hard/coupled suites, with the entrapment ablation retained as the RQ2 result.
 
-| Metric | Tests |
-|--------|-------|
-| **Generalization gap** | In-distribution vs. held-out structure / larger size → H1 |
-| **Constant perturbation robustness** | Recall detector |
-| **Length / compositional extrapolation curves** | Procedure vs. memorization |
-| **Derivation verifiability rate** | Checker accepts full derivation, not just final value |
-| **Entrapment rate** | Stalls at nonzero-residual fixed points, with/without noise → RQ2 |
-| **Intermediate-object usage** | Auxiliary nodes/lemmas on otherwise-unsolvable problems → H2 |
-
----
-
-## Roadmap
-
-```
-P0 ──► P1 ──► P2 ──► P3 ──► P4
- infra   MVP    RLVR   struct  scale
-```
-
-| Phase | Focus | Target |
-|:-----:|-------|--------|
-| **P0** | Infrastructure | Graph schema, problem generator, CAS interface, checker, corruption utilities, eval harness |
-| **P1** | Value-diffusion MVP | Fixed-structure diffusion on equations and simple algebra; first length-generalization curves |
-| **P2** | Checker fine-tuning | RLVR against checker; derive-not-recall via generalization and perturbation metrics |
-| **P3** | Structure diffusion | Graph-growing; intermediate-object invention; test H2 |
-| **P4** | Scope & scale | Broaden domains; NL parser/autoformalizer; scale model and data |
+**Reproduce everything:** `python3 scripts/run_overnight.py` (one command, crash-safe, per-phase logs + manifest; see [`RUNBOOK_SPARSH.md`](RUNBOOK_SPARSH.md)).
 
 ---
 
-## Risks & open questions
+## Repo tour
 
-<details>
-<summary><strong>Discrete graph diffusion is hard</strong> — structure diffusion (P3) is the riskiest component</summary>
-
-Corruption processes and noise schedules over discrete/symbolic structure are not well understood. Build value diffusion first; treat P3 as research, not engineering.
-</details>
-
-<details>
-<summary><strong>Diffusion machinery may be overkill</strong> — noise for exploration may suffice</summary>
-
-Validate whether plain learned iterative refinement with injected noise captures the benefit before committing to full SDE/score-matching formalism.
-</details>
-
-<details>
-<summary><strong>Autoformalization bottleneck</strong> — NL → constraint graph is its own hard subproblem</summary>
-
-Deferred to P4. Early phases use problems generated directly in graph form to de-risk the core mechanism.
-</details>
-
-<details>
-<summary><strong>Calculator fixes arithmetic, not strategy</strong></summary>
-
-The CAS removes a bounded class of errors. Most hard-problem failures are reasoning/strategy errors — the interesting capacity stays in the denoiser's decisions.
-</details>
-
-<details>
-<summary><strong>Expressiveness ceiling without structure diffusion</strong></summary>
-
-A fixed constraint graph cannot represent open-ended proof or solutions requiring new objects. Until P3 works, scope claims are "solve for a consistent state," not "prove arbitrary statements."
-</details>
-
-<details>
-<summary><strong>Specialization, not lobotomy</strong></summary>
-
-A math-only model from scratch loses language ability to parse problems. Favor heavy specialization (continued pretraining on formal + informal math) over a math-only model.
-</details>
-
-<details>
-<summary><strong>Multiple valid solutions / identifiability</strong></summary>
-
-Diffusion naturally samples one of several valid configurations — acceptable and leverageable for diverse derivations, but evaluation must account for it.
-</details>
+```
+marc/
+  graph/       constraint-graph schema, PyG conversion
+  cas/         SymPy residuals/energy/gradients + two-stage checker
+  data/        procedural templates: linear, hard nonlinear, geometry,
+               coupled chains, aux-required families (the invention data)
+  structure/   THE CORE BET — padded slots, absorbing-D3PM corruption,
+               invention menus + certificates, structure policy + reverse sampler
+  refine/      classical Langevin refinement + residual Jacobians
+  model/       GNN encoders (bipartite message passing), structure head
+  diffusion/   value-diffusion machinery (retained: hybrid + ablations context)
+  train/       Stage-A denoising, Stage-B GRPO (corrected), scale trainer (GPU/MPS),
+               structure-policy training (CE + optional solve-reward)
+  eval/        harness, metrics (Wilson/z/Holm), solver registry incl. lm/exact,
+               structure evals
+scripts/       run_overnight.py (the one command) + per-experiment scripts
+paper/         RESULTS.md, PROVENANCE.md, REVIEW_ATTACKS.md, figures
+```
 
 ---
 
 ## Prior art
 
-MARC's individual components are precedented; the contribution is their **specific combination as a mathematical reasoning engine**, plus structure-denoising for intermediate-object invention and train-only-against-a-checker discipline.
-
 | Line of work | Relationship to MARC |
 |--------------|---------------------|
-| **Graph / discrete diffusion** (DiGress-style) | Machinery for denoising graph structure; not previously used as a math reasoning substrate |
-| **Neural / GNN constraint & SAT solvers** | Message passing and diffusion as solvers; MARC adds exact CAS guidance and formal checker |
-| **RLVR & process rewards** (GRPO, DeepSeek-R1, PRMs) | Verifiable-reward training paradigm for Stage B |
-| **Latent reasoning** (CoT, Coconut, recurrent-depth) | Reasoning off the token stream; MARC's graph is a *structured, checkable* latent |
-| **Neurosymbolic & formal math** (Lean, AlphaProof, DeepSeek-Prover) | Verifier-centric, derive-not-recall philosophy |
-| **Tool-augmented computation** (PoT, PAL) | Reasoning/computation split that CAS offload instantiates |
-| **Numerical representation** (Abacus, xVal, FoNE) | How variable-node values are encoded |
+| **AlphaGeometry** (neural auxiliary constructions + symbolic engine) | The closest relative and the strongest precedent for the division of labor; MARC generalizes the pattern from geometry-specific machinery to arbitrary constraint graphs, with an exact checker in the loop |
+| **Graph / discrete diffusion** (D3PM, DiGress) | The formalism for the structure policy: absorbing corruption over slots, learned reverse process; instantiation = ABSENT → active |
+| **Neural algorithmic reasoning** | Independently documents why GNNs struggle with precise numerics — consistent with our `Ax=b` overfit failure and the delegation of values to classical solvers |
+| **Neural / GNN constraint & SAT solvers** | Learned components inside search; MARC differs by learning the *representation change*, not the search itself |
+| **RLVR & verifier-gated training** (GRPO, DeepSeek-R1) | The training discipline for both stages; reward only from the checker |
+| **Tool-augmented computation** (PoT, PAL) | The reasoning/computation split, taken to its logical end: *all* computation is delegated |
+| **Neurosymbolic & formal math** (Lean, AlphaProof) | The verifier-centric, derive-not-recall philosophy MARC retains from v0.1 |
 
 ---
 
 ## Success criteria
 
-**Supported** if, at comparable scale, value-diffusion (P1–P2) shows a **smaller generalization gap and greater perturbation robustness** than a token-level CoT baseline, with high derivation-verifiability rate. Structure-diffusion (H2) is supported if graph-growing solves problems requiring auxiliary objects that fixed-structure cannot, with measurable intermediate-object usage.
+**Supported** if the structure policy, under the clean seed protocol, (a) beats random-slot and no-context controls with Holm-corrected significance on nonlinear aux-required families, (b) holds on cross-pattern holdout, and (c) approaches the enumeration ceiling at a measured fraction of its cost — with the cost gap widening as K grows.
 
-**Falsified** if: injected noise does not reduce entrapment (RQ2 fails); generalization gap is no better than CoT (H1 fails); or structure diffusion never converges and yields no object-invention benefit (H2 fails) despite a stable value-diffusion base.
+**Falsified** if the no-context ablation matches the full policy (the model isn't reading the graph), or cross-pattern transfer collapses to chance (it memorizes family signatures), or the amortization advantage disappears at realistic K.
+
+Either outcome is publishable. That is the point of the protocol.
 
 ---
 
@@ -298,7 +193,7 @@ MARC's individual components are precedented; the contribution is their **specif
 
 <br />
 
-*Living document — sections on approach and training are the first items to pin down before P0.*
+*v0.2 · The founding value-diffusion framing is preserved in [CONCEPT.md](CONCEPT.md); the evidence that forced this reframe is in [paper/RESULTS.md](paper/RESULTS.md).*
 
 **SAID Laboratory** · [saidlaboratory/MARC](https://github.com/saidlaboratory/MARC)
 

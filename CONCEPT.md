@@ -2,9 +2,11 @@
 
 ## Denoising diffusion over constraint graphs for verifiable mathematical reasoning
 
-**Status:** Draft v0.1 | **Date:** June 2026  
+**Status:** Draft v0.1 — **superseded by the v0.2 orchestrator reframe (July 2026)** | **Date:** June 2026  
 **Scope:** MVP framing and a phased research roadmap  
 **Repo:** https://github.com/saidlaboratory/MARC
+
+> **Reframing note (July 21, 2026).** This document is the founding v0.1 framing and is preserved unchanged as the historical record. The central bet below — a learned denoiser refining *values* toward consistency — was tested with pre-registered controls and lost (learned proposals tie/lose to random restart on coupled systems; Levenberg–Marquardt saturates the hard families; see `paper/RESULTS.md` R7 and the LM columns). MARC v0.2 keeps this document's substrate (constraint graphs), verification discipline (checker-only reward), and evaluation philosophy (derive-not-recall, structural holdout), but relocates the learned component to the one decision classical solvers cannot make: **what structure to add** (auxiliary variables, defining relations). Values are delegated to classical solvers. The current framing lives in [README.md](README.md); the team writing guide is [OUTLINE.md](OUTLINE.md); the evidence ledger is [paper/RESULTS.md](paper/RESULTS.md).
 
 # 1\. Executive Summary
 
