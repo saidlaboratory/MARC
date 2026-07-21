@@ -17,9 +17,8 @@
     "seed_base": 900000,
     "families": null,
     "solver": {
-      "name": "refine",
-      "k_refine": 4,
-      "polish_steps": 4000
+      "name": "lm",
+      "k_refine": 4
     },
     "data_version": {
       "eval": 2,
@@ -64,7 +63,7 @@
     "overlap_instances": 0,
     "offending": []
   },
-  "positive_control_ok": false,
+  "positive_control_ok": true,
   "samplers": {
     "reverse": {
       "invention_rate": {
@@ -105,21 +104,21 @@
           ]
         },
         "policy": {
-          "k": 3,
+          "k": 182,
           "n": 500,
-          "rate": 0.006,
+          "rate": 0.364,
           "ci95": [
-            0.002042559297638913,
-            0.017490563810893606
+            0.323010706915662,
+            0.4070631893247437
           ]
         },
         "random_slot": {
-          "k": 0,
+          "k": 100,
           "n": 500,
-          "rate": 0.0,
+          "rate": 0.2,
           "ci95": [
-            0.0,
-            0.007624618530903363
+            0.16728494139259462,
+            0.23728982972594745
           ]
         },
         "always_none": {
@@ -132,23 +131,23 @@
           ]
         },
         "gold_oracle": {
-          "k": 12,
+          "k": 500,
           "n": 500,
-          "rate": 0.024,
+          "rate": 1.0,
           "ci95": [
-            0.013781177149521824,
-            0.04147745969189818
+            0.9923753814690964,
+            0.9999999999999999
           ]
         }
       },
       "comparisons": {
         "policy_vs_random": {
-          "z": 1.7346547441043507,
-          "p": 0.041400988358992453
+          "z": 5.762714129485294,
+          "p": 4.138596348393079e-09
         },
         "policy_vs_fixed": {
-          "z": 1.7346547441043507,
-          "p": 0.041400988358992453
+          "z": 14.91622899832804,
+          "p": 1.2923696190027195e-50
         }
       },
       "per_family": {
@@ -163,12 +162,12 @@
             ]
           },
           "solve_policy": {
-            "k": 0,
+            "k": 88,
             "n": 165,
-            "rate": 0.0,
+            "rate": 0.5333333333333333,
             "ci95": [
-              0.0,
-              0.02275268654170536
+              0.4573189068484033,
+              0.6078309140488163
             ]
           }
         },
@@ -183,12 +182,12 @@
             ]
           },
           "solve_policy": {
-            "k": 2,
+            "k": 71,
             "n": 170,
-            "rate": 0.011764705882352941,
+            "rate": 0.4176470588235294,
             "ci95": [
-              0.003232190436117468,
-              0.04187553981947152
+              0.3461319955680449,
+              0.49280183845097
             ]
           }
         },
@@ -203,12 +202,12 @@
             ]
           },
           "solve_policy": {
-            "k": 1,
+            "k": 23,
             "n": 165,
-            "rate": 0.006060606060606061,
+            "rate": 0.1393939393939394,
             "ci95": [
-              0.001070620565756266,
-              0.03352748795726175
+              0.09471387130261513,
+              0.20048352080928142
             ]
           }
         }
@@ -253,21 +252,21 @@
           ]
         },
         "policy": {
-          "k": 4,
+          "k": 205,
           "n": 500,
-          "rate": 0.008,
+          "rate": 0.41,
           "ci95": [
-            0.0031152647975077885,
-            0.020387359836901122
+            0.3677343110002554,
+            0.4536381203353072
           ]
         },
         "random_slot": {
-          "k": 0,
+          "k": 100,
           "n": 500,
-          "rate": 0.0,
+          "rate": 0.2,
           "ci95": [
-            0.0,
-            0.007624618530903363
+            0.16728494139259462,
+            0.23728982972594745
           ]
         },
         "always_none": {
@@ -280,23 +279,23 @@
           ]
         },
         "gold_oracle": {
-          "k": 12,
+          "k": 500,
           "n": 500,
-          "rate": 0.024,
+          "rate": 1.0,
           "ci95": [
-            0.013781177149521824,
-            0.04147745969189818
+            0.9923753814690964,
+            0.9999999999999999
           ]
         }
       },
       "comparisons": {
         "policy_vs_random": {
-          "z": 2.004012040140506,
-          "p": 0.022534385344873904
+          "z": 7.211854847133608,
+          "p": 2.759739719091739e-13
         },
         "policy_vs_fixed": {
-          "z": 2.004012040140506,
-          "p": 0.022534385344873904
+          "z": 16.058070719115847,
+          "p": 2.5096079054842487e-58
         }
       },
       "per_family": {
@@ -311,12 +310,12 @@
             ]
           },
           "solve_policy": {
-            "k": 0,
+            "k": 98,
             "n": 165,
-            "rate": 0.0,
+            "rate": 0.593939393939394,
             "ci95": [
-              0.0,
-              0.02275268654170536
+              0.517694285116933,
+              0.6659097555934133
             ]
           }
         },
@@ -331,12 +330,12 @@
             ]
           },
           "solve_policy": {
-            "k": 2,
+            "k": 73,
             "n": 170,
-            "rate": 0.011764705882352941,
+            "rate": 0.4294117647058823,
             "ci95": [
-              0.003232190436117468,
-              0.04187553981947152
+              0.35737209391871344,
+              0.5045711923832993
             ]
           }
         },
@@ -351,12 +350,12 @@
             ]
           },
           "solve_policy": {
-            "k": 2,
+            "k": 34,
             "n": 165,
-            "rate": 0.012121212121212121,
+            "rate": 0.20606060606060606,
             "ci95": [
-              0.0033303221439865346,
-              0.043113208360344143
+              0.15137214272779614,
+              0.27412489117853966
             ]
           }
         }
@@ -367,28 +366,28 @@
     "enumeration": {
       "status": "ok",
       "solve": {
-        "k": 12,
+        "k": 500,
         "n": 500,
-        "rate": 0.024,
+        "rate": 1.0,
         "ci95": [
-          0.013781177149521824,
-          0.04147745969189818
+          0.9923753814690964,
+          0.9999999999999999
         ]
       },
       "first_accept_is_gold": {
-        "k": 12,
-        "n": 12,
+        "k": 500,
+        "n": 500,
         "rate": 1.0,
         "ci95": [
-          0.7574992425007574,
-          1.0
+          0.9923753814690964,
+          0.9999999999999999
         ]
       },
-      "solved_calls_mean": 3.952,
-      "refine_calls_mean": 15.808,
+      "solved_calls_mean": 2.53,
+      "refine_calls_mean": 10.12,
       "wall_clock_s": {
-        "mean": 0.5961418505022302,
-        "total": 298.0709252511151
+        "mean": 0.010979006652371026,
+        "total": 5.489503326185513
       }
     },
     "no_context": {
@@ -405,12 +404,12 @@
             ]
           },
           "solve_policy": {
-            "k": 1,
+            "k": 62,
             "n": 500,
-            "rate": 0.002,
+            "rate": 0.124,
             "ci95": [
-              0.000353127309584542,
-              0.011240992747195207
+              0.09794566312958619,
+              0.15578805000565316
             ]
           }
         },
@@ -425,12 +424,12 @@
             ]
           },
           "solve_policy": {
-            "k": 2,
+            "k": 147,
             "n": 500,
-            "rate": 0.004,
+            "rate": 0.294,
             "ci95": [
-              0.0010976075412372681,
-              0.014466014041418871
+              0.2557578175953935,
+              0.3353835252393387
             ]
           }
         }
@@ -448,12 +447,12 @@
         ]
       },
       "solve_snapped": {
-        "k": 3,
+        "k": 180,
         "n": 500,
-        "rate": 0.006,
+        "rate": 0.36,
         "ci95": [
-          0.002042559297638913,
-          0.017490563810893606
+          0.31914070629947555,
+          0.4029941868891773
         ]
       },
       "pin_abs_err_mean": 0.15808456999081177,
@@ -466,66 +465,66 @@
     "m": 7,
     "tests": {
       "reverse:policy_vs_random": {
-        "z": 1.7346547441043507,
-        "p": 0.041400988358992453,
-        "p_holm": 0.20700494179496226,
-        "significant_05": false
+        "z": 5.762714129485294,
+        "p": 4.138596348393079e-09,
+        "p_holm": 1.2415789045179236e-08,
+        "significant_05": true
       },
       "reverse:policy_vs_fixed": {
-        "z": 1.7346547441043507,
-        "p": 0.041400988358992453,
-        "p_holm": 0.20700494179496226,
-        "significant_05": false
+        "z": 14.91622899832804,
+        "p": 1.2923696190027195e-50,
+        "p_holm": 7.754217714016318e-50,
+        "significant_05": true
       },
       "single_shot:policy_vs_random": {
-        "z": 2.004012040140506,
-        "p": 0.022534385344873904,
-        "p_holm": 0.15774069741411734,
-        "significant_05": false
+        "z": 7.211854847133608,
+        "p": 2.759739719091739e-13,
+        "p_holm": 1.1038958876366957e-12,
+        "significant_05": true
       },
       "single_shot:policy_vs_fixed": {
-        "z": 2.004012040140506,
-        "p": 0.022534385344873904,
-        "p_holm": 0.15774069741411734,
-        "significant_05": false
+        "z": 16.058070719115847,
+        "p": 2.5096079054842487e-58,
+        "p_holm": 1.756725533838974e-57,
+        "significant_05": true
       },
       "reverse:policy_vs_no_context": {
-        "z": 1.002006020070253,
-        "p": 0.15817034266052682,
-        "p_holm": 0.47451102798158046,
-        "significant_05": false
+        "z": 8.835384116734371,
+        "p": 4.987744738569981e-19,
+        "p_holm": 2.49387236928499e-18,
+        "significant_05": true
       },
       "single_shot:policy_vs_no_context": {
-        "z": 0.818957148778788,
-        "p": 0.20640543117778123,
-        "p_holm": 0.47451102798158046,
-        "significant_05": false
+        "z": 3.8403354289058576,
+        "p": 6.143315803897749e-05,
+        "p_holm": 0.00012286631607795497,
+        "significant_05": true
       },
       "reverse:policy_value_vs_random": {
-        "z": 0.0,
-        "p": 0.5,
-        "p_holm": 0.5,
+        "z": -10.5409255338946,
+        "p": 1.0,
+        "p_holm": 1.0,
         "significant_05": false
       }
     }
   },
   "timing": {
-    "policy_forward_s_mean": 0.006967172133998247,
-    "enumeration_s_mean": 0.5961418505022302,
-    "amortization_note": "enumeration solves the certified linear menu exactly (solve rate 0.02) in 0.5961s of solver calls per instance; one policy forward costs 0.0070s. The policy's contribution is amortizing solver calls into a learned forward pass, not exceeding enumeration's capability."
+    "policy_forward_s_mean": 0.004354621747042983,
+    "enumeration_s_mean": 0.010979006652371026,
+    "amortization_note": "enumeration solves the certified linear menu exactly (solve rate 1.00) in 0.0110s of solver calls per instance; one policy forward costs 0.0044s. The policy's contribution is amortizing solver calls into a learned forward pass, not exceeding enumeration's capability."
   },
   "positive_control": {
     "gold_oracle": {
-      "k": 12,
+      "k": 500,
       "n": 500,
-      "rate": 0.024,
+      "rate": 1.0,
       "ci95": [
-        0.013781177149521824,
-        0.04147745969189818
+        0.9923753814690964,
+        0.9999999999999999
       ]
     },
     "threshold": 0.95,
-    "ok": false,
+    "ok": true,
     "by_construction": [
       "generator resamples lambda_max(A^T A)>=9",
       "polish_steps=4000 (default 400)"
@@ -539,115 +538,115 @@
       "seed": 900000,
       "n": 100,
       "fixed_k": 0,
-      "gold_k": 2,
-      "random_k": 0,
+      "gold_k": 100,
+      "random_k": 20,
       "samplers": {
         "reverse": {
           "invention_k": 37,
           "none_k": 36,
-          "solve_k": 1
+          "solve_k": 37
         },
         "single_shot": {
           "invention_k": 37,
           "none_k": 25,
-          "solve_k": 1
+          "solve_k": 37
         }
       },
       "enumeration": {
-        "solve_k": 2,
-        "first_accept_gold_k": 2
+        "solve_k": 100,
+        "first_accept_gold_k": 100
       }
     },
     {
       "seed": 901000,
       "n": 100,
       "fixed_k": 0,
-      "gold_k": 2,
-      "random_k": 0,
+      "gold_k": 100,
+      "random_k": 24,
       "samplers": {
         "reverse": {
           "invention_k": 32,
           "none_k": 30,
-          "solve_k": 1
+          "solve_k": 32
         },
         "single_shot": {
           "invention_k": 39,
           "none_k": 20,
-          "solve_k": 1
+          "solve_k": 39
         }
       },
       "enumeration": {
-        "solve_k": 2,
-        "first_accept_gold_k": 2
+        "solve_k": 100,
+        "first_accept_gold_k": 100
       }
     },
     {
       "seed": 902000,
       "n": 100,
       "fixed_k": 0,
-      "gold_k": 5,
-      "random_k": 0,
+      "gold_k": 100,
+      "random_k": 18,
       "samplers": {
         "reverse": {
           "invention_k": 32,
           "none_k": 31,
-          "solve_k": 1
+          "solve_k": 32
         },
         "single_shot": {
           "invention_k": 36,
           "none_k": 25,
-          "solve_k": 1
+          "solve_k": 36
         }
       },
       "enumeration": {
-        "solve_k": 5,
-        "first_accept_gold_k": 5
+        "solve_k": 100,
+        "first_accept_gold_k": 100
       }
     },
     {
       "seed": 903000,
       "n": 100,
       "fixed_k": 0,
-      "gold_k": 0,
-      "random_k": 0,
+      "gold_k": 100,
+      "random_k": 16,
       "samplers": {
         "reverse": {
           "invention_k": 39,
           "none_k": 34,
-          "solve_k": 0
+          "solve_k": 39
         },
         "single_shot": {
           "invention_k": 40,
           "none_k": 20,
-          "solve_k": 0
+          "solve_k": 40
         }
       },
       "enumeration": {
-        "solve_k": 0,
-        "first_accept_gold_k": 0
+        "solve_k": 100,
+        "first_accept_gold_k": 100
       }
     },
     {
       "seed": 904000,
       "n": 100,
       "fixed_k": 0,
-      "gold_k": 3,
-      "random_k": 0,
+      "gold_k": 100,
+      "random_k": 22,
       "samplers": {
         "reverse": {
           "invention_k": 42,
           "none_k": 32,
-          "solve_k": 0
+          "solve_k": 42
         },
         "single_shot": {
           "invention_k": 53,
           "none_k": 21,
-          "solve_k": 1
+          "solve_k": 53
         }
       },
       "enumeration": {
-        "solve_k": 3,
-        "first_accept_gold_k": 3
+        "solve_k": 100,
+        "first_accept_gold_k": 100
       }
     }
   ],

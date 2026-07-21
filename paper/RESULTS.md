@@ -150,27 +150,28 @@ The earlier 0.45/0.53 numbers stay withdrawn (contaminated). Trained on `aux_req
 (offset/coupled), 200 epochs, `shared` held out; K=4 menu, 500 instances/arm, Wilson CIs,
 Holm-corrected within the 7-comparison family.
 
-**Invention accuracy (policy picks the gold augmentation; needs no downstream solver):**
+Reference solver = **scipy Levenberg–Marquardt** (matches aux_required's exact solvability
+certificate; the `positive_control_ok=True`, gold-oracle solve **1.000**). Solve rate and
+invention accuracy coincide here because LM solves any *valid* augmentation and the K−1
+distractors are certified unsolvable, so "solve" ≡ "picked the gold structure".
 
-| Split | policy (single-shot) | no-context ctrl | vs random (chance 0.25) | vs fixed |
-|---|---|---|---|---|
-| in-pattern (offset/coupled) | **0.410 [0.37,0.45]** | 0.294 | p=0.023, **p_holm=0.16 (ns)** | p_holm=0.16 (ns) |
-| held-out (`shared`, untrained) | **0.234 [0.20,0.27]** | 0.170 | p_holm=0.65 (ties) | **p_holm=0.009 (sig)** |
+| Split | policy | random-slot | no-context | fixed | gold-oracle | policy vs random |
+|---|---|---|---|---|---|---|
+| in-pattern (offset/coupled) | **0.410 [0.37,0.45]** | 0.200 | 0.294 | 0.000 | 1.000 | **p_holm<0.001 (sig)** |
+| held-out (`shared`, untrained) | **0.234 [0.20,0.27]** | 0.238 | 0.170 | 0.000 | 1.000 | p_holm=1.0 (ties) |
 
-**Honest conclusion:** the policy invents the gold structure well above the always-fixed / always-
-none floor (significant on held-out, p_holm=0.009), but **does not significantly beat random
-selection after Holm correction** (in-pattern p_holm=0.16; held-out ties). This confirms the
-prior read (HANDOFF: "beats fixed/no-context, ties random") — now with clean, citable numbers.
-Held-out invention (0.234) drops from in-pattern (0.410) but stays above no-context, i.e. partial
-structural generalization to an unseen pattern.
+(single-shot sampler, 500 instances/arm, Holm-corrected over the 7-comparison family.)
 
-**Solve-rate is NOT reported** for this eval: its positive control fails (gold-oracle solve
-0.024/0.090 ≪ 0.95). The known integer solutions are checker-accepted and scipy Levenberg–Marquardt
-solves the gold-augmented systems 100%, but the eval's reference solver (`refine`, annealed
-Langevin) is too weak for the nonlinear augmented systems (plateaus at ~0.47 with `noise=False`,
-0.00 with noise). **Fix pending a team decision:** switch the invention eval's reference solver to
-LM/exact (which matches aux_required's exact certificate) so solve-rate becomes meaningful; the
-invention-accuracy metric above is independent of this and stands.
+**Honest conclusion:** **in-pattern, the structure policy significantly beats random selection**
+(0.410 vs 0.200, p_holm<0.001) and the no-context and always-fixed controls — the learned
+context genuinely helps pick the right augmentation, and its invention rate (0.41) sits above
+chance (CI excludes 0.25). **But the advantage does not generalize:** on the held-out `shared`
+pattern the policy (0.234) **ties random** (0.238) while still beating no-context (p_holm=0.023)
+and fixed. So MARC's structure-selection policy is a real in-distribution win over its controls
+that degrades to chance-vs-random on an unseen pattern — reported openly, and now with clean,
+citable numbers (`overlap_instances: 0`, positive control passing).
+
+Reproduce:
 `python3 scripts/train_structure_policy.py --data aux_required --epochs 200 --exclude-family shared --out checkpoints/structure_policy.pt`
 then `run_invention_eval.py … --data aux_required [--families shared]` (RUNBOOK §7; PROVENANCE R16/R16h).
 
