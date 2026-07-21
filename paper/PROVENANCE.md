@@ -28,6 +28,9 @@ Commits are the short SHA at time of run. Re-record if a number is regenerated.
 | R14 | MATH coverage (parser), MATH-500 sample | 0/48 = 0.000 | `python scripts/run_math_coverage.py` | fixed sample | 552fdcd |
 | R15 | Dimension scaling, unified-v2 methodology | see `results/p_scaling/scaling.json` | `python3 scripts/run_dimension_scaling.py` (unified stats, PR #62) | in JSON | PR #62 |
 | R16 | Structure selection (menu-based), in-pattern | **pending clean run** | `python3 scripts/run_invention_eval.py --ckpt checkpoints/structure_policy.pt --out results/p5_invention/invention.json --data aux_required` (harness adds `--eval-seeds 5` when supported) | seed-space v1, disjoint from train/val | — |
+| R17 | **Factorization law: single-start reachability slope** (indep / coupled) | **b = −1.032 (R²=0.982) / −0.128 (R²=0.958)** | `PYTHONPATH=. python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721` | seed 20260721, 600 fresh inst/n | sparsh/crossover-theory |
+| R18 | **Factorization law: parameter-free random-restart prediction MAE (indep)** | **0.012** (v = q(1) = 0.270; measured curve 0.90/0.47/0.16/0.03/0.00) | same as R17 | same | sparsh/crossover-theory |
+| R19 | **Factorization law: expected restarts 1/q(n)** (indep / coupled) | **3.7→13→32→150→600 / 2.0→2.5→2.9→3.8→4.3** | same as R17 | same | sparsh/crossover-theory |
 | R17 | Structure selection, held-out pattern (`shared` excluded from training) | **pending clean run** | same as R16 with `--families shared --out results/p5_invention/invention_heldout.json` | seed-space v1 | — |
 
 ## Notes / caveats attached to specific numbers

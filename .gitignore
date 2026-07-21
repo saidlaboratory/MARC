@@ -12,6 +12,7 @@ results/
 !results/p4_scale/roadmap.md
 !results/p3_h2/h2_report.md
 !results/p2_main/cot_baseline.json
+!results/p_crossover/crossover_theory.json
 checkpoints/
 
 # Virtual environments & IDE

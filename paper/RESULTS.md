@@ -152,3 +152,31 @@ them. Clean numbers regenerate under the seed-space v1 protocol (disjoint seed r
 `seed_hygiene` block with `overlap_instances: 0` in the results JSON) via the fixed overnight
 harness (`eval_invention` + the held-out-pattern `eval_invention_heldout`).
 `python3 scripts/run_invention_eval.py --ckpt checkpoints/structure_policy.pt --out results/p5_invention/invention.json --data aux_required`
+
+## R9 · The factorization law — *why* learning helps in R5 and not in R7 (the unifying result)
+The central scientific contribution: one falsifiable, parameter-free law that predicts both
+the R5 positive and the R7 negative. All methods share one polish operator and one checker;
+let `q(n)` = single-start reachability (prob. one random start + polish is accepted). Then
+best-of-K random restart is exactly `P_random(n;K) = 1 − (1 − q(n))^K`. The scaling of `q(n)`
+is set by whether acceptance basins **factorize across variables**:
+
+- **Separable (independent traps):** the polish is coordinate-decoupled, so `q(n) = v^n` with
+  `v := q(1)`. Measured (600 fresh instances/n, Wilson CIs): `log q(n)` is linear with slope
+  **−1.03 (R²=0.98)**; `v = 0.27`. Substituting into the best-of-K identity reproduces the
+  **entire** measured random-restart curve (0.90, 0.47, 0.16, 0.03, 0.00) with **no free
+  parameters, MAE 0.012**. Expected restarts `1/q(n)` explode **3.7 → 13 → 32 → 150 → 600**,
+  so any fixed budget is exhausted — random search *must* lose to a flat learned proposal
+  (R5: learned ≈ 0.95 across n=1–4). This is the mechanism behind R5.
+- **Coupled (chained bilinear):** the polish propagates along the chain, basins do **not**
+  factorize, `log q(n)` slope is only **−0.13 (R²=0.96)** — nearly flat. Expected restarts stay
+  **2.0 → 4.3**; random never collapses, so the learned proposal has nothing to amortize (R7:
+  ties random) and the classical LM solver dominates (0.77 → 1.0). This is the mechanism
+  behind R7 — a *predicted* consequence of broken factorization, not an unexplained negative.
+
+**Why this matters:** it converts the scattered R5/R7 "helps here, not there" observations into
+a single predictive principle — *a learned proposal beats classical search iff acceptance
+basins factorize and dimension is high* — validated parameter-free. Full derivation and honest
+limitations (instance heterogeneity, learned ceiling measured not derived) in
+`paper/notes/crossover_law.md`. Figure `paper/figures/fig_crossover_theory.pdf`.
+`PYTHONPATH=. python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721`
+(PROVENANCE R17–R19).
