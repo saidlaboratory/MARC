@@ -29,6 +29,8 @@ def test_quick_schema_selftrain():
         cell = row[m]
         lo, hi = cell["ci95"]
         assert 0.0 <= lo <= cell["rate"] <= hi <= 1.0
+        assert cell["wall_ms_total"] >= 0.0
+        assert cell["wall_ms_mean"] >= 0.0
     for m in ("lm", "learned"):
         assert row[m]["n"] == 4 and 0 <= row[m]["k"] <= 4
     for p_key in ("p_learned_gt_random", "p_learned_gt_lm"):

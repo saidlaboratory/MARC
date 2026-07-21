@@ -110,16 +110,30 @@ def build_payload(id_problems, ho_problems, k, refine_solver=None,
     metrics = run_split_eval(id_problems, ho_problems, solver=solver,
                              n_samples=k, solver_name="refine")
     pp = metrics["per_problem"]
+    n_all = len(id_problems) + len(ho_problems)
+    # refine's per-problem timing already comes from the runner; sum both splits
+    refine_ms = (metrics["splits"]["in_distribution"]["wall_ms_total"]
+                 + metrics["splits"]["held_out_structure"]["wall_ms_total"])
+    t0 = time.perf_counter()
+    rand_id, rand_ho = random_arm(id_problems, k), random_arm(ho_problems, k)
+    rand_ms = (time.perf_counter() - t0) * 1000.0
     arms = {
-        "refine": _arm(_refine_counts(pp, "geometry_in_distribution"),
-                       _refine_counts(pp, "geometry_held_out")),
-        "random": _arm(random_arm(id_problems, k), random_arm(ho_problems, k)),
+        "refine": {**_arm(_refine_counts(pp, "geometry_in_distribution"),
+                          _refine_counts(pp, "geometry_held_out")),
+                   "wall_ms_total": refine_ms, "wall_ms_mean": refine_ms / n_all},
+        "random": {**_arm(rand_id, rand_ho),
+                   "wall_ms_total": rand_ms, "wall_ms_mean": rand_ms / n_all},
     }
     learned_vs_random = None
     if learned_solver is not None:
+        t0 = time.perf_counter()
+        l_id = learned_arm(id_problems, learned_solver, k)
+        l_ho = learned_arm(ho_problems, learned_solver, k)
+        learned_ms = (time.perf_counter() - t0) * 1000.0
         arms["learned"] = {"status": "ok", "checkpoint": ckpt,
-                           **_arm(learned_arm(id_problems, learned_solver, k),
-                                  learned_arm(ho_problems, learned_solver, k))}
+                           **_arm(l_id, l_ho),
+                           "wall_ms_total": learned_ms,
+                           "wall_ms_mean": learned_ms / n_all}
         z, p = two_proportion_z(
             arms["learned"]["pooled"]["k"], arms["learned"]["pooled"]["n"],
             arms["random"]["pooled"]["k"], arms["random"]["pooled"]["n"])
@@ -174,7 +188,7 @@ def main() -> None:
             continue
         c = arm["pooled"]
         print(f"[arm {name}] best-of-{args.k} {c['k']}/{c['n']} = {c['rate']:.2f} "
-              f"[{c['ci95'][0]:.2f},{c['ci95'][1]:.2f}]")
+              f"[{c['ci95'][0]:.2f},{c['ci95'][1]:.2f}] {arm['wall_ms_mean']:.0f} ms/prob")
     if payload["learned_vs_random"]:
         lv = payload["learned_vs_random"]
         print(f"[learned vs random] z={lv['z']:.2f} p={lv['p_one_sided']:.3f}")

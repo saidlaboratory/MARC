@@ -36,6 +36,8 @@ def test_selftrain_schema(monkeypatch, tmp_path):
         assert cell["n"] == 2 and 0 <= cell["k"] <= 2
         lo, hi = cell["ci95"]
         assert 0.0 <= lo <= cell["rate"] <= hi <= 1.0
+        assert cell["wall_ms_total"] >= 0.0
+        assert cell["wall_ms_mean"] >= 0.0
     assert isinstance(row["hybrid_beats_langevin_sig"], bool)
     assert 0.0 <= row["p_learned_gt_lm"] <= 1.0
 

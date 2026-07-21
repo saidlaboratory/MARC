@@ -25,6 +25,7 @@ import argparse
 import json
 import os
 import random
+import time
 from pathlib import Path
 
 import torch
@@ -67,6 +68,13 @@ def train_x0(items, epochs, D=128, L=4):
             opt.step()
     net.eval()
     return net
+
+
+def _timed(count_fn, *args):
+    # wall-clock the whole attempt loop (proposal + polish + accept) of one arm
+    t0 = time.perf_counter()
+    kn = count_fn(*args)
+    return kn, (time.perf_counter() - t0) * 1000.0
 
 
 def langevin_count(items, K):
@@ -145,17 +153,21 @@ def run(ns, K, ntest, epochs, ntrain, ckpt=None):
             propose = ckpt_propose(solver)
         else:
             propose = selftrain_propose(train_x0(gen(n, ntrain, seed0=0), epochs))
-        cl = langevin_count(test, K)
-        cr = random_count(test, K)
-        clm = lm_count(test, K)
-        ch = hybrid_count(test, propose, K)
+        cl, ms_l = _timed(langevin_count, test, K)
+        cr, ms_r = _timed(random_count, test, K)
+        clm, ms_lm = _timed(lm_count, test, K)
+        ch, ms_h = _timed(hybrid_count, test, propose, K)
         _, p = two_proportion_z(ch[0], ch[1], cr[0], cr[1])
         _, p_lm = two_proportion_z(ch[0], ch[1], clm[0], clm[1])
         rows.append({"n": n,
-                     "langevin": {"rate": cl[0] / cl[1], "ci95": wilson_interval(*cl)},
-                     "random": {"rate": cr[0] / cr[1], "ci95": wilson_interval(*cr)},
-                     "lm": {"k": clm[0], "n": clm[1], "rate": clm[0] / clm[1], "ci95": wilson_interval(*clm)},
-                     "learned": {"k": ch[0], "n": ch[1], "rate": ch[0] / ch[1], "ci95": wilson_interval(*ch)},
+                     "langevin": {"rate": cl[0] / cl[1], "ci95": wilson_interval(*cl),
+                                  "wall_ms_total": ms_l, "wall_ms_mean": ms_l / cl[1]},
+                     "random": {"rate": cr[0] / cr[1], "ci95": wilson_interval(*cr),
+                                "wall_ms_total": ms_r, "wall_ms_mean": ms_r / cr[1]},
+                     "lm": {"k": clm[0], "n": clm[1], "rate": clm[0] / clm[1], "ci95": wilson_interval(*clm),
+                            "wall_ms_total": ms_lm, "wall_ms_mean": ms_lm / clm[1]},
+                     "learned": {"k": ch[0], "n": ch[1], "rate": ch[0] / ch[1], "ci95": wilson_interval(*ch),
+                                 "wall_ms_total": ms_h, "wall_ms_mean": ms_h / ch[1]},
                      "p_learned_gt_random": p,
                      "p_learned_gt_lm": p_lm})
         print(f"{n:>3} {cl[0]/cl[1]:>9.3f} {cr[0]/cr[1]:>9.3f} {clm[0]/clm[1]:>9.3f} "

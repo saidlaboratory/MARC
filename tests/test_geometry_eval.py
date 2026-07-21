@@ -64,8 +64,13 @@ def test_schema_and_skipped_learned(monkeypatch):
     pooled = payload["arms"]["refine"]["pooled"]
     assert (pooled["k"], pooled["n"], pooled["rate"]) == (4, 4, 1.0)
     assert payload["arms"]["random"]["pooled"]["k"] == 0
+    for arm in ("refine", "random"):
+        assert payload["arms"][arm]["wall_ms_total"] >= 0.0
+        assert payload["arms"][arm]["wall_ms_mean"] >= 0.0
     assert payload["arms"]["learned"]["status"] == "skipped"
     assert "reason" in payload["arms"]["learned"]
+    # a skipped arm burned no compute, so it carries no timing fields
+    assert "wall_ms_total" not in payload["arms"]["learned"]
     assert payload["learned_vs_random"] is None
 
 
@@ -74,6 +79,8 @@ def test_learned_arm_and_ztest(monkeypatch):
     learned = payload["arms"]["learned"]
     assert learned["status"] == "ok"
     assert learned["checkpoint"] == "stub.pt"
+    assert learned["wall_ms_total"] >= 0.0
+    assert learned["wall_ms_mean"] >= 0.0
     # with K=2 the second (solution) rollout rescues every problem
     assert learned["pooled"]["k"] == learned["pooled"]["n"] == 4
     lv = payload["learned_vs_random"]
