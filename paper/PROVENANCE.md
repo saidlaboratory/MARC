@@ -38,7 +38,7 @@ Commits are the short SHA at time of run. Re-record if a number is regenerated.
   **withdrawn** — its eval seeds overlapped the validation seeds used for checkpoint selection,
   and it evaluated `toys` data against an `aux_required`-trained policy (source mismatch). Do not
   cite any `results/p5_invention` JSON that lacks a `seed_hygiene` block with
-  `overlap_instances: 0`. See `paper/RESULTS.md` R8 and `paper/REVIEW_ATTACKS.md` #3.
+  `overlap_instances: 0`. See `paper/RESULTS.md` R8 and `paper/notes/REVIEW_ATTACKS.md` #3.
 - **R1/R2/R12 are saturated** (convex suite at ceiling) — not usable for H1 separation. See
   fixing-plan A1/A6; replace with hard-suite numbers (R9–R11) for headline claims.
 - **R6** degrades at n=6 (0.100) — report the full curve, not a single point.
