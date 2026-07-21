@@ -1,0 +1,458 @@
+% marc.tex — MARC paper draft (corrected framing; every number traces to paper/RESULTS.md)
+\documentclass[11pt]{article}
+% swap for aaai2026.sty + authblk config before submission
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\title{When Do Learned Diffusion Proposals Help Constraint Solving?\\
+A Controlled Study on Continuous Algebraic Systems}
+% author block: team fills in names, order, and affiliations before submission
+\author{...}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Diffusion models are increasingly used to propose solutions to constraint and optimization
+problems, but the control that matters most for any proposal mechanism is often missing:
+random multi-start under the same refinement budget. We run that control. MARC represents a
+continuous algebraic constraint system as a factor graph, proposes candidate assignments with
+a graph-neural diffusion denoiser, polishes them by descent on an exact computer-algebra
+energy, and accepts an assignment only if it passes an exact symbolic checker. Three findings
+result. First, a propose-and-polish hybrid beats cold-start annealed Langevin descent on
+trapped non-convex families, but random restarts with the same polish match the learned
+proposal there; the recipe is the contribution, not the denoiser. Second, the learned proposal
+beats random multi-start only in higher dimension: random restart wins at $n \le 2$, collapses
+by $n = 3$, and the learned proposal holds (0.550 at $n=3$, 0.650 at $n=4$). Third, this
+advantage does not survive coupling: on chained bilinear systems the learned proposal ties or
+loses to random restart at every dimension tested. Learned diffusion proposals amortize
+independent search; they help exactly when solutions are per-variable separable and dimension
+defeats random restart. We do not claim more, and we report the negative results with the same
+confidence intervals as the positive ones.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Solving a system of algebraic constraints involves two different kinds of decision. The
+continuous decision asks which values satisfy the equations; it is smooth, gradient-rich, and
+has been owned by numerical analysis for sixty years. The discrete decision asks which
+representation makes the problem tractable at all: which auxiliary variable, substitution, or
+defining relation to introduce. Classical solvers have nothing to say about the second
+decision, and for the first they are very hard to beat. This paper measures, under controlled
+conditions, whether a learned diffusion model helps with the value decision on continuous
+algebraic constraint systems. The short answer is: only in a narrow regime, and we can say
+exactly which one.
+
+The measurement matters because the comparison usually reported is the wrong one. A learned
+proposal followed by refinement is typically compared against refinement from a cold start,
+and it wins. That comparison conflates two effects: the value of starting refinement from
+diverse initializations, and the value of the learned model specifically. The control that
+separates them is random multi-start with the same polish and the same candidate budget. When
+we added that control, our own headline claim shrank, and the corrected claim is the subject
+of this paper.
+
+Our system, MARC, is an orchestrator rather than a solver. A problem is represented as a
+factor graph over variables and symbolic constraint expressions. A graph neural network
+trained as a diffusion denoiser proposes candidate assignments. Classical machinery finishes
+the job: an exact computer-algebra system (CAS) supplies residuals, an energy, and its
+gradient; deterministic energy descent polishes each proposal; and a two-stage checker
+(numeric gate, then exact symbolic verification after snapping to rationals) is the sole
+acceptance criterion. Nothing counts as solved unless the checker says so. The design follows
+the division of labor that AlphaGeometry demonstrated in geometry \citep{trinh2024alphageometry}:
+neural proposals for decisions that admit no gradient, symbolic engines for everything they
+already do well.
+
+Within that architecture we ask a specific question. When does the learned proposal earn its
+place over the classical alternatives? We evaluate against a graded battery: deterministic
+energy descent, annealed Langevin descent, a mean-prior control that starts polish from the
+training-distribution mean, and random multi-start with identical polish and budget. The
+answer has three parts. On non-convex families where deterministic descent is fully trapped,
+any diverse proposal plus polish beats cold-start Langevin; the learned proposal ties or loses
+to random restart on all four families, so the hybrid recipe is the useful result there
+(Section~\ref{sec:hybrid}). On bundled trap families with wide, per-instance-varying roots,
+there is a clean crossover at $n = 3$: random restart wins at low dimension, collapses once it
+must hit all $n$ basins by chance, and the learned proposal holds where it fails
+(Section~\ref{sec:scaling}). On coupled chained-bilinear systems, where the solution is a
+joint object rather than a product of per-variable marginals, the learned advantage vanishes:
+the learned proposal ties or loses to random restart at every dimension we tested, with zero
+significant wins in five comparisons (Section~\ref{sec:coupled}).
+
+We therefore claim a characterization, not a victory. Learned diffusion proposals amortize
+independent search: they help when solutions are per-variable separable and the dimension
+defeats random restart, and this advantage disappears under coupling. Alongside this we
+contribute the substrate itself (factor graphs with an exact CAS and an exact accept checker
+in the loop), a pre-registered entrapment result showing that annealed noise escapes
+deterministic traps with a confidence interval that excludes zero, a partial cross-family
+transfer result, and a scope measurement on the MATH benchmark showing that autoformalization,
+not solving, is the binding constraint. We make no claim against combinatorial-optimization
+solvers such as DIFUSCO; the problem class is different (Section~\ref{sec:related}). Every
+rate we report carries $N$ and a 95\% Wilson interval or a $z$-test, and the negative results
+are reported in full because they are the boundary of the claim.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Graph-based diffusion for combinatorial optimization.}
+DIFUSCO \citep{sun2023difusco} applies graph denoising diffusion to discrete $\{0,1\}$
+assignments for NP-complete problems such as TSP and MIS, and remains the reference neural CO
+solver. Follow-up work extends the idea to unsupervised training \citep{sanokowski2024diffuco},
+constraint-aware trajectory optimization \citep{li2024constraintaware}, and constraint-matrix
+diffusion for vehicle routing \citep{anon2026vrpdiffusion}. MARC differs in problem class and
+in supervision: we solve continuous algebraic systems (real-valued assignments satisfying
+symbolic residuals), and a symbolic CAS provides exact residuals, exact energy gradients, and
+an exact accept checker. None of the CO-diffusion line integrates a symbolic verifier, and
+none studies entrapment as a falsifiable hypothesis. We do not compete on their benchmarks and
+make no claim to.
+
+\paragraph{Diffusion plus iterative refinement.}
+The closest hybrid to ours is diffusion-based learning for constrained non-convex optimization
+with bootstrapped refinement \citep{bootstrapped2025refinement}, which also lets a diffusion
+model propose and a refinement stage correct. Two things distinguish our study. Our polish is
+the same CAS energy descent that defines the problem and the checker, so the proposal and the
+verifier share one exact objective. And our ablation isolates the denoiser's marginal
+contribution over cold-start refinement with confidence intervals, including the random
+multi-start control that, in our experiments, removes the apparent advantage of the learned
+proposal on small-solution families.
+
+\paragraph{Langevin dynamics, escape from local minima, and amortized inference.}
+That injected annealed noise escapes minima where deterministic descent stalls is classical;
+stochastic-gradient Langevin methods \citep{welling2011sgld} and the convergence theory of
+Langevin simulated annealing \citep{bras2021langevin} supply the grounding, and regularized
+Langevin dynamics has been applied to combinatorial optimization directly
+\citep{regularized2025langevin}. Our entrapment experiment (Section~\ref{sec:entrapment})
+confirms this on algebraic constraint systems and we present it as confirmation, not novelty.
+The dimension-scaling result is an instance of amortized inference in the sense of amortized
+Langevin dynamics \citep{taniguchi2022langevin}: a learned per-instance proposal replaces
+search whose cost grows like $p^n$ with dimension. Our coupled-family experiment bounds that
+argument; the amortization holds only while the solution factorizes per variable.
+
+\paragraph{Learned structure proposals.}
+AlphaGeometry \citep{trinh2024alphageometry} pairs a neural proposer of auxiliary
+constructions with a symbolic deduction engine, and is the strongest precedent for the
+division of labor MARC adopts. Discrete diffusion over structured state spaces
+\citep{austin2021d3pm, vignac2023digress} supplies the formalism for the structure-proposal
+direction we discuss in Section~\ref{sec:scope}. Our present results concern value proposals;
+the structure policy is built but its numbers are pending a clean protocol and are not cited
+here.
+
+\section{Method}
+\label{sec:method}
+
+\subsection{Constraint graphs and the exact symbolic layer}
+
+A problem instance is a factor graph $G = (V, F)$ with variable nodes $V = \{x_1, \dots,
+x_n\}$ and factor nodes $F = \{g_1, \dots, g_m\}$, each factor carrying a symbolic expression
+string. A bare expression $g$ denotes the equality $g = 0$; relational expressions denote
+non-strict inequalities. The residual of factor $j$ at assignment $x$ is $r_j(x) = |g_j(x)|$
+for equalities and the hinge $\max(0, g_j(x))$ for inequalities, so $r_j(x) = 0$ exactly when
+the constraint holds. The energy is
+\begin{equation}
+E(x) \;=\; \tfrac{1}{2} \sum_{j=1}^{m} r_j(x)^2 .
+\end{equation}
+Residuals, energy, and $\nabla E$ are computed exactly by a CAS (SymPy) and compiled once per
+graph. Acceptance is a two-stage gate: a numeric stage rejects fast if any factor's violation
+exceeds a tolerance, and a symbolic stage snaps the candidate to nearby exact rationals and
+re-checks every constraint exactly. The symbolic stage is authoritative; it catches
+false accepts that a numeric tolerance admits. The checker is the only acceptance criterion in
+every experiment and the only reward source in training.
+
+\subsection{The learned proposal: a GNN denoiser with guided reverse diffusion}
+
+The forward process is standard Gaussian diffusion over variable values with a cosine noise
+schedule over $T = 1000$ steps. The denoiser is a bipartite message-passing GNN: variable
+nodes are encoded from their current noisy value and type, factor nodes from their type, their
+residual at the current values, and a sinusoidal timestep embedding; $L$ rounds of bipartite
+message passing are followed by a per-variable head that predicts the noise
+$\hat{\varepsilon}$. Sampling runs DDIM reverse steps with energy-gradient guidance,
+\begin{equation}
+\hat{s} \;=\; s_\theta(x_t, t, G) \;-\; \lambda_t \nabla E(x_t),
+\end{equation}
+so the exact CAS gradient steers the reverse process toward feasibility.
+
+One architectural detail proved necessary. Message passing applies LayerNorm each round, which
+washes out the magnitude of constraint constants, so a variable whose value is pinned by its
+own constraint cannot be read off the deep features. A direct linear skip from a variable's
+incident-factor constants to its output restores the path and cut the mean absolute root error
+from 5.4 to 0.9. We report this because it is the kind of failure that silently caps a
+graph-network solver's numerical capacity.
+
+\subsection{Propose and polish, and the baseline battery}
+
+The system solver is a hybrid. The diffusion model proposes $K$ candidate assignments
+(best-of-8 throughout); each is polished by deterministic descent on $E$; the first candidate
+to pass the checker is the answer. The baselines are graded so that each isolates one
+ingredient. Deterministic energy descent from a cold start is the plain relaxation
+\begin{equation}
+x^{(k+1)} \;=\; x^{(k)} - \eta \, \nabla E\!\left(x^{(k)}\right) + \sigma_k \xi_k,
+\qquad \xi_k \sim \mathcal{N}(0, I),
+\end{equation}
+with $\sigma_k \equiv 0$; it stalls at points where $\nabla E = 0$ but $E > 0$. Annealed
+Langevin descent sets $\sigma_k$ on a decreasing schedule and is the classical stochastic
+solver. The mean-prior control starts polish from the training-distribution mean and tests
+whether the learned model does more than reproduce an average solution. The decisive control
+is random multi-start: $K$ initializations drawn uniformly from $[-5,5]^n$, polished
+identically, same budget, no learning. Throughout the paper \emph{refine}, \emph{random}, and
+their variants are labeled classical baselines; the learned hybrid is the system.
+
+MARC as a whole is an orchestrator built from these parts: learned components propose,
+classical solvers finish, and the checker decides. The experiments below measure which
+decisions the learned component actually improves.
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Protocol}
+
+All problem families are procedurally generated with held-out test instances. Unless stated
+otherwise, solve rates are best-of-8 over $N = 60$ held-out instances per family, intervals
+are 95\% Wilson intervals, and comparisons are two-proportion $z$-tests. Before any
+comparison we verified that the learned solver converges at all: after five implementation
+faults were found and fixed (the denoiser never received $x_t$; constants were absent from the
+graph tensors; $t$ did not condition variable nodes; guidance magnitudes exploded; a
+shape-handling fault in the one-variable case), the solve rate on convex linear systems went
+from 0 to 1.000 both in-distribution and held out, with a generalization gap of zero. Convex
+families are saturated by every method and carry no comparative signal; all results below are
+on non-convex families.
+
+\subsection{Entrapment: noise escapes where deterministic descent cannot}
+\label{sec:entrapment}
+
+We pre-registered the question of whether annealed noise reduces entrapment, with
+falsification defined as no reduction. On 200 non-convex problems, deterministic energy
+descent is trapped on every instance; annealed Langevin descent cuts the entrapment rate to
+0.475 (Table~\ref{tab:entrapment}). The reduction is $0.525 \pm 0.086$ and the 95\% interval
+excludes zero ($N = 200$, 5 seeds). This is textbook annealed-Langevin behavior and we present
+it as a confirmed premise for everything that follows, not as a novel finding: stochasticity
+matters in this search space, whether or not the noise source is learned.
+
+% provenance: RESULTS.md R2
+\begin{table}[t]
+\centering
+\caption{Entrapment on 200 non-convex problems ($N = 200$, 5 seeds). Reduction
+$0.525 \pm 0.086$; the 95\% CI excludes 0.}
+\label{tab:entrapment}
+\begin{tabular}{lc}
+\toprule
+Solver & Entrapment rate \\
+\midrule
+Deterministic energy descent & 1.000 \\
+Annealed Langevin descent    & 0.475 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The hybrid recipe: a good proposal plus polish beats cold-start refinement}
+\label{sec:hybrid}
+
+Table~\ref{tab:hybrid} shows the mechanism ablation on four non-convex families where
+deterministic descent is fully trapped (best-of-8, 60 held-out instances per family, 95\%
+Wilson intervals). Cold-start refinement solves nothing; adding Langevin noise helps somewhat;
+and both the random-init control and the learned hybrid do far better. The comparison that
+matters is the last column. The learned proposal ties random multi-start on two families
+($p = 0.50$) and loses on two, including a complete failure on CircleLine (0.000 where random
+reaches 0.200).
+
+% provenance: RESULTS.md R3
+\begin{table}[t]
+\centering
+\caption{Mechanism ablation on trapped non-convex families (best-of-8, 60 held-out per
+family, 95\% Wilson CIs). The random-init control uses identical polish and budget with no
+learning.}
+\label{tab:hybrid}
+\footnotesize
+\begin{tabular}{lccccl}
+\toprule
+Family & refine cold & refine+Langevin & random-init+polish & learned hybrid & learned $>$ random? \\
+\midrule
+BilinearSystem  & 0.000 & 0.300 & 0.550 [0.42, 0.67] & 0.550 & tie ($p = 0.50$) \\
+BilinearProduct & 0.000 & 0.100 & 0.717 [0.59, 0.81] & 0.683 & no (random wins) \\
+QuadraticSystem & 0.000 & 0.300 & 0.683 [0.56, 0.79] & 0.683 & tie ($p = 0.50$) \\
+CircleLine      & 0.000 & 0.033 & 0.200 [0.12, 0.32] & 0.000 & no (random wins) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This corrects an earlier over-claim of ours. Without the random control, the table reads as
+``the learned solver beats classical refinement''; with it, the correct reading is that
+diverse restarts plus deterministic polish beat cold-start Langevin, and the learned proposal
+adds nothing on these families. The reason is unglamorous: solutions here are small integers
+in $[-3,3]$, which random restart over $[-5,5]$ hits readily, so there is nothing for learning
+to amortize. The hybrid recipe is the useful result; the denoiser is not.
+
+\subsection{Cross-family transfer is partial}
+\label{sec:transfer}
+
+We train on three non-convex families and test the hybrid on the held-out fourth (best-of-8,
+60 test instances per family, 200 epochs). Table~\ref{tab:transfer} reports the outcome. On
+two of four held-out families the cross-trained model reaches 0.683, significantly above the
+refine+Langevin baseline ($p < 10^{-4}$): the model solves a family it never trained on. On the
+other two it solves nothing. The BilinearSystem failure is the informative one, because that
+family is solvable in-distribution (0.550 in Table~\ref{tab:hybrid}). A smoke run trained on
+only the two similar families \{Product, Quadratic\} recovered it at 0.70, whereas adding the
+pathological CircleLine family to the training mix collapsed it to 0.00. Dissimilar training
+families can actively disrupt transfer. We read this as transfer across related non-convex
+structure, not as a universal solver.
+
+% provenance: RESULTS.md R4
+\begin{table}[t]
+\centering
+\caption{Leave-one-family-out transfer (best-of-8, 60 test per family, 200 epochs). $p$ from a
+$z$-test of learned (cross) $>$ refine+Langevin.}
+\label{tab:transfer}
+\small
+\begin{tabular}{lllll}
+\toprule
+Held-out family & Trained on & refine+Langevin & learned (cross) & $p$ \\
+\midrule
+BilinearProduct & Sys, Quad, Circle  & 0.100 [0.05, 0.20] & 0.683 [0.56, 0.79] & $<10^{-4}$ \\
+QuadraticSystem & Sys, Prod, Circle  & 0.300 [0.20, 0.43] & 0.683 [0.56, 0.79] & $<10^{-4}$ \\
+BilinearSystem  & Prod, Quad, Circle & 0.300 [0.20, 0.43] & 0.000 & fails \\
+CircleLine      & Sys, Prod, Quad    & 0.033 [0.01, 0.11] & 0.000 & fails \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Dimension scaling: the crossover where learning earns its keep}
+\label{sec:scaling}
+
+The families in Section~\ref{sec:hybrid} give random restart an easy target. To test the
+amortization argument we use bundled non-convex traps whose roots vary per instance over a
+wide signed range ($\pm[3,8]$), so neither a fixed prior nor a lucky draw suffices.
+Table~\ref{tab:scaling} shows solve rates by dimension with the full battery, including the
+random multi-start control at the same best-of-8 budget.
+
+% provenance: RESULTS.md R5
+\begin{table}[t]
+\centering
+\caption{Dimension scaling on bundled traps with per-instance-varying roots in $\pm[3,8]$
+(best-of-8). Bold marks the best method per row.}
+\label{tab:scaling}
+\begin{tabular}{cccccc}
+\toprule
+$n$ & deterministic & Langevin & mean-prior & random restart & learned \\
+\midrule
+1 & 0.000 & 0.225 & 0.000 & \textbf{0.875} & 0.675 \\
+2 & 0.000 & 0.025 & 0.000 & \textbf{0.700} & 0.425 \\
+3 & 0.000 & 0.000 & 0.000 & 0.050 & \textbf{0.550} \\
+4 & 0.000 & 0.000 & 0.000 & 0.000 & \textbf{0.650} \\
+6 & 0.000 & 0.000 & 0.000 & 0.025 & \textbf{0.100} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+There is a clean crossover at $n = 3$. At $n \le 2$ random restart wins (0.875 against 0.675
+at $n = 1$): the solution space is small enough to brute-force and learning buys nothing. From
+$n = 3$ random restart collapses (0.050, then 0.000), because a random initialization must
+land in all $n$ basins simultaneously and the cost of that event grows like $p^n$. The learned
+proposal holds where random fails: 0.550 at $n = 3$ and 0.650 at $n = 4$. Langevin and the
+mean-prior are at or near zero from $n = 3$. This is the amortized-inference result: a
+per-instance learned proposal replaces a search whose cost is exponential in dimension. Two
+caveats bound it. The learned model degrades at $n = 6$ (0.100), and it loses to random
+restart at $n \le 2$. The claim is that the amortized proposal beats random search in high
+dimension, and only there.
+
+\subsection{Coupling removes the advantage}
+\label{sec:coupled}
+
+The crossover in Table~\ref{tab:scaling} could still be an artifact of independence: those
+trap families have per-variable-separable solutions, which a model can represent as $n$
+marginals. The stress test is a coupled chained-bilinear family, $x_i + x_{i+1} = s_i$ and
+$x_i \cdot x_{i+1} = p_i$, whose solution is a joint object, and where random restart does not
+collapse with dimension because polish propagates corrections along the chain.
+Table~\ref{tab:coupled} reports best-of-8 with 60 test instances per $n$.
+
+% provenance: RESULTS.md R7
+\begin{table}[t]
+\centering
+\caption{Coupled chained-bilinear systems (best-of-8, 60 test per $n$). The learned proposal
+records zero significant wins over random restart in five comparisons.}
+\label{tab:coupled}
+\begin{tabular}{ccccl}
+\toprule
+$n$ & Langevin & random restart & learned & learned $>$ random? \\
+\midrule
+2 & 0.167 & 0.483 & 0.233 & no (loses) \\
+3 & 0.100 & 0.600 & 0.533 & no \\
+4 & 0.050 & 0.517 & 0.517 & no (tie) \\
+6 & 0.000 & 0.367 & 0.333 & no \\
+8 & 0.000 & 0.467 & 0.483 & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The outcome is decisive. The learned proposal ties or loses to random restart at every
+dimension, 0 significant wins out of 5. The high-dimensional advantage of
+Section~\ref{sec:scaling} was an independence artifact: it required per-variable-separable
+solutions the model can memorize as marginals, and it required random restart to collapse
+because it must hit all $n$ basins by chance. Under coupling neither condition holds, and the
+learned diffusion proposal provides no advantage over random search plus refinement. We regard
+this as the most important table in the paper, because it is the boundary of the claim.
+
+\subsection{Scope: what these problems are, and are not}
+\label{sec:scope}
+
+All families above are synthetic and procedurally generated. To locate MARC's paradigm against
+real problem text we measured coverage on a 48-problem sample of MATH-500
+\citep{hendrycks2021math}: the template formalizer covers 0 of 48 problems. By hand
+classification, roughly 20\% of the sample is constraint-shaped (MARC's paradigm), about 31\%
+is CAS computation, and about 48\% is reasoning or proof, outside the architecture's scope.
+The binding constraint is autoformalization from natural language to constraint graphs, not
+the solver. MARC targets continuous algebraic constraint solving; it does not do general
+mathematical reasoning, and we report this coverage number so the scope is quantified rather
+than implied.\footnote{A discrete-diffusion structure-selection policy (choosing among $K$
+candidate graph augmentations and predicting the defining constant) is built and trained in
+the same codebase. Its preliminary evaluation numbers are withdrawn: the evaluation seeds
+overlapped the validation seeds used for checkpoint selection, and the harness evaluated a
+different data source than training. Clean numbers are pending under a protocol with disjoint
+seed ranges asserted at load time, and none are cited in this paper.}
+% provenance: RESULTS.md R6 (prose); footnote provenance: RESULTS.md R8
+
+\section{Limitations}
+\label{sec:limitations}
+
+The central limitation is the one the coupled experiment establishes: the learned proposal's
+advantage requires per-variable-separable solutions and a regime where random restart
+collapses, and on coupled systems it ties or loses to random multi-start at every dimension
+tested. We believe the cause is structural rather than a matter of tuning; the denoiser
+effectively learns per-variable marginals, so any joint solution space removes the advantage.
+Even on the favorable independent families the model loses to random restart at $n \le 2$ and
+degrades to 0.100 at $n = 6$, so the useful window is the crossover region, not high dimension
+in general.
+
+Several failures are specific and reportable. CircleLine is never solved by the learned
+proposal: 0.000 in-distribution against 0.200 for random restart, and 0.000 in cross-family
+transfer. Transfer succeeds on only two of four held-out families, and adding CircleLine to a
+training mix collapsed an otherwise recoverable transfer (0.70 to 0.00), so a bad training
+family actively hurts. The entrapment result, while pre-registered and precise, is
+confirmatory: annealed Langevin escaping deterministic traps is textbook behavior, and we
+claim measurement on this substrate, not novelty. The structure-selection policy has not
+separated from random selection in the runs completed so far, and its quantitative evaluation
+is withdrawn pending the clean seed protocol. Finally, every problem family in this paper is
+synthetic; the MATH coverage measurement (0/48) quantifies how far the current formalizer is
+from real problem text, and we have no result on a real domain yet.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We set out to test whether a learned diffusion proposal helps solve continuous algebraic
+constraint systems, and we ran the control that decides the question. The outcome is a
+characterization. The propose-and-polish recipe is genuinely better than cold-start Langevin
+refinement on trapped non-convex families, but the proposal need not be learned there. The
+learned proposal earns its place only where search is independent across variables and
+dimension defeats random restart, a regime we can exhibit cleanly at $n \ge 3$, and this
+advantage disappears under coupling. These boundaries close the route from learned value
+proposals to a general claim over classical search on this problem class. What survives is the
+substrate (exact symbolic residuals, energy guidance, and an exact checker wrapped around any
+proposer) and the division of labor it supports. The decision classical solvers cannot make is
+not which values to try but which structure to add, and that is where our current work,
+including the structure policy whose evaluation is pending a clean protocol, is directed.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
