@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 import torch
@@ -160,6 +161,19 @@ def lm_count(items, K):
     return ok, len(items)
 
 
+def _timed(count_fn, *args):
+    # wall-clock the whole attempt loop (proposal + polish + accept) of one arm
+    t0 = time.perf_counter()
+    kn = count_fn(*args)
+    return kn, (time.perf_counter() - t0) * 1000.0
+
+
+def _cell(kn, ms):
+    k, n = kn
+    return {"k": k, "n": n, "rate": k / n, "ci95": wilson_interval(k, n),
+            "wall_ms_total": ms, "wall_ms_mean": ms / n}
+
+
 def _fmt(k, n):
     lo, hi = wilson_interval(k, n)
     return f"{k/n:.3f} [{lo:.2f},{hi:.2f}]"
@@ -193,31 +207,26 @@ def main() -> None:
     rows = []
     for template in families:
         test = gen(template, args.test, seed0=100000)
-        c_cold = refine_count(test, False, args.K)
-        c_lang = refine_count(test, True, args.K)
-        c_rand = random_count(test, args.K)
-        c_lm = lm_count(test, args.K)
+        c_cold, ms_cold = _timed(refine_count, test, False, args.K)
+        c_lang, ms_lang = _timed(refine_count, test, True, args.K)
+        c_rand, ms_rand = _timed(random_count, test, args.K)
+        c_lm, ms_lm = _timed(lm_count, test, args.K)
         if solver is not None:
-            c_hyb = hybrid_count_ckpt(test, solver, args.K)
+            c_hyb, ms_hyb = _timed(hybrid_count_ckpt, test, solver, args.K)
         else:
             net = train_x0(gen(template, ntrain, seed0=0), epochs)
-            c_hyb = hybrid_count(test, net, args.K)
+            c_hyb, ms_hyb = _timed(hybrid_count, test, net, args.K)
         # significant if learned lower-CI > langevin upper-CI
         hyb_lo = wilson_interval(*c_hyb)[0]
         lang_hi = wilson_interval(*c_lang)[1]
         sig = hyb_lo > lang_hi
         row = {
             "family": template.name,
-            "refine_cold": {"k": c_cold[0], "n": c_cold[1], "rate": c_cold[0] / c_cold[1],
-                            "ci95": wilson_interval(*c_cold)},
-            "refine_langevin": {"k": c_lang[0], "n": c_lang[1], "rate": c_lang[0] / c_lang[1],
-                                "ci95": wilson_interval(*c_lang)},
-            "random_restart": {"k": c_rand[0], "n": c_rand[1], "rate": c_rand[0] / c_rand[1],
-                               "ci95": wilson_interval(*c_rand)},
-            "lm": {"k": c_lm[0], "n": c_lm[1], "rate": c_lm[0] / c_lm[1],
-                   "ci95": wilson_interval(*c_lm)},
-            "learned_hybrid": {"k": c_hyb[0], "n": c_hyb[1], "rate": c_hyb[0] / c_hyb[1],
-                               "ci95": wilson_interval(*c_hyb)},
+            "refine_cold": _cell(c_cold, ms_cold),
+            "refine_langevin": _cell(c_lang, ms_lang),
+            "random_restart": _cell(c_rand, ms_rand),
+            "lm": _cell(c_lm, ms_lm),
+            "learned_hybrid": _cell(c_hyb, ms_hyb),
             "hybrid_beats_langevin_sig": bool(sig),
             "p_learned_gt_lm": two_proportion_z(c_hyb[0], c_hyb[1], c_lm[0], c_lm[1])[1],
         }
