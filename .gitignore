@@ -37,3 +37,5 @@ paper/tex/*.fls
 paper/tex/*.fdb_latexmk
 paper/tex/*.synctex.gz
 paper/tex/*.pdf
+!results/p5_invention/invention.json
+!results/p5_invention/invention_heldout.json

@@ -152,7 +152,10 @@ def test_unknown_source_raises():
 def test_module_constants():
     assert SOURCES == ("toys", "aux_required", "nonlinear")
     assert FAMILIES_BY_SOURCE["toys"] == FAMILIES
-    assert FAMILIES_BY_SOURCE["aux_required"] == FAMILIES
+    # aux_required has its OWN pattern vocabulary (offset/coupled/shared), which
+    # aux_required.generate_instances(patterns=...) requires — NOT the toy names.
+    from marc.data.aux_required import PATTERNS as AUX_PATTERNS
+    assert FAMILIES_BY_SOURCE["aux_required"] == tuple(AUX_PATTERNS)
     assert FAMILIES_BY_SOURCE["nonlinear"] == ("vieta", "quad_link")
     assert DATA_VERSION == 2
 

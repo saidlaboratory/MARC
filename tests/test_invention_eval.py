@@ -224,7 +224,9 @@ def test_n_exceeding_stride_errors(mod, tmp_path):
 
 
 def test_reference_solver_pinned(mod):
-    assert mod.REFERENCE_SOLVER == {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+    # scipy Levenberg–Marquardt: matches aux_required's exact solvability certificate;
+    # the gradient-descent `refine` solver floor-ed the gold-oracle positive control.
+    assert mod.REFERENCE_SOLVER == {"name": "lm", "k_refine": 4}
 
 
 def test_seed_space_constants(mod):

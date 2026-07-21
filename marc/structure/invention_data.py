@@ -306,9 +306,19 @@ _TEMPLATES: Dict[str, Tuple[Tuple[str, ...], List[Tuple[str, Dict[str, int]]], T
 
 FAMILIES: Tuple[str, ...] = tuple(_TEMPLATES)
 
+# aux_required has its OWN pattern vocabulary (offset/coupled/shared), not the toy
+# family names — track it from the source of truth so make_dataset(source="aux_required")
+# and the eval/train --families defaults pass patterns aux_required.generate_instances
+# actually accepts. Literal fallback preserves the "aux_required import is optional" design.
+try:  # pragma: no cover - trivial import guard
+    from marc.data.aux_required import PATTERNS as _AUX_PATTERNS
+    _AUX_FAMILIES: Tuple[str, ...] = tuple(_AUX_PATTERNS)
+except Exception:  # pragma: no cover
+    _AUX_FAMILIES = ("offset", "coupled", "shared")
+
 FAMILIES_BY_SOURCE: Dict[str, Tuple[str, ...]] = {
     "toys": FAMILIES,
-    "aux_required": FAMILIES,  # contract C3 keeps the same family vocabulary
+    "aux_required": _AUX_FAMILIES,
     "nonlinear": ("vieta", "quad_link"),
 }
 

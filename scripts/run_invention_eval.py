@@ -59,8 +59,14 @@ SEED_STRIDE = 1000        # seed-space contract v1 — must match scripts/train_
 LEGACY_VAL_OFFSET = 500000  # seed-space contract v1 — must match scripts/train_structure_policy.py
 LEGACY_VAL_SIZE = 50        # seed-space contract v1 — must match scripts/train_structure_policy.py
 
-# reference solver — must match train_structure_policy.py and invention_data gold certification
-REFERENCE_SOLVER = {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+# Reference solver for the eval's solve-rate arms. scipy Levenberg–Marquardt (analytic
+# Jacobian, k Gaussian multistarts): it matches aux_required's *exact* solvability
+# certificate — the gradient-descent `refine` solver is too weak for the nonlinear
+# augmented systems (gold-oracle positive control collapsed to ~0.02, floor-ing every
+# solve rate), while LM solves the certified-solvable systems 100% (gold-oracle ~1.0),
+# so solve-rate comparisons across arms become meaningful. Invention-accuracy (pick==gold)
+# is independent of this choice.
+REFERENCE_SOLVER = {"name": "lm", "k_refine": 4}
 
 #: capability probe P4: sibling data units may widen the source list.
 SOURCES = tuple(getattr(invention_data, "SOURCES", ("toys", "aux_required")))
@@ -85,11 +91,9 @@ def _hard_negative_idx(inst: InventionInstance) -> int | None:
 
 def evaluate(policy, instances, *, k_refine: int = 4, T: int = 20, seed: int = 0) -> dict:
     """Run all arms over ``instances``; returns {"positive_control_ok", "samplers"}."""
-    # ponytail: polish_steps=4000 (default 400) — the checker's symbolic snap gate
-    # needs ~1e-10 accuracy; slow eigenmodes (lambda_min ~ 0.2 on some augmented
-    # systems) need the longer noise-free tail to get there. Pure config on the
-    # frozen solver; drop if refine ever gets adaptive lr.
-    solver = load_solver("refine", seed=seed, polish_steps=4000)
+    # scipy Levenberg–Marquardt reference solver (see REFERENCE_SOLVER): solves the
+    # certified-solvable augmented systems where gradient-descent refine plateaus.
+    solver = load_solver(REFERENCE_SOLVER["name"], seed=seed)
     checker = Checker()
     rng = random.Random(seed)
     gen = torch.Generator().manual_seed(seed)
@@ -281,8 +285,7 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
     per_seed = []
     for s in eval_seeds:
         instances = make_dataset(data, n, s, K=K, families=families)
-        solver = load_solver("refine", seed=s,
-                             polish_steps=REFERENCE_SOLVER["polish_steps"])
+        solver = load_solver(REFERENCE_SOLVER["name"], seed=s)
         rng = random.Random(s)
         gen = torch.Generator().manual_seed(s)
         gen_nc = torch.Generator().manual_seed(s)

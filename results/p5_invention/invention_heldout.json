@@ -1,0 +1,579 @@
+{
+  "status": "ok",
+  "config": {
+    "ckpt": "checkpoints/structure_policy.pt",
+    "n": 100,
+    "k_refine": 4,
+    "data": "aux_required",
+    "K": 4,
+    "T": 20,
+    "eval_seeds": [
+      900000,
+      901000,
+      902000,
+      903000,
+      904000
+    ],
+    "seed_base": 900000,
+    "families": [
+      "shared"
+    ],
+    "solver": {
+      "name": "lm",
+      "k_refine": 4
+    },
+    "data_version": {
+      "eval": 2,
+      "ckpt": 2,
+      "match": true
+    }
+  },
+  "seed_hygiene": {
+    "eval_seed_ranges": [
+      [
+        900000,
+        900100
+      ],
+      [
+        901000,
+        901100
+      ],
+      [
+        902000,
+        902100
+      ],
+      [
+        903000,
+        903100
+      ],
+      [
+        904000,
+        904100
+      ]
+    ],
+    "allow_seed_overlap": false,
+    "checked": true,
+    "source": "train_config.train_seed_range",
+    "train_seed_range": [
+      0,
+      500
+    ],
+    "val_seed_range": [
+      500000,
+      500050
+    ],
+    "overlap_instances": 0,
+    "offending": []
+  },
+  "positive_control_ok": true,
+  "samplers": {
+    "reverse": {
+      "invention_rate": {
+        "k": 92,
+        "n": 500,
+        "rate": 0.184,
+        "ci95": [
+          0.15248894558374934,
+          0.2203298133277816
+        ]
+      },
+      "none_rate": {
+        "k": 263,
+        "n": 500,
+        "rate": 0.526,
+        "ci95": [
+          0.4822008460547351,
+          0.569402673781658
+        ]
+      },
+      "hard_negative_confusion": {
+        "k": 45,
+        "n": 408,
+        "rate": 0.11029411764705882,
+        "ci95": [
+          0.0834571117747976,
+          0.14440136585349445
+        ]
+      },
+      "solve": {
+        "fixed": {
+          "k": 0,
+          "n": 500,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.007624618530903363
+          ]
+        },
+        "policy": {
+          "k": 92,
+          "n": 500,
+          "rate": 0.184,
+          "ci95": [
+            0.15248894558374934,
+            0.2203298133277816
+          ]
+        },
+        "random_slot": {
+          "k": 119,
+          "n": 500,
+          "rate": 0.238,
+          "ci95": [
+            0.20275841101838787,
+            0.2772368890918055
+          ]
+        },
+        "always_none": {
+          "k": 0,
+          "n": 500,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.007624618530903363
+          ]
+        },
+        "gold_oracle": {
+          "k": 500,
+          "n": 500,
+          "rate": 1.0,
+          "ci95": [
+            0.9923753814690964,
+            0.9999999999999999
+          ]
+        }
+      },
+      "comparisons": {
+        "policy_vs_random": {
+          "z": -2.0925894666515714,
+          "p": 0.9818070911696908
+        },
+        "policy_vs_fixed": {
+          "z": 10.065862402352007,
+          "p": 3.9099472209571035e-24
+        }
+      },
+      "per_family": {
+        "shared": {
+          "invention_rate": {
+            "k": 92,
+            "n": 500,
+            "rate": 0.184,
+            "ci95": [
+              0.15248894558374934,
+              0.2203298133277816
+            ]
+          },
+          "solve_policy": {
+            "k": 92,
+            "n": 500,
+            "rate": 0.184,
+            "ci95": [
+              0.15248894558374934,
+              0.2203298133277816
+            ]
+          }
+        }
+      }
+    },
+    "single_shot": {
+      "invention_rate": {
+        "k": 117,
+        "n": 500,
+        "rate": 0.234,
+        "ci95": [
+          0.19900409539602293,
+          0.27305220166241767
+        ]
+      },
+      "none_rate": {
+        "k": 198,
+        "n": 500,
+        "rate": 0.396,
+        "ci95": [
+          0.35408095329434175,
+          0.43950496736008615
+        ]
+      },
+      "hard_negative_confusion": {
+        "k": 60,
+        "n": 383,
+        "rate": 0.1566579634464752,
+        "ci95": [
+          0.12368586225416417,
+          0.19644930418088313
+        ]
+      },
+      "solve": {
+        "fixed": {
+          "k": 0,
+          "n": 500,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.007624618530903363
+          ]
+        },
+        "policy": {
+          "k": 117,
+          "n": 500,
+          "rate": 0.234,
+          "ci95": [
+            0.19900409539602293,
+            0.27305220166241767
+          ]
+        },
+        "random_slot": {
+          "k": 119,
+          "n": 500,
+          "rate": 0.238,
+          "ci95": [
+            0.20275841101838787,
+            0.2772368890918055
+          ]
+        },
+        "always_none": {
+          "k": 0,
+          "n": 500,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.007624618530903363
+          ]
+        },
+        "gold_oracle": {
+          "k": 500,
+          "n": 500,
+          "rate": 1.0,
+          "ci95": [
+            0.9923753814690964,
+            0.9999999999999999
+          ]
+        }
+      },
+      "comparisons": {
+        "policy_vs_random": {
+          "z": -0.14894547538147457,
+          "p": 0.559201671379441
+        },
+        "policy_vs_fixed": {
+          "z": 11.510987414513064,
+          "p": 5.807046335252981e-31
+        }
+      },
+      "per_family": {
+        "shared": {
+          "invention_rate": {
+            "k": 117,
+            "n": 500,
+            "rate": 0.234,
+            "ci95": [
+              0.19900409539602293,
+              0.27305220166241767
+            ]
+          },
+          "solve_policy": {
+            "k": 117,
+            "n": 500,
+            "rate": 0.234,
+            "ci95": [
+              0.19900409539602293,
+              0.27305220166241767
+            ]
+          }
+        }
+      }
+    }
+  },
+  "arms": {
+    "enumeration": {
+      "status": "ok",
+      "solve": {
+        "k": 500,
+        "n": 500,
+        "rate": 1.0,
+        "ci95": [
+          0.9923753814690964,
+          0.9999999999999999
+        ]
+      },
+      "first_accept_is_gold": {
+        "k": 500,
+        "n": 500,
+        "rate": 1.0,
+        "ci95": [
+          0.9923753814690964,
+          0.9999999999999999
+        ]
+      },
+      "solved_calls_mean": 2.532,
+      "refine_calls_mean": 10.128,
+      "wall_clock_s": {
+        "mean": 0.009734106655581854,
+        "total": 4.867053327790927
+      }
+    },
+    "no_context": {
+      "status": "ok",
+      "samplers": {
+        "reverse": {
+          "invention_rate": {
+            "k": 19,
+            "n": 500,
+            "rate": 0.038,
+            "ci95": [
+              0.024459922123289107,
+              0.0585852253992656
+            ]
+          },
+          "solve_policy": {
+            "k": 19,
+            "n": 500,
+            "rate": 0.038,
+            "ci95": [
+              0.024459922123289107,
+              0.0585852253992656
+            ]
+          }
+        },
+        "single_shot": {
+          "invention_rate": {
+            "k": 85,
+            "n": 500,
+            "rate": 0.17,
+            "ci95": [
+              0.13961985448969885,
+              0.2054123937406974
+            ]
+          },
+          "solve_policy": {
+            "k": 85,
+            "n": 500,
+            "rate": 0.17,
+            "ci95": [
+              0.13961985448969885,
+              0.2054123937406974
+            ]
+          }
+        }
+      }
+    },
+    "policy_value": {
+      "status": "ok",
+      "solve_raw": {
+        "k": 0,
+        "n": 500,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.007624618530903363
+        ]
+      },
+      "solve_snapped": {
+        "k": 91,
+        "n": 500,
+        "rate": 0.182,
+        "ci95": [
+          0.15064591449727432,
+          0.21820334288838023
+        ]
+      },
+      "pin_abs_err_mean": 0.17932173311081617,
+      "value_fallback": 0
+    }
+  },
+  "comparisons_holm": {
+    "method": "holm",
+    "alpha": 0.05,
+    "m": 7,
+    "tests": {
+      "reverse:policy_vs_random": {
+        "z": -2.0925894666515714,
+        "p": 0.9818070911696908,
+        "p_holm": 1.0,
+        "significant_05": false
+      },
+      "reverse:policy_vs_fixed": {
+        "z": 10.065862402352007,
+        "p": 3.9099472209571035e-24,
+        "p_holm": 2.345968332574262e-23,
+        "significant_05": true
+      },
+      "single_shot:policy_vs_random": {
+        "z": -0.14894547538147457,
+        "p": 0.559201671379441,
+        "p_holm": 1.0,
+        "significant_05": false
+      },
+      "single_shot:policy_vs_fixed": {
+        "z": 11.510987414513064,
+        "p": 5.807046335252981e-31,
+        "p_holm": 4.064932434677087e-30,
+        "significant_05": true
+      },
+      "reverse:policy_vs_no_context": {
+        "z": 7.348699525225271,
+        "p": 1.0007226803837847e-13,
+        "p_holm": 5.003613401918924e-13,
+        "significant_05": true
+      },
+      "single_shot:policy_vs_no_context": {
+        "z": 2.5204195981509097,
+        "p": 0.005860750668824329,
+        "p_holm": 0.023443002675297316,
+        "significant_05": true
+      },
+      "reverse:policy_value_vs_random": {
+        "z": -11.622124581834713,
+        "p": 1.0,
+        "p_holm": 1.0,
+        "significant_05": false
+      }
+    }
+  },
+  "timing": {
+    "policy_forward_s_mean": 0.004354457075591199,
+    "enumeration_s_mean": 0.009734106655581854,
+    "amortization_note": "enumeration solves the certified linear menu exactly (solve rate 1.00) in 0.0097s of solver calls per instance; one policy forward costs 0.0044s. The policy's contribution is amortizing solver calls into a learned forward pass, not exceeding enumeration's capability."
+  },
+  "positive_control": {
+    "gold_oracle": {
+      "k": 500,
+      "n": 500,
+      "rate": 1.0,
+      "ci95": [
+        0.9923753814690964,
+        0.9999999999999999
+      ]
+    },
+    "threshold": 0.95,
+    "ok": true,
+    "by_construction": [
+      "generator resamples lambda_max(A^T A)>=9",
+      "polish_steps=4000 (default 400)"
+    ],
+    "certificates": {
+      "exact": 500
+    }
+  },
+  "per_seed": [
+    {
+      "seed": 900000,
+      "n": 100,
+      "fixed_k": 0,
+      "gold_k": 100,
+      "random_k": 22,
+      "samplers": {
+        "reverse": {
+          "invention_k": 13,
+          "none_k": 60,
+          "solve_k": 13
+        },
+        "single_shot": {
+          "invention_k": 20,
+          "none_k": 41,
+          "solve_k": 20
+        }
+      },
+      "enumeration": {
+        "solve_k": 100,
+        "first_accept_gold_k": 100
+      }
+    },
+    {
+      "seed": 901000,
+      "n": 100,
+      "fixed_k": 0,
+      "gold_k": 100,
+      "random_k": 34,
+      "samplers": {
+        "reverse": {
+          "invention_k": 19,
+          "none_k": 44,
+          "solve_k": 19
+        },
+        "single_shot": {
+          "invention_k": 23,
+          "none_k": 39,
+          "solve_k": 23
+        }
+      },
+      "enumeration": {
+        "solve_k": 100,
+        "first_accept_gold_k": 100
+      }
+    },
+    {
+      "seed": 902000,
+      "n": 100,
+      "fixed_k": 0,
+      "gold_k": 100,
+      "random_k": 16,
+      "samplers": {
+        "reverse": {
+          "invention_k": 19,
+          "none_k": 48,
+          "solve_k": 19
+        },
+        "single_shot": {
+          "invention_k": 23,
+          "none_k": 36,
+          "solve_k": 23
+        }
+      },
+      "enumeration": {
+        "solve_k": 100,
+        "first_accept_gold_k": 100
+      }
+    },
+    {
+      "seed": 903000,
+      "n": 100,
+      "fixed_k": 0,
+      "gold_k": 100,
+      "random_k": 23,
+      "samplers": {
+        "reverse": {
+          "invention_k": 22,
+          "none_k": 59,
+          "solve_k": 22
+        },
+        "single_shot": {
+          "invention_k": 25,
+          "none_k": 44,
+          "solve_k": 25
+        }
+      },
+      "enumeration": {
+        "solve_k": 100,
+        "first_accept_gold_k": 100
+      }
+    },
+    {
+      "seed": 904000,
+      "n": 100,
+      "fixed_k": 0,
+      "gold_k": 100,
+      "random_k": 24,
+      "samplers": {
+        "reverse": {
+          "invention_k": 19,
+          "none_k": 52,
+          "solve_k": 19
+        },
+        "single_shot": {
+          "invention_k": 26,
+          "none_k": 38,
+          "solve_k": 26
+        }
+      },
+      "enumeration": {
+        "solve_k": 100,
+        "first_accept_gold_k": 100
+      }
+    }
+  ],
+  "caveats": [
+    "single training seed; CIs cover instance variance only",
+    "headline rates pool counts across eval seeds; per-seed counts in per_seed"
+  ]
+}
