@@ -13,7 +13,7 @@ diffusion-proposes / refine-polishes hybrid solves regardless of the guidance we
 vs. zero distinguishes nothing.
 
 ## Why guidance weight genuinely doesn't drive the result (honest finding)
-Our investigation (see `paper/learned_solver_fix.md`, `paper/dimension_scaling_result.md`)
+Our investigation (see `paper/notes/learned_solver_fix.md`, `paper/notes/dimension_scaling_result.md`)
 established the actual mechanism:
 1. The eps-prediction + CAS-energy-guidance sampler **wanders** and degrades in higher
    dimension (it scored 0 at n≥2 in the scaling study). Classifier-style guidance is **not**

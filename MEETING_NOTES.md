@@ -31,7 +31,7 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 
 ## 1. TL;DR
 
-- **The learned solver now works.** It went from *diverging / 0% solve* to actually solving. Five real bugs fixed. (`paper/learned_solver_fix.md`)
+- **The learned solver now works.** It went from *diverging / 0% solve* to actually solving. Five real bugs fixed. (`paper/notes/learned_solver_fix.md`)
 - **Two genuine results in hand:** (a) noise escapes entrapment where deterministic descent is 100% trapped; (b) on high-dim non-convex problems the learned model does per-instance inference that beats classical refinement **and** a trivial prior.
 - **NEW (today): the eval suite is de-saturated** — the #1 paper blocker (A1) is fixed, and the first hard-suite ablation shows the **learned hybrid beats refine** (0.625 vs 0.350 vs 0.000). This answers the "what does the denoiser add?" review attack.
 - **Reality check:** these are toy problems (linear systems, bilinear systems, constructed traps). This is **not** competition math (IMO/USAMO) and not SOTA. It's a plausible AAAI submission **if scoped honestly**.
@@ -51,9 +51,9 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 ### Science results
 | Result | Numbers | File |
 |---|---|---|
-| Learned solver converges (convex) | 0% → 100% in-dist & held-out | `paper/learned_solver_fix.md` |
+| Learned solver converges (convex) | 0% → 100% in-dist & held-out | `paper/notes/learned_solver_fix.md` |
 | Entrapment (RQ2) | deterministic 100% trapped → Langevin 0.475; reduction **0.525 ± 0.086**, N=200 | `results/p1_entrapment/` |
-| Dimension scaling | learned beats determ (0) / Langevin (→0) / mean-prior (0); decays 0.68→0.10 over n=1..6 | `paper/dimension_scaling_result.md` |
+| Dimension scaling | learned beats determ (0) / Langevin (→0) / mean-prior (0); decays 0.68→0.10 over n=1..6 | `paper/notes/dimension_scaling_result.md` |
 | **A1 hard suite (new)** | bilinear traps de-saturate: determ 0.000, Langevin 0.175–0.35 | `scripts/run_hard_eval.py` |
 | **A8.1 hybrid ablation (new)** | learned_hybrid beats refine on both hard families: BilinearSystem **0.625** vs 0.350/0.000; BilinearProduct **0.725** vs 0.125/0.000 | `results/p_hard/hard_eval.json` |
 
@@ -67,9 +67,9 @@ Snapshot for the team meeting: what changed, where we stand, decisions needed, a
 | **A1** | Eval suite saturated → hard tier | ✅ **done today** (bilinear templates de-saturate) |
 | **A8.1** | Hybrid vs refine-only ablation | ✅ **done, rigorous** — 4 non-convex families + Wilson CIs + z-test. Learned hybrid significantly beats Langevin on **3/4** (p<0.01); honest **failure on CircleLine** (0.000). `paper/figures/hard_suite_table.md` |
 | A2 | Headline numbers from learned model, not refine | ✅ hard-suite headline table + figure (`paper/figures/hard_suite_table.md`, `fig_hard_suite.pdf`) |
-| A4/A5 | Guidance / purist ablations degenerate | ✅ reframed (`paper/ablation_reframe.md`): replace with A8.1; guidance sweep on hard checkpoint optional (P1) |
+| A4/A5 | Guidance / purist ablations degenerate | ✅ reframed (`paper/notes/ablation_reframe.md`): replace with A8.1; guidance sweep on hard checkpoint optional (P1) |
 | A6 | CoT baseline too thin (N=25, k=1) | ⏳ needs Gemini key + N≥100, k≥4, stronger tier |
-| A7 | H2 null result | ✅ reframed as "preliminary" (`paper/h2_reframe.md`) |
+| A7 | H2 null result | ✅ reframed as "preliminary" (`paper/notes/h2_reframe.md`) |
 | A3 | Geometry training template | ⏳ P1 — not started (Davin) |
 | A8.3 | Entrapment on a non-convex family | ⏳ P0 framing — bilinear suite now exists for it |
 | C1 | **No paper (.tex)** | ❌ **not started — critical path (Quang)** |

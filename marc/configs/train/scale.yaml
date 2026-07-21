@@ -12,7 +12,7 @@ training:
   epochs_B: 20     # Stage B (GRPO RL fine-tuning) epochs
   batch_size: 32
   lr_A: 3.0e-4
-  lr_B: 1.0e-4
+  lr_B: 3.0e-5   # 1.0e-4 diverged at D512 (GRPO loss 12.9 -> 1.3e5)
   device: "auto"   # auto = cuda > mps > cpu; or set cuda/mps/cpu explicitly
   seed: 42
   amp: "auto"      # bf16 autocast iff cuda supports it; true/false to force
@@ -49,6 +49,7 @@ grpo:
   steps: 40        # DDIM steps per rollout
   guidance_weight: 1.0
   problems_subset: 256  # cap on problems used for GRPO fine-tuning
+  shaping_clip: 100.0   # bound on the energy-delta shaping term (10*B); raw deltas hit O(1e16) on diverged rollouts
 
 checkpointing:
   dir: "checkpoints/scale_D512_L8"

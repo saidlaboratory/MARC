@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 from pathlib import Path
 
@@ -34,7 +35,7 @@ from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
 from marc.eval.metrics import wilson_interval, two_proportion_z
 from marc.eval.runner import Problem
-from marc.eval.solver import ScipySolver
+from marc.eval.solver import ScipySolver, load_solver
 from marc.refine.iterative import refine
 from marc.diffusion.schedule import cosine_beta_schedule
 from marc.diffusion.forward import corrupt
@@ -100,42 +101,54 @@ def lm_count(items, K):
     return ok, len(items)
 
 
-def hybrid_count(items, net, K):
+def hybrid_count(items, propose, K):
     chk = Checker(); ok = 0
-    with torch.no_grad():
-        for g, sol in items:
-            data = build_heterodata(g); nv = len(sol); solved = False
-            for s in range(K):
-                torch.manual_seed(1000 * s + nv)
-                data["variable"].x = torch.randn(nv, 1)
-                prop = (net(data, torch.tensor([T])) * SCALE).reshape(-1).tolist()
-                if chk.verify(g, refine(g, prop, noise=False).x).accepted:
-                    solved = True; break
-            ok += int(solved)
+    for g, sol in items:
+        solved = False
+        for s in range(K):
+            prop = propose(g, sol, s)
+            if prop is not None and chk.verify(g, refine(g, prop, noise=False).x).accepted:
+                solved = True; break
+        ok += int(solved)
     return ok, len(items)
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Coupled chained-bilinear scaling (main-track gate)")
-    ap.add_argument("--quick", action="store_true")
-    ap.add_argument("--K", type=int, default=8)
-    ap.add_argument("--test", type=int, default=60)
-    args = ap.parse_args()
-    ns = [2, 3] if args.quick else [2, 3, 4, 6, 8]
-    epochs = 20 if args.quick else 250
-    ntrain = 60 if args.quick else 300
+def selftrain_propose(net):
+    def propose(g, sol, s):
+        nv = len(sol)
+        data = build_heterodata(g)
+        torch.manual_seed(1000 * s + nv)
+        data["variable"].x = torch.randn(nv, 1)
+        with torch.no_grad():
+            return (net(data, torch.tensor([T])) * SCALE).reshape(-1).tolist()
+    return propose
 
-    print(f"Coupled chained bilinear — best-of-{args.K}, {args.test} test/n")
+
+def ckpt_propose(solver):
+    """Stage-A checkpoints predict noise, so proposals come from the LearnedSolver's
+    DDIM rollout (polish=False: the raw sample feeds the same refine(noise=False) +
+    Checker gate in hybrid_count that every learned attempt goes through)."""
+    def propose(g, sol, s):
+        return solver.sample(Problem(id=f"chain{len(sol)}", graph=g, solution=list(sol)), 1)[0]
+    return propose
+
+
+def run(ns, K, ntest, epochs, ntrain, ckpt=None):
+    solver = load_solver("learned", checkpoint=ckpt, polish=False) if ckpt else None
+    mode = f"ckpt:{Path(ckpt).name}" if ckpt else "selftrain"
+    print(f"learned arm: {mode}")
     print(f"{'n':>3} {'langevin':>9} {'random':>9} {'lm':>9} {'learned':>9} {'p(l>rand)':>10} {'p(l>lm)':>9}")
     rows = []
     for n in ns:
-        train = gen(n, ntrain, seed0=0)
-        test = gen(n, args.test, seed0=500000)
-        net = train_x0(train, epochs)
-        cl = langevin_count(test, args.K)
-        cr = random_count(test, args.K)
-        clm = lm_count(test, args.K)
-        ch = hybrid_count(test, net, args.K)
+        test = gen(n, ntest, seed0=500000)
+        if solver:
+            propose = ckpt_propose(solver)
+        else:
+            propose = selftrain_propose(train_x0(gen(n, ntrain, seed0=0), epochs))
+        cl = langevin_count(test, K)
+        cr = random_count(test, K)
+        clm = lm_count(test, K)
+        ch = hybrid_count(test, propose, K)
         _, p = two_proportion_z(ch[0], ch[1], cr[0], cr[1])
         _, p_lm = two_proportion_z(ch[0], ch[1], clm[0], clm[1])
         rows.append({"n": n,
@@ -147,10 +160,27 @@ def main() -> None:
                      "p_learned_gt_lm": p_lm})
         print(f"{n:>3} {cl[0]/cl[1]:>9.3f} {cr[0]/cr[1]:>9.3f} {clm[0]/clm[1]:>9.3f} "
               f"{ch[0]/ch[1]:>9.3f} {p:>10.4f} {p_lm:>9.4f}", flush=True)
+    return {"K": K, "test_per_n": ntest, "epochs": epochs, "learned_mode": mode, "rows": rows}
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Coupled chained-bilinear scaling (main-track gate)")
+    ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--K", type=int, default=8)
+    ap.add_argument("--test", type=int, default=60)
+    ap.add_argument("--ckpt", default=os.environ.get("MARC_CKPT"),
+                    help="trained checkpoint; skips self-training, learned arm samples via LearnedSolver (defaults to $MARC_CKPT)")
+    args = ap.parse_args()
+    ns = [2, 3] if args.quick else [2, 3, 4, 6, 8]
+    epochs = 20 if args.quick else 250
+    ntrain = 60 if args.quick else 300
+
+    print(f"Coupled chained bilinear — best-of-{args.K}, {args.test} test/n")
+    payload = run(ns, args.K, args.test, epochs, ntrain, ckpt=args.ckpt)
 
     out = Path("results/p_coupled"); out.mkdir(parents=True, exist_ok=True)
-    (out / "coupled.json").write_text(json.dumps({"K": args.K, "test_per_n": args.test,
-                                                  "epochs": epochs, "rows": rows}, indent=2))
+    (out / "coupled.json").write_text(json.dumps(payload, indent=2))
+    rows = payload["rows"]
     n_win = sum(r["p_learned_gt_random"] < 0.05 and r["learned"]["rate"] > r["random"]["rate"] for r in rows)
     print(f"\nlearned significantly beats random on {n_win}/{len(rows)} dims → "
           f"{'REAL joint amortized inference (main-track signal)' if n_win >= 2 else 'ties random (independence artifact)'}")

@@ -26,7 +26,7 @@ honest snapshot of what currently exists and works.
    from the graph tensors; the timestep didn't condition variables; inference guidance exploded;
    a 1-variable `squeeze` bug — it now **solves 100%** on in-distribution and held-out linear
    systems (generalization gap 0), and Stage-A loss drops from a flat ~1.0 to ~0.37.
-   Method = diffusion proposal + energy-descent polish. See `paper/learned_solver_fix.md`.
+   Method = diffusion proposal + energy-descent polish. See `paper/notes/learned_solver_fix.md`.
 2. **Noise escapes entrapment (H1/RQ2).** On 200 non-convex problems, deterministic descent is
    **100% trapped**; annealed-noise (Langevin) descent cuts entrapment to 0.48 — reduction
    **0.52 ± 0.09** (95% CI excludes 0). `results/p1_entrapment/`.
@@ -34,7 +34,7 @@ honest snapshot of what currently exists and works.
    traps with per-instance-varying solutions, the learned model beats deterministic (0),
    Langevin (→0 by n=3), and a mean-prior (0) at every dimension, though it also degrades at
    n=6 (0.68 → 0.10). Required a specific architectural fix (condition variables on incident
-   constraint constants + a direct skip to the output). See `paper/dimension_scaling_result.md`
+   constraint constants + a direct skip to the output). See `paper/notes/dimension_scaling_result.md`
    and `scripts/run_dimension_scaling.py`.
 4. **CoT baseline** runs on Gemini (`gemini-flash-lite-latest`) via the OpenAI-compatible
    endpoint, with backoff + resume cache; full N=25 completed (in-dist 1.0, held-out 1.0).
@@ -61,7 +61,7 @@ honest snapshot of what currently exists and works.
 | Entrapment ablation | `python -m marc.eval.ablations.noise_ablation --graphs 200` |
 | Dimension scaling | `scripts/run_dimension_scaling.py` |
 | CoT baseline | `GEMINI_API_KEY=… python -m marc.eval.baselines.cot_baseline` |
-| Investigation notes | `paper/learned_solver_fix.md`, `paper/dimension_scaling_result.md` |
+| Investigation notes | `paper/notes/learned_solver_fix.md`, `paper/notes/dimension_scaling_result.md` |
 
 ## Status for AAAI
 A **working** method with one clean scaling result and honest, well-characterized limitations —

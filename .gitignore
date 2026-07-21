@@ -12,6 +12,7 @@ results/
 !results/p4_scale/roadmap.md
 !results/p3_h2/h2_report.md
 !results/p2_main/cot_baseline.json
+!results/p_crossover/crossover_theory.json
 checkpoints/
 
 # Virtual environments & IDE
@@ -25,3 +26,14 @@ DAVIN_P2_P3_NOTES.md
 
 # Claude Code agent worktrees (nested repos; committed gitlinks break Pages builds)
 .claude/
+
+# LaTeX build artifacts (paper/tex — commit source only)
+paper/tex/*.aux
+paper/tex/*.bbl
+paper/tex/*.blg
+paper/tex/*.log
+paper/tex/*.out
+paper/tex/*.fls
+paper/tex/*.fdb_latexmk
+paper/tex/*.synctex.gz
+paper/tex/*.pdf

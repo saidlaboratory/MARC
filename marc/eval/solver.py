@@ -352,19 +352,22 @@ class LearnedSolver:
             state = ckpt_dict.get("model", ckpt_dict.get("model_state_dict", ckpt_dict)) if isinstance(ckpt_dict, dict) else ckpt_dict
             # strict=False so checkpoints predating newer conditioning params (e.g.
             # the zero-init incident-constant projection) still load and behave as
-            # they did when trained. strict=False alone still raises on shape drift
-            # (fac_encoder/output_mlp grew inputs after Stage-A), so drop mismatched
-            # tensors too — those layers keep their fresh init and the polish step
-            # absorbs the coarser proposals.
+            # they did when trained. strict=False alone still raises on SIZE
+            # mismatches (conditioning widened fac_encoder/output_mlp inputs), so
+            # drop those tensors — loudly, since the affected modules stay at init.
             own = self.denoiser.state_dict()
-            drift = [k for k, v in state.items() if k in own and own[k].shape != v.shape]
-            if drift:
+            drop = [k for k, v in state.items()
+                    if k in own and own[k].shape != v.shape]
+            if drop:
                 warnings.warn(
-                    f"checkpoint arch drift; reinitialised {drift}",
+                    f"checkpoint {checkpoint} predates the current GraphDenoiser "
+                    f"architecture: {len(drop)} size-mismatched tensors left at "
+                    f"init ({', '.join(drop)}). Expect degraded proposals; the "
+                    "polish step absorbs some of it.",
                     RuntimeWarning,
                     stacklevel=2,
                 )
-                state = {k: v for k, v in state.items() if k not in drift}
+                state = {k: v for k, v in state.items() if k not in drop}
             self.denoiser.load_state_dict(state, strict=False)
         elif not checkpoint:
             warnings.warn(
