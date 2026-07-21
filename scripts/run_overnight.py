@@ -41,6 +41,10 @@ TIMEOUTS = {
     "train_stage_a": 14 * 3600,  # Stage-A at D512/L8 dominates the night
     "train_stage_b": 8 * 3600,
     "train_structure_policy": 4 * 3600,
+    "eval_main_learned": 90 * 60,  # hung 3h+ on MPS once; suite saturates well before
+    "eval_hard": 90 * 60,
+    "eval_coupled": 90 * 60,
+    "eval_dimension_scaling": 90 * 60,
     "figures": 15 * 60,
 }
 DEFAULT_TIMEOUT = 3 * 3600  # eval phases
@@ -462,13 +466,16 @@ def build_phases(smoke: bool, manifest: Manifest, state: dict) -> list[dict]:
          "cmd": ["python3", "scripts/run_main_eval.py", "--solver", "learned",
                  "--out", "results/p2_main_learned", "--skip-ablations"]
                 + (["--n", "2", "--k", "2"] if S else [])},
-        {"name": "eval_hard",
+        # wants_ckpt = soft needs_ckpt: MARC_CKPT is passed when a checkpoint
+        # exists, but the phase still runs without one (these scripts self-train
+        # as fallback).
+        {"name": "eval_hard", "wants_ckpt": True,
          "cmd": ["python3", "scripts/run_hard_eval.py"] + (["--quick"] if S else [])},
-        {"name": "eval_crossfamily",
+        {"name": "eval_crossfamily", "wants_ckpt": True,
          "cmd": ["python3", "scripts/run_crossfamily_eval.py"] + (["--quick"] if S else [])},
-        {"name": "eval_coupled",
+        {"name": "eval_coupled", "wants_ckpt": True,
          "cmd": ["python3", "scripts/run_coupled_eval.py"] + (["--quick"] if S else [])},
-        {"name": "eval_dimension_scaling",
+        {"name": "eval_dimension_scaling", "wants_ckpt": True,
          "cmd": ["python3", "scripts/run_dimension_scaling.py"] + (["--quick"] if S else [])},
         {"name": "eval_geometry",
          "cmd": ["python3", "scripts/run_geometry_eval.py"]
@@ -577,7 +584,8 @@ def main() -> int:
         if spec.get("needs_ckpt") and ckpt is None:
             done("skipped", "no denoiser checkpoint available")
             continue
-        if (spec.get("needs_ckpt") or spec.get("pass_ckpt")) and ckpt is not None:
+        if (spec.get("needs_ckpt") or spec.get("pass_ckpt")
+                or spec.get("wants_ckpt")) and ckpt is not None:
             env_extra["MARC_CKPT"] = str(ckpt)
         if spec.get("pass_ckpt"):
             purist = pick_purist_checkpoint()
