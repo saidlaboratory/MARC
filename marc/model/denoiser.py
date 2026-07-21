@@ -25,9 +25,11 @@ class GraphDenoiser(nn.Module):
         step_dim: int = 64,
         num_var_types: int = 4,
         num_fac_types: int = 4,
+        var_attn: bool = False,
     ):
         super().__init__()
         self.step_dim = step_dim
+        self.var_attn = var_attn
         # Pinned contract C1: training code dispatches batched forwards on this flag.
         self.supports_per_graph_t = True
 
@@ -43,6 +45,14 @@ class GraphDenoiser(nn.Module):
         # deep features alone. This linear skip restores that path. New param, so
         # older checkpoints load via strict=False (skip contribution starts small).
         self.const_skip = nn.Linear(1, 1)
+        # Optional cross-variable self-attention after message passing. The bipartite
+        # stack only mixes variables through shared factors, so the output head is
+        # per-variable independent; this block lets the proposal condition jointly
+        # across variables (coupled solution spaces). Created only when enabled so
+        # var_attn=False state dicts are byte-identical to pre-attention checkpoints.
+        if var_attn:
+            self.attn = nn.MultiheadAttention(D, num_heads=4, batch_first=True)
+            self.attn_norm = nn.LayerNorm(D)
 
         # Precompute sinusoidal frequency bank; avoids recomputation each forward pass.
         half = step_dim // 2
@@ -126,6 +136,17 @@ class GraphDenoiser(nn.Module):
 
         for layer in self.layers:
             h_v, h_f = layer(h_v, h_f, edge_index, edge_attr)
+
+        if self.var_attn:
+            # Mask attention within each graph; without a batch vector the whole
+            # input is one graph.
+            vb = getattr(data["variable"], "batch", None)
+            mask = None if vb is None else vb.unsqueeze(0) != vb.unsqueeze(1)
+            attn_out, _ = self.attn(
+                h_v.unsqueeze(0), h_v.unsqueeze(0), h_v.unsqueeze(0),
+                attn_mask=mask, need_weights=False,
+            )
+            h_v = self.attn_norm(h_v + attn_out.squeeze(0))
 
         out = self.output_head(self.output_mlp(torch.cat([h_v, step_emb_v], dim=-1)))
         return out + self.const_skip(incident_const)

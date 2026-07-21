@@ -5,6 +5,7 @@ model:
   D: 512           # hidden dimension (baseline=128, mid=256, large=512)
   L: 8             # message-passing rounds (baseline=4, mid=6, large=8)
   step_dim: 64     # sinusoidal time embedding dimension
+  var_attn: false  # cross-variable self-attention after message passing (joint proposals)
 
 training:
   T: 1000          # diffusion timesteps (cosine schedule)
