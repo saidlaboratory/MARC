@@ -38,7 +38,7 @@ from marc.train.stage_a import stage_a_loss
 from marc.train.stage_b import train_stage_b
 
 DEFAULTS = {
-    "model": {"D": 512, "L": 8, "step_dim": 64},
+    "model": {"D": 512, "L": 8, "step_dim": 64, "var_attn": False},
     "training": {
         "T": 1000,
         "epochs_A": 50,
@@ -591,7 +591,8 @@ def main(argv=None) -> None:
     train_pairs, _test_pairs = prepare_data(cfg)
     _, alpha_bar = cosine_beta_schedule(cfg["training"]["T"])
     model_kwargs = {"D": cfg["model"]["D"], "L": cfg["model"]["L"],
-                    "step_dim": cfg["model"]["step_dim"]}
+                    "step_dim": cfg["model"]["step_dim"],
+                    "var_attn": bool(cfg["model"].get("var_attn", False))}
     model = GraphDenoiser(**model_kwargs)
 
     ema_on = bool(cfg["training"].get("ema", True))

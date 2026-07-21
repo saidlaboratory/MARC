@@ -358,5 +358,5 @@ def test_smoke_cli(tmp_path):
     assert (out_dir / "train_log.csv").exists()
     assert (out_dir / "smoke_data" / "manifest.json").exists()
     ckpt = torch.load(out_dir / "latest.pt", weights_only=False)
-    assert ckpt["model_kwargs"] == {"D": 32, "L": 2, "step_dim": 16}
+    assert ckpt["model_kwargs"] == {"D": 32, "L": 2, "step_dim": 16, "var_attn": False}
     assert "ema_state_dict" in ckpt  # EMA defaults on; smoke checkpoint carries it

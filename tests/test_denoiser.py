@@ -107,6 +107,54 @@ def test_vector_t_rejects_cas_engine():
         model(batch, torch.tensor([1, 2]), cas_engine=object())
 
 
+def test_var_attn_off_matches_old_ctor():
+    # Flag off must be a no-op: same seed, same params, same outputs as before
+    # the kwarg existed (no extra modules are created, so RNG streams align).
+    torch.manual_seed(0)
+    old = GraphDenoiser(D=32, L=2, step_dim=16)
+    torch.manual_seed(0)
+    new = GraphDenoiser(D=32, L=2, step_dim=16, var_attn=False)
+    data = _make_mock_graph()
+    t = torch.tensor([50])
+    with torch.no_grad():
+        assert torch.equal(old(data, t), new(data, t))
+
+
+def test_var_attn_forward_backward():
+    model = GraphDenoiser(D=32, L=2, step_dim=16, var_attn=True)
+    data = _make_mock_graph()
+    eps_hat = model(data, torch.tensor([50]))
+    assert eps_hat.shape == (2, 1)
+    eps_hat.sum().backward()
+    assert model.attn.in_proj_weight.grad is not None
+
+
+def test_var_attn_no_cross_graph_leakage():
+    model = GraphDenoiser(D=32, L=2, step_dim=16, var_attn=True)
+    g1 = _make_graph(2, 2)
+    g2 = _make_graph(3, 2)
+    g2b = g2.clone()
+    g2b["variable"].x = g2b["variable"].x + 1.0
+    t = torch.tensor([7, 63])
+    with torch.no_grad():
+        out = model(Batch.from_data_list([g1, g2]), t)
+        out_pert = model(Batch.from_data_list([g1, g2b]), t)
+    assert torch.allclose(out[:2], out_pert[:2], atol=1e-6)
+    assert not torch.allclose(out[2:], out_pert[2:])
+
+
+def test_var_attn_checkpoint_compat():
+    # State dicts without attention keys must load into var_attn=False strictly
+    # and into var_attn=True via strict=False (only the attn params missing).
+    state = GraphDenoiser(D=32, L=2, step_dim=16).state_dict()
+    GraphDenoiser(D=32, L=2, step_dim=16, var_attn=False).load_state_dict(state)
+    result = GraphDenoiser(D=32, L=2, step_dim=16, var_attn=True).load_state_dict(
+        state, strict=False
+    )
+    assert not result.unexpected_keys
+    assert all(k.startswith(("attn.", "attn_norm.")) for k in result.missing_keys)
+
+
 def _const_graph():
     """x + y - 3 = 0 (const -3) and x - 5 = 0 (const -5); x touches both."""
     graph = FactorGraph(
