@@ -220,3 +220,40 @@ checkpoint, but say it anyway.
 | `pytest` red on arrival | Don't run anything — ping the team. |
 | A phase says `skipped: script not present` | The sibling PR with that script isn't merged. Merge open PRs and rerun with `--only <phase>` (plus `figures,summarize`). |
 | `eval_cot` skipped: no API key | Export `GEMINI_API_KEY` (or `OPENAI_API_KEY`) and rerun `--only eval_cot,summarize`, or ignore — it's a baseline, not a blocker. |
+
+## 7. Regenerating R8 (structure-selection numbers)
+
+The old R8 numbers are withdrawn (seed overlap — see the red flag in §2). To
+regenerate them cleanly, three commands from the repo root:
+
+**Step 1 — retrain the structure policy.** Not optional: only a freshly trained
+checkpoint records `seed_space_version: 1` provenance in its `train_config`
+(`scripts/train_structure_policy.py` writes it at save time). Reusing an old
+checkpoint drops the eval's seed-hygiene check into the weaker
+"reconstructed"/legacy path, and those numbers stay uncitable.
+
+```bash
+PYTHONPATH=. python3 scripts/train_structure_policy.py \
+    --data aux_required --epochs 200 --device auto \
+    --exclude-family shared --out checkpoints/structure_policy.pt
+```
+
+**Step 2 — main eval** (same data source as training):
+
+```bash
+PYTHONPATH=. python3 scripts/run_invention_eval.py \
+    --ckpt checkpoints/structure_policy.pt \
+    --out results/p5_invention/invention.json --data aux_required
+```
+
+**Step 3 — held-out pattern** (the `shared` family training excluded):
+
+```bash
+PYTHONPATH=. python3 scripts/run_invention_eval.py \
+    --ckpt checkpoints/structure_policy.pt \
+    --out results/p5_invention/invention_heldout.json \
+    --data aux_required --families shared
+```
+
+Then check each output JSON for the `seed_hygiene` block with
+`"overlap_instances": 0`. **Nothing gets cited until that block is present.**

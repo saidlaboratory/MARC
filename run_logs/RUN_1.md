@@ -68,8 +68,10 @@ them" is expected but not yet measured.
    tuning problem.
 4. **Harness gap: the differentiating evals never load the trained D512 checkpoint** — they
    retrain small models. The scaled run was largely wasted on saturated convex evals.
-5. **Stage-B GRPO diverges at D512** (no gradient clipping, unnormalized data, reward ~−9e8),
-   ~35 min/epoch. No usable RL stage.
+5. **Stage-B GRPO diverges at D512** (unbounded shaping reward — a raw energy delta that can
+   reach ~1e16 within the ±1e4 rollout clamp — plus unnormalized inputs; reward ~−9e8),
+   ~35 min/epoch. No usable RL stage. Gradient clipping is already in place (`grad_clip: 1.0`
+   in `scale.yaml`, applied in both stages) and doesn't save it.
 6. **CircleLine fails completely** (0.00 in-dist and cross-family), and cross-family transfer
    fails on 2/4; adding CircleLine to the training mix collapses BilinearSystem transfer
    (0.70 → 0.00).
@@ -80,8 +82,8 @@ them" is expected but not yet measured.
 9. **All problems are synthetic.** MATH coverage 0/48; no real domain result yet; geometry only
    has the classical-refine number (0.56), no learned-vs-random comparison there.
 10. **Entrapment is confirmatory, not novel** — textbook annealed Langevin.
-11. **MPS is too slow for D512 diffusion+guidance at eval scale** (the 3h+ hang); no gradient
-    clipping in the training config; Stage-A loss is volatile (spikes to ~390 in epoch 1).
+11. **MPS is too slow for D512 diffusion+guidance at eval scale** (the 3h+ hang); Stage-A loss
+    is volatile (spikes to ~390 in epoch 1) despite the `grad_clip: 1.0` already in the config.
 12. **No `.tex` exists** with 6 days to deadline; `paper/*.md` sprawl (~10 files) not yet
     consolidated.
 13. Hygiene debt: OpenAI + Gemini keys exposed in a working chat (need rotation); a pending
@@ -100,8 +102,9 @@ them" is expected but not yet measured.
    head) and re-test on the coupled family. Until the proposal is joint, R7 will reproduce.
 3. **(Flaw 9)** Run learned-vs-random on geometry. It is the one non-saturated, non-separable,
    real-ish domain; a win there is worth more than all the synthetic tables combined. ~2–3 days.
-4. **(Flaw 5)** Before any Stage-B retry: gradient clipping, input normalization, reward
-   scaling/clipping (a −9e8 reward guarantees divergence), lower LR. Or drop Stage-B for this
+4. **(Flaw 5)** Before any Stage-B retry: input normalization, reward scaling/clipping (the
+   shaping reward is a raw, unbounded energy delta; a −9e8 reward guarantees divergence and
+   gradient clipping — already applied — can't rescue it), lower LR. Or drop Stage-B for this
    paper — Stage-A is the checkpoint that matters.
 5. **(Flaw 6)** Treat CircleLine as a diagnostic: characterize why (solution manifold geometry
    vs training distribution) and report it as the failure-mode analysis section. Curriculum or
@@ -115,8 +118,8 @@ them" is expected but not yet measured.
    learning helps constraint solving." Entrapment becomes supporting evidence, not a claim of
    novelty. Start the `.tex` today (intro/method/related-work are experiment-free;
    `related_work.md` is ready); consolidate `paper/*.md` into `paper/notes/`.
-9. **(Flaw 11)** Cap eval-suite sizes for D512 on MPS, add a per-phase wall-clock budget to the
-   harness, and add gradient clipping to `scale.yaml` regardless.
+9. **(Flaw 11)** Cap eval-suite sizes for D512 on MPS and add a per-phase wall-clock budget to
+   the harness (`scale.yaml` already carries `grad_clip: 1.0`).
 10. **(Flaw 13)** Rotate both API keys; `git pull --no-rebase origin main` then push the pending
     results commit; fund a real key if the CoT baseline stays in the paper (N≥100, k≥4,
     stronger model) — otherwise cut it.
