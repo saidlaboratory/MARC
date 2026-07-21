@@ -12,6 +12,10 @@ introduces irrational constants the checker's exact-rational gate can't snap to.
 
 from __future__ import annotations
 
+import random
+from dataclasses import dataclass
+from typing import Dict, Tuple
+
 from marc.graph.graph import FactorGraph
 from marc.graph.schema import Edge, FactorNode, VariableNode
 
@@ -80,6 +84,27 @@ def make_point_chain(k: int, rng):
     g = build_point_chain_graph(link_sqs, anchor_sqs, origin_sq, c)
     sol = [float(v) for p in pts for v in p]
     return g, sol
+
+
+@dataclass
+class PointChainTemplate:
+    """Point-chain geometry as a generator template: k points, 2k variables.
+
+    Wraps :func:`make_point_chain` into the (graph, {var: value}) contract the
+    trainer's templates use, so the geometry denoiser can train on the same
+    family the R9 crossover law flagged as learning-favorable."""
+
+    k: int = 2
+    name: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            self.name = f"PointChain{self.k}"
+
+    def generate(self, seed: int = None) -> Tuple[FactorGraph, Dict[str, float]]:
+        graph, sol = make_point_chain(self.k, random.Random(seed))
+        # make_point_chain's flat solution follows variable order (x0,y0,x1,y1,...)
+        return graph, {v.id: s for v, s in zip(graph.variables, sol)}
 
 
 def build_linked_graph(b1_sq: float, a1_sq: float, link_sq: float, a2_sq: float, c: float) -> FactorGraph:

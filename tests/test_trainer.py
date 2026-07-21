@@ -172,6 +172,32 @@ def test_registry_includes_instance_registered_families():
     assert [t.name for t in resolved] == ["CoupledChain4"]
 
 
+def test_registry_point_chain_families():
+    from marc.cas.checker import Checker
+
+    reg = template_registry()
+    for k in (2, 3, 4):
+        tmpl = reg[f"PointChain{k}"]
+        assert tmpl.k == k
+        graph, sol = tmpl.generate(seed=7)
+        assert len(sol) == 2 * k
+        assert set(sol) == {v.id for v in graph.variables}
+        # the stored solution is exact — the checker gate accepts it as-is
+        assert Checker().verify(graph, [sol[v.id] for v in graph.variables]).accepted
+    resolved = resolve_templates(["PointChain2", "PointChain4"])
+    assert [t.name for t in resolved] == ["PointChain2", "PointChain4"]
+
+
+def test_scale_geo_yaml_loads_and_templates_resolve():
+    cfg = load_config(str(REPO_YAML.parent / "scale_geo.yaml"))
+    names = cfg["data"]["templates"]
+    assert names[-3:] == ["PointChain2", "PointChain3", "PointChain4"]
+    # different template mix => own data dir, so the live scale.yaml run's
+    # manifest/cache is never invalidated
+    assert cfg["data"]["dir"] != DEFAULTS["data"]["dir"]
+    assert [t.name for t in resolve_templates(names)] == names
+
+
 def test_scale_yaml_loads_and_templates_resolve():
     cfg = load_config(str(REPO_YAML))
     names = cfg["data"]["templates"]
