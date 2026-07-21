@@ -10,6 +10,8 @@ import importlib.util
 import random
 from pathlib import Path
 
+import pytest
+
 from marc.cas.checker import Checker
 from marc.refine.iterative import refine
 
@@ -59,6 +61,7 @@ def test_problem_shape_scales_with_n():
 def test_quick_run_schema():
     payload = rds.run(ns=[1], K=2, ntest=5, epochs=1, ntrain=4, seeds=2)
     assert payload["methodology"] == "unified-v2"
+    assert payload["learned_mode"] == "selftrain" and payload["ckpt"] is None
     assert "note" in payload and "seeds" in payload
     assert payload["K"] == 2 and payload["test_per_n"] == 5
     assert len(payload["rows"]) == 1
@@ -75,3 +78,36 @@ def test_quick_run_schema():
         assert cell["seed_std"] >= 0.0
     for p_key in ("p_learned_gt_random", "p_learned_gt_langevin"):
         assert 0.0 <= row[p_key] <= 1.0
+
+
+class _StubSolver:
+    def __init__(self):
+        self.calls = 0
+
+    def sample(self, problem, k):
+        self.calls += 1
+        nv = len(problem.graph.variables)
+        # first call diverges (None candidate), the rest propose zeros
+        return [None if self.calls == 1 else [0.0] * nv for _ in range(k)]
+
+
+def test_ckpt_mode_uses_stub_solver(monkeypatch):
+    stub = _StubSolver()
+    seen = {}
+
+    def fake_load(name, **kw):
+        seen.update(kw, name=name)
+        return stub
+
+    monkeypatch.setattr(rds, "load_solver", fake_load)
+    monkeypatch.setattr(rds, "train_x0",
+                        lambda *a, **k: pytest.fail("ckpt mode must not self-train"))
+    payload = rds.run(ns=[1], K=2, ntest=4, epochs=1, ntrain=4, seeds=1, ckpt="stub.pt")
+    assert seen["name"] == "learned"
+    assert seen["checkpoint"] == "stub.pt"
+    assert seen["polish"] is False  # the shared refine stays the one polisher
+    assert stub.calls > 0
+    assert payload["learned_mode"] == "checkpoint" and payload["ckpt"] == "stub.pt"
+    row = payload["rows"][0]
+    for m in rds.METHODS:
+        assert 0 <= row[m]["k"] <= row[m]["n"] == 4

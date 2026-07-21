@@ -18,6 +18,11 @@ run_hard_eval.py / run_coupled_eval.py invoke it) and differ ONLY in the startin
   * random_restart: K uniform starts + polish (no learning)   -> the amortization control
   * learned_x0    : GraphDenoiser (x0 target) proposes, refine polishes, best-of-K
 
+With --ckpt (or MARC_CKPT) the learned arm instead loads a trained Stage-A
+noise-prediction checkpoint through marc.eval.solver.LearnedSolver (DDIM rollout,
+polish disabled) — proposals then go through the SAME refine + Checker gate, so the
+arms stay comparable. Without a checkpoint the per-rep x0 self-training runs as before.
+
 Acceptance is the same two-stage Checker gate the other counting scripts use. The family's
 roots live on a 6-decimal grid (``make_problem`` rounds every constant), so the polished
 candidate is snapped to that grid before verification — the exact analogue of the integer
@@ -32,9 +37,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import statistics
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import torch.nn as nn
@@ -44,6 +51,7 @@ from marc.graph.graph import FactorGraph
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
 from marc.eval.metrics import wilson_interval, two_proportion_z
+from marc.eval.solver import load_solver
 from marc.refine.iterative import refine
 from marc.diffusion.schedule import cosine_beta_schedule
 from marc.diffusion.forward import corrupt
@@ -109,8 +117,11 @@ def train_x0(items, epochs: int, D: int = 128, L: int = 4, seed: int = 0):
     return net
 
 
-def count_methods(test, net, tmean: float, K: int, rep: int):
-    """Solved counts per method on one test suite. Returns {method: (k, n)}."""
+def count_methods(test, net, tmean: float, K: int, rep: int, solver=None):
+    """Solved counts per method on one test suite. Returns {method: (k, n)}.
+
+    ``solver`` (a LearnedSolver on a trained checkpoint) replaces the self-trained
+    ``net`` as the learned arm's proposer; polish + acceptance are identical."""
     chk = Checker()
     counts = dict.fromkeys(METHODS, 0)
     with torch.no_grad():
@@ -131,12 +142,17 @@ def count_methods(test, net, tmean: float, K: int, rep: int):
                     solved = True
                     break
             counts["random_restart"] += solved
-            data = build_heterodata(g)
+            data = None if solver else build_heterodata(g)
             solved = False
             for s in range(K):
                 torch.manual_seed(1000 * s + nv + 31 * rep)
-                data["variable"].x = torch.randn(nv, 1)
-                prop = (net(data, torch.tensor([T])) * SCALE).reshape(-1).tolist()
+                if solver is not None:
+                    prop = solver.sample(SimpleNamespace(graph=g, metadata={}), 1)[0]
+                    if prop is None or not all(abs(v) < 1e6 for v in prop):
+                        continue    # every rollout diverged; nothing to polish
+                else:
+                    data["variable"].x = torch.randn(nv, 1)
+                    prop = (net(data, torch.tensor([T])) * SCALE).reshape(-1).tolist()
                 if accepted(chk, g, refine(g, prop, noise=False, seed=0).x):
                     solved = True
                     break
@@ -144,8 +160,13 @@ def count_methods(test, net, tmean: float, K: int, rep: int):
     return {m: (counts[m], len(test)) for m in METHODS}
 
 
-def run(ns, K: int, ntest: int, epochs: int, ntrain: int, seeds: int) -> dict:
+def run(ns, K: int, ntest: int, epochs: int, ntrain: int, seeds: int,
+        ckpt: str | None = None) -> dict:
     """Full experiment across dimensions and seed replicates; returns the JSON payload."""
+    # one solver across reps: a fixed checkpoint doesn't vary with rep (the seed
+    # still varies the test problems); polish=False so the shared refine below
+    # stays the single polisher for every arm
+    solver = load_solver("learned", checkpoint=ckpt, polish=False) if ckpt else None
     per_rep = []                     # per_rep[rep][n] = {method: (k, n)}
     for rep in range(seeds):
         off = 1_000_003 * rep        # fresh train/test draws + fresh torch init per replicate
@@ -153,9 +174,9 @@ def run(ns, K: int, ntest: int, epochs: int, ntrain: int, seeds: int) -> dict:
         for n in ns:
             train = suite(n, ntrain, seed=100 + n + off)
             test = suite(n, ntest, seed=90000 + n + off)
-            net = train_x0(train, epochs, seed=rep)
+            net = None if solver else train_x0(train, epochs, seed=rep)
             tmean = sum(v for _, sol, _ in train for v in sol) / sum(len(sol) for _, sol, _ in train)
-            by_n[n] = count_methods(test, net, tmean, K, rep)
+            by_n[n] = count_methods(test, net, tmean, K, rep, solver=solver)
             print(f"  seed {rep} n={n}: " + "  ".join(
                 f"{m}={k}/{t}" for m, (k, t) in by_n[n].items()), flush=True)
         per_rep.append(by_n)
@@ -183,6 +204,7 @@ def run(ns, K: int, ntest: int, epochs: int, ntrain: int, seeds: int) -> dict:
         rows.append(row)
 
     return {"K": K, "test_per_n": ntest, "epochs": epochs, "seeds": seeds,
+            "learned_mode": "checkpoint" if ckpt else "selftrain", "ckpt": ckpt,
             "methodology": "unified-v2", "note": NOTE, "rows": rows}
 
 
@@ -192,15 +214,20 @@ def main() -> None:
     ap.add_argument("--K", type=int, default=8, help="best-of-K budget (all methods)")
     ap.add_argument("--test", type=int, default=40, help="held-out problems per n")
     ap.add_argument("--seeds", type=int, default=1, help="seed replicates of the whole experiment")
+    ap.add_argument("--ckpt", default=os.environ.get("MARC_CKPT"),
+                    help="trained Stage-A checkpoint for the learned arm (DDIM via "
+                         "LearnedSolver; default $MARC_CKPT; omit to self-train per rep)")
     args = ap.parse_args()
 
     ns = [1, 2] if args.quick else [1, 2, 3, 4, 6]
     epochs = 20 if args.quick else 200
     ntrain = 40 if args.quick else 200
 
+    mode = f"ckpt {args.ckpt}" if args.ckpt else "self-trained x0"
     print(f"H1 dimension scaling — best-of-{args.K}, {args.test} test/n, epochs={epochs}, "
-          f"seeds={args.seeds} (unified-v2: shared refine + Checker gate, Wilson CIs)")
-    payload = run(ns, args.K, args.test, epochs, ntrain, args.seeds)
+          f"seeds={args.seeds}, learned arm: {mode} "
+          f"(unified-v2: shared refine + Checker gate, Wilson CIs)")
+    payload = run(ns, args.K, args.test, epochs, ntrain, args.seeds, ckpt=args.ckpt)
 
     print(f"\n{'n':>3} {'determ':>8} {'langevin':>9} {'mean_prior':>11} {'random':>8} "
           f"{'learned_x0':>11} {'p(l>rand)':>10}")
