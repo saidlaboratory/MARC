@@ -20,6 +20,7 @@ from marc.graph.graph import FactorGraph
 from marc.graph.schema import Edge, FactorNode, VariableNode
 from marc.graph.serialize import load_graph, save_graph
 from marc.model.denoiser import GraphDenoiser
+from marc.train.reward import SHAPING_CLIP, TERMINAL_B
 from marc.train.rollout import recompute_log_prob, run_rollout
 from marc.train.stage_b import grpo_step, train_stage_b
 
@@ -71,6 +72,24 @@ def test_grpo_step_returns_finite_stats(problem):
     assert 0.0 <= stats["accept_rate"] <= 1.0
 
 
+def test_mean_reward_bounded_by_default_clip(problem):
+    """Regression: clamp-bound rollouts drove raw shaping to ~ -1e8..-1e16 and
+    diverged Stage-B at D512; the default shaping_clip bounds the group reward."""
+    G, cas = problem
+    torch.manual_seed(0)
+    policy = TinyPolicy()
+    _, alpha_bar = cosine_beta_schedule(50)
+    opt = torch.optim.Adam(policy.parameters(), lr=1e-3)
+
+    stats = grpo_step(
+        policy, None, G, cas, alpha_bar, opt,
+        checker=Checker(), N=3, steps=4,
+        generator=torch.Generator().manual_seed(0),
+    )
+    assert math.isfinite(stats["mean_reward"])
+    assert -SHAPING_CLIP <= stats["mean_reward"] <= TERMINAL_B + SHAPING_CLIP
+
+
 def test_ratio_is_one_pre_update(problem):
     """new_lp == old_lp before any optimizer step: recompute_log_prob replays
     the recorded states, so the unchanged policy reproduces the behavioral
@@ -112,8 +131,11 @@ def test_grad_clip_respected(problem):
     opt = torch.optim.Adam(policy.parameters(), lr=1e-3)
 
     clip = 1e-3
+    # shaping_clip off: the untrained policy pins every rollout at the bound,
+    # zeroing the group advantage — this test needs a large raw gradient.
     stats = grpo_step(
         policy, None, G, cas, alpha_bar, opt, N=4, steps=4, grad_clip=clip,
+        shaping_clip=float("inf"),
         generator=torch.Generator().manual_seed(4),
     )
     # clipping actually engaged: pre-clip norm (returned stat) exceeds the cap
@@ -221,9 +243,12 @@ def test_grpo_reward_improves(tmp_path):
     rewards = []
     stats = None
     for i in range(20):
+        # shaping_clip off: the untrained denoiser starts clamp-bound, so the
+        # default bound would pin all rewards at -shaping_clip and erase the
+        # group-relative signal this test is about.
         stats = grpo_step(
             policy, None, graph, cas, alpha_bar, opt,
-            checker=checker, N=4, steps=5,
+            checker=checker, N=4, steps=5, shaping_clip=float("inf"),
             generator=torch.Generator().manual_seed(100 + i),
         )
         rewards.append(stats["mean_reward"])
