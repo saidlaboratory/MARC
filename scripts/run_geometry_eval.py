@@ -89,15 +89,20 @@ def random_arm(problems, K, scale=GEOMETRY_REFINE_KWARGS["init_scale"]):
 
 
 def learned_arm(problems, solver, K):
-    """K independent diffusion rollouts (LearnedSolver polishes internally),
-    best-of-K. sample() may yield None when every rollout diverged — skipped."""
+    """K independent diffusion rollouts + the same geometry-tuned polish the
+    random arm gets (polish parity — the solver's generic internal polish is
+    wrong for quartic energies), best-of-K. sample() may yield None when every
+    rollout diverged — skipped."""
     chk = Checker()
     ok = 0
     for p in problems:
         solved = False
         for _ in range(K):
             x = solver.sample(p, 1)[0]
-            if x is not None and chk.verify(p.graph, x).accepted:
+            if x is None:
+                continue
+            x = refine(p.graph, x, seed=0, **_POLISH_KWARGS).x
+            if chk.verify(p.graph, x).accepted:
                 solved = True
                 break
         ok += int(solved)
@@ -165,7 +170,7 @@ def main() -> None:
     if args.ckpt:
         import torch
         torch.manual_seed(0)
-        learned_solver = load_solver("learned", checkpoint=args.ckpt)
+        learned_solver = load_solver("learned", checkpoint=args.ckpt, polish=False)
 
     print(f"== P4 geometry eval :: arms=refine/random"
           f"{'/learned' if learned_solver else ''} n={args.n} k={args.k} ==")
