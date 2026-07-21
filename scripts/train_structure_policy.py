@@ -175,7 +175,9 @@ def main(argv=None) -> None:
     else:
         device = torch.device(args.device)
 
-    families = list(FAMILIES)
+    # families default to the vocabulary of the chosen data source (aux_required uses
+    # offset/coupled/shared, not the toy names) — mirrors run_invention_eval's resolution.
+    families = list(invention_data.FAMILIES_BY_SOURCE.get(args.data, FAMILIES))
     if args.exclude_family:
         families = [f for f in families if f != args.exclude_family]
         if not families:
