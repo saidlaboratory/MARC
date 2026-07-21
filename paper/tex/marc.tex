@@ -4,6 +4,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \usepackage{natbib}
 \usepackage[hidelinks]{hyperref}
 
@@ -29,10 +30,14 @@ proposal there; the recipe is the contribution, not the denoiser. Second, the le
 beats random multi-start only in higher dimension: random restart wins at $n \le 2$, collapses
 by $n = 3$, and the learned proposal holds (0.550 at $n=3$, 0.650 at $n=4$). Third, this
 advantage does not survive coupling: on chained bilinear systems the learned proposal ties or
-loses to random restart at every dimension tested. Learned diffusion proposals amortize
-independent search; they help exactly when solutions are per-variable separable and dimension
-defeats random restart. We do not claim more, and we report the negative results with the same
-confidence intervals as the positive ones.
+loses to random restart at every dimension tested. A factorization law unifies these findings.
+Because every method shares one polish operator and one acceptance checker, best-of-$K$ random
+restart is exactly $1-(1-q(n))^K$ in the single-start reachability $q(n)$, and the measured
+slope of $\log q(n)$ decides the regime: the learned proposal beats classical search precisely
+when acceptance basins factorize across variables and dimension is high. One measured constant
+reproduces the entire random-restart curve with no free parameters (mean absolute error 0.012).
+We do not claim more, and we report the negative results with the same confidence intervals as
+the positive ones.
 \end{abstract}
 
 \section{Introduction}
@@ -84,7 +89,9 @@ significant wins in five comparisons (Section~\ref{sec:coupled}).
 
 We therefore claim a characterization, not a victory. Learned diffusion proposals amortize
 independent search: they help when solutions are per-variable separable and the dimension
-defeats random restart, and this advantage disappears under coupling. Alongside this we
+defeats random restart, and this advantage disappears under coupling. Section~\ref{sec:law}
+states the characterization as a parameter-free law in the measured single-start reachability
+and validates it on both synthetic families and a geometric domain. Alongside this we
 contribute the substrate itself (factor graphs with an exact CAS and an exact accept checker
 in the loop), a pre-registered entrapment result showing that annealed noise escapes
 deterministic traps with a confidence interval that excludes zero, a partial cross-family
@@ -356,15 +363,124 @@ caveats bound it. The learned model degrades at $n = 6$ (0.100), and it loses to
 restart at $n \le 2$. The claim is that the amortized proposal beats random search in high
 dimension, and only there.
 
+\subsection{A factorization law predicts both results}
+\label{sec:law}
+
+The crossover above and the coupled negative reported next are two outcomes of one mechanism,
+and the mechanism can be stated as a law and tested without fitting anything. Every method in
+this study shares one polish operator and one acceptance checker; methods differ only in where
+they start the polish. For a problem instance, define the single-start reachability
+% provenance: RESULTS.md R9 + paper/notes/crossover_law.md §1
+\begin{equation}
+q(n) \;=\; \Pr_{x_0 \sim U}\big[\,\text{polish}(x_0)\ \text{is accepted}\,\big],
+\end{equation}
+the probability that one random start, pushed through the shared polish, lands in an accepting
+basin. This is a geometric property of the problem family and the polish operator, with no
+learning in it. Random multi-start with budget $K$ succeeds iff at least one of $K$ i.i.d.\
+starts is accepted, so
+% provenance: RESULTS.md R9 + paper/notes/crossover_law.md §2
+\begin{equation}
+P_{\text{random}}(n;K) \;=\; 1 - \big(1 - q(n)\big)^{K} .
+\label{eq:bestofk}
+\end{equation}
+The identity is exact for a fixed instance; across a family we use the instance-averaged
+version, with per-instance heterogeneity a second-order correction
+(Section~\ref{sec:limitations}). It already says that a hybrid beating cold-start Langevin has
+proven nothing about the value of learning: it must beat Eq.~\eqref{eq:bestofk} at the same
+$K$.
+
+How $q(n)$ scales with dimension is decided by whether the acceptance basins factorize across
+variables. If each factor touches one variable, as in the bundled trap family, the polish is
+coordinate-decoupled and a start is accepted only when every coordinate independently lands in
+its root basin, so $q(n) = v^n$ with $v := q(1)$: $\log q$ is linear in $n$, reachability
+decays geometrically, and random search needs $\Theta(v^{-n})$ starts to hold a fixed success
+rate. If factors couple variables, as in the chained bilinear family, the solution is a joint
+object, the polish propagates corrections along the chain, and $q(n)$ need not decay
+geometrically at all. We measured $q(n)$ directly by single-start polish on 600 fresh
+instances per $n$ (Wilson intervals), with the same generators, polish, and checker as the
+solve-rate experiments. Table~\ref{tab:law} shows the dichotomy.
+
+% provenance: RESULTS.md R9 + paper/notes/crossover_law.md §5
+\begin{table}[t]
+\centering
+\caption{The factorization dichotomy, measured (600 fresh instances per $n$, Wilson CIs,
+$K = 8$). Expected restarts $1/q(n)$ are listed over the tested dimensions in increasing
+order.}
+\label{tab:law}
+\small
+\begin{tabular}{lll}
+\toprule
+Quantity & Independent (separable) & Coupled \\
+\midrule
+$\log q(n)$ slope & $-1.03$ & $-0.13$ \\
+fit $R^2$ & 0.98 & 0.96 \\
+measured $v = q(1)$ & 0.27 & --- \\
+$E[\text{starts}] = 1/q(n)$ & $3.7 \to 13 \to 32 \to 150 \to 600$ & $2.0 \to 2.5 \to 2.9 \to 3.8 \to 4.3$ \\
+$P_{\text{random}}$ MAE, parameter-free & 0.012 & law N/A (not separable) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% provenance: paper/figures/fig_crossover_theory.pdf, RESULTS.md R9
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig_crossover_theory.pdf}
+\caption{The factorization law, measured. Left: $\log q(n)$ against $n$. The separable family
+is a line (slope $-1.03$, $R^2 = 0.98$), the coupled bilinear family is nearly flat
+($-0.13$), and the geometry family, though syntactically coupled, collapses ($-0.77$,
+$R^2 = 0.999$). Right: the best-of-8 random-restart curve predicted parameter-free from
+$v = 0.27$ via Eq.~\eqref{eq:bestofk}, against the measured curve (MAE 0.012), with the
+learned hybrid's observed solve rate overlaid; the dotted line is the crossover dimension
+predicted from $v$ and the learned ceiling.}
+\label{fig:law}
+\end{figure}
+
+The separable family behaves exactly as the law requires. $\log q(n)$ is linear with slope
+$-1.03$ ($R^2 = 0.98$), giving $v = 0.27$, and substituting that single measured constant into
+Eq.~\eqref{eq:bestofk} reproduces the entire best-of-8 random-restart curve with no free
+parameters: predicted 0.919, 0.454, 0.147, 0.042, 0.003 against the measured 0.902, 0.467,
+0.162, 0.030, 0.002 at $n = 1, 2, 3, 4, 6$, a mean absolute error of 0.012
+% provenance: RESULTS.md R9 + crossover_law.md §5 (crossover_theory.json)
+(Figure~\ref{fig:law}). These rates re-measure the random control of Table~\ref{tab:scaling}
+at $N = 600$ rather than $N = 40$; the more precise values, 0.90 then 0.47 at $n = 1, 2$, if
+anything move the crossover earlier, and they do not change the mechanism. The budget-fair
+way to read the dichotomy is the expected number of restarts $1/q(n)$: it explodes from 3.7
+to 600 over the separable dimensions while staying between 2.0 and 4.3 on the coupled family.
+Any fixed restart budget is therefore exhausted on the separable family, and random search
+must eventually lose to a proposal whose ceiling stays comparatively flat. On the coupled
+family random search never collapses, a finite crossover dimension does not exist, and a
+learned proposal has nothing to amortize. We do not claim a sharp crossover at a particular
+$n$; the robust, predicted quantity is the geometric collapse of the restart cost against the
+learned ceiling, and the coupled negative that follows is the law's other prediction.
+
+Separability is sufficient for geometric collapse but not necessary, so the diagnostic is the
+measured slope, not the syntactic label. A coupled system can still have a steeply decaying
+$q(n)$ if each local subproblem admits several basins and errors compound down the chain. A
+real-valued geometric domain makes this concrete: chains of unknown points $P_1, \dots, P_k$
+($n = 2k$ coordinates) with squared-distance constraints to fixed anchors and between
+consecutive points, a genuinely non-convex quartic energy whose solutions the checker accepts
+exactly. The family is syntactically coupled, yet its reachability collapses: slope $-0.77$
+($R^2 = 0.999$), with $q(n) = 0.653$, 0.147, 0.027, 0.007 at $n = 2, 4, 6, 8$
+% provenance: RESULTS.md R9 (geometry) + crossover_law.md §5a
+(Figure~\ref{fig:law}, left). Each point's two-circle subproblem has a reflection ambiguity
+and spurious basins, so a random start rarely places every point in the right basin. The law
+therefore flags geometry as learning-favorable: random search collapses here, so an amortized
+proposal that learns each point's marginal placement can win. Solve rates with the classical
+polish alone are non-saturated (0.56 in-distribution, 0.28 held out), so the domain is hard
+rather than trivially solvable. Training the denoiser on geometry chains against the
+random-restart control is the law-guided next experiment.
+% pending: geometry learned-vs-random result (D512 checkpoint eval in progress) — insert number here
+
 \subsection{Coupling removes the advantage}
 \label{sec:coupled}
 
-The crossover in Table~\ref{tab:scaling} could still be an artifact of independence: those
-trap families have per-variable-separable solutions, which a model can represent as $n$
-marginals. The stress test is a coupled chained-bilinear family, $x_i + x_{i+1} = s_i$ and
-$x_i \cdot x_{i+1} = p_i$, whose solution is a joint object, and where random restart does not
-collapse with dimension because polish propagates corrections along the chain.
-Table~\ref{tab:coupled} reports best-of-8 with 60 test instances per $n$.
+The law of Section~\ref{sec:law} predicts where the crossover must disappear: when acceptance
+basins do not factorize, $q(n)$ stays nearly flat, random restart never collapses, and a
+learned proposal has nothing to amortize. The test is the coupled chained-bilinear family,
+$x_i + x_{i+1} = s_i$ and $x_i \cdot x_{i+1} = p_i$, whose solution is a joint object and
+whose measured reachability slope is $-0.13$ (Table~\ref{tab:law}), so what follows is a
+prediction checked, not an unexplained negative. Table~\ref{tab:coupled} reports best-of-8
+with 60 test instances per $n$.
 
 % provenance: RESULTS.md R7
 \begin{table}[t]
@@ -424,6 +540,17 @@ Even on the favorable independent families the model loses to random restart at 
 degrades to 0.100 at $n = 6$, so the useful window is the crossover region, not high dimension
 in general.
 
+The factorization law carries its own caveats. Eq.~\eqref{eq:bestofk} uses the
+instance-averaged $q$; per-instance reachability varies, so best-of-$K$ computed from the
+average is an approximation (a Jensen gap), and we validate the parameter-free prediction
+against a best-of-$K$ curve self-measured under identical conditions rather than against a
+separate experiment. The learned proposal's ceiling is measured, not derived: the law predicts
+the random-restart curve and the collapse of the restart cost, not the learned model's
+absolute accuracy, and it says nothing about the capacity-limited decay at $n = 6$. And while
+the reachability prediction is validated on three families, the solve-rate consequence is
+confirmed only on the separable positive and the coupled negative; on geometry the law
+predicts that learning can help, and that experiment has not been run.
+
 Several failures are specific and reportable. CircleLine is never solved by the learned
 proposal: 0.000 in-distribution against 0.200 for random restart, and 0.000 in cross-family
 transfer. Transfer succeeds on only two of four held-out families, and adding CircleLine to a
@@ -432,9 +559,10 @@ family actively hurts. The entrapment result, while pre-registered and precise, 
 confirmatory: annealed Langevin escaping deterministic traps is textbook behavior, and we
 claim measurement on this substrate, not novelty. The structure-selection policy has not
 separated from random selection in the runs completed so far, and its quantitative evaluation
-is withdrawn pending the clean seed protocol. Finally, every problem family in this paper is
-synthetic; the MATH coverage measurement (0/48) quantifies how far the current formalizer is
-from real problem text, and we have no result on a real domain yet.
+is withdrawn pending the clean seed protocol. Finally, every solve-rate comparison in this
+paper is on synthetic families; the geometry domain of Section~\ref{sec:law} enters only at
+the reachability level so far, and the MATH coverage measurement (0/48) quantifies how far the
+current formalizer is from real problem text.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -445,8 +573,10 @@ characterization. The propose-and-polish recipe is genuinely better than cold-st
 refinement on trapped non-convex families, but the proposal need not be learned there. The
 learned proposal earns its place only where search is independent across variables and
 dimension defeats random restart, a regime we can exhibit cleanly at $n \ge 3$, and this
-advantage disappears under coupling. These boundaries close the route from learned value
-proposals to a general claim over classical search on this problem class. What survives is the
+advantage disappears under coupling. The factorization law compresses that characterization
+into one measured quantity, the single-start reachability slope, and reproduces the
+random-restart curve it predicts without a fitted parameter. These boundaries close the route
+from learned value proposals to a general claim over classical search on this problem class. What survives is the
 substrate (exact symbolic residuals, energy guidance, and an exact checker wrapped around any
 proposer) and the division of labor it supports. The decision classical solvers cannot make is
 not which values to try but which structure to add, and that is where our current work,
