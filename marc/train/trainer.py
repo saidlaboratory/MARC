@@ -553,8 +553,6 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         description="Config-driven Stage-A (DSM) / Stage-B (GRPO) trainer for the scale run.",
         epilog=(
-            "NOTE: on current main, Stage-B GRPO carries a known log-prob bug; "
-            "recommend --stage a unless the Stage-B fix has merged. "
             "EMA (training.ema, default on, decay training.ema_decay): Stage-A "
             "checkpoints carry the shadow weights under the additive key "
             "'ema_state_dict'; 'model_state_dict' is always the raw weights "

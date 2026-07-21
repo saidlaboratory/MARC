@@ -1,7 +1,11 @@
 import pytest
 import torch
 from torch_geometric.data import HeteroData, Batch
+from torch_geometric.utils import scatter
 
+from marc.graph.graph import FactorGraph
+from marc.graph.pyg import build_heterodata
+from marc.graph.schema import VariableNode, FactorNode, Edge
 from marc.model.denoiser import GraphDenoiser
 from marc.model.embeddings import sinusoidal_embedding
 
@@ -101,6 +105,39 @@ def test_vector_t_rejects_cas_engine():
     batch = Batch.from_data_list([_make_graph(2, 2), _make_graph(3, 2)])
     with pytest.raises(ValueError):
         model(batch, torch.tensor([1, 2]), cas_engine=object())
+
+
+def _const_graph():
+    """x + y - 3 = 0 (const -3) and x - 5 = 0 (const -5); x touches both."""
+    graph = FactorGraph(
+        variables=[VariableNode("x", 0.5), VariableNode("y", -0.5)],
+        factors=[FactorNode("f0", "x + y - 3"), FactorNode("f1", "x - 5")],
+        edges=[Edge("x", "f0"), Edge("y", "f0"), Edge("x", "f1")],
+    )
+    return build_heterodata(graph)
+
+
+def test_incident_const_sums_incident_factor_constants():
+    data = _const_graph()
+    assert torch.equal(data["factor"].x, torch.tensor([[-3.0], [-5.0]]))
+    # Same gather as the denoiser forward (denoiser.py): each variable sums the
+    # constant terms of its incident factors.
+    src, dst = data["variable", "connected_to", "factor"].edge_index
+    incident_const = scatter(data["factor"].x[dst], src, dim=0, dim_size=2, reduce="sum")
+    assert torch.equal(incident_const, torch.tensor([[-8.0], [-3.0]]))
+
+
+def test_output_depends_on_const_skip():
+    torch.manual_seed(0)
+    model = GraphDenoiser(D=32, L=2, step_dim=16)
+    data = _const_graph()
+    t = torch.tensor([50])
+    with torch.no_grad():
+        out = model(data, t)
+        model.const_skip.weight.zero_()
+        model.const_skip.bias.zero_()
+        out_no_skip = model(data, t)
+    assert not torch.allclose(out, out_no_skip)
 
 
 def test_sinusoidal_embedding_vectorized():
