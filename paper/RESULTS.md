@@ -25,7 +25,7 @@ conditioning variables; guidance explosion; a 1-var `squeeze` bug) took the lear
 from *diverging (≈1e4, 0% solve)* to **solve_rate 1.000** on convex linear systems
 (in-distribution and held-out, generalization gap 0). Stage-A DSM loss drops from a flat
 ~1.0 to ~0.37. Method: diffusion proposal + energy-descent polish.
-*(paper/learned_solver_fix.md)*
+*(paper/notes/learned_solver_fix.md)*
 
 ## R2 · Entrapment — noise escapes where deterministic descent cannot (RQ2)
 On 200 non-convex problems, deterministic energy descent is **100% trapped**; annealed-noise
@@ -115,7 +115,7 @@ quantifies scope honestly. `python scripts/run_math_coverage.py`
 - Every solve rate has N + a CI or z-test.
 - Report CircleLine failure and the n=6 dropoff openly.
 - No claim to beat combinatorial-optimization SOTA (DIFUSCO etc.) — different problem class
-  (`paper/related_work.md`).
+  (`paper/notes/related_work.md`).
 - MARC targets continuous algebraic constraint solving; it does **not** do general MATH/olympiad
   reasoning.
 

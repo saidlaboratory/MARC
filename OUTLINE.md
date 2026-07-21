@@ -60,13 +60,13 @@ Lead with the discrete/continuous decision split, not with diffusion. The AlphaG
 Constraint graphs (variable/factor nodes, expression strings), CAS residuals/energy, two-stage checker, why checker-only reward. Source: `marc/graph/`, `marc/cas/`, TECHNICAL_GUIDE §§3–7. Half a page; this is plumbing, written confidently.
 
 ### §3 The value-diffusion study (honest negative) (Sparsh)
-The controlled experiments and what killed each claim: random-restart control shrank R5; R7 coupled families closed the route; LM saturates; the `Ax=b` overfit probe. Entrapment as the surviving (pre-registered) positive. Tone: measurement, not apology. Sources: RESULTS.md R1–R7, `paper/learned_solver_fix.md`, `results/p_coupled/`.
+The controlled experiments and what killed each claim: random-restart control shrank R5; R7 coupled families closed the route; LM saturates; the `Ax=b` overfit probe. Entrapment as the surviving (pre-registered) positive. Tone: measurement, not apology. Sources: RESULTS.md R1–R7, `paper/notes/learned_solver_fix.md`, `results/p_coupled/`.
 
 ### §4 Method: the structure policy (Quang)
 Aux-required families + certificates (exact rank for linear; **empirical probes for nonlinear — state plainly they are probabilistic claims at a stated budget**), menu construction with hard negatives and randomized gold support, padded-slot representation, absorbing-D3PM forward/reverse, the graph-conditioned encoder, predicted defining value. The ladder (§8 below) closes this section. Sources: `marc/structure/`, `marc/data/aux_required.py`, TECHNICAL_GUIDE §10/§14.
 
 ### §5 Experimental protocol (Sparsh)
-The part reviewers will probe hardest — write it proudly: disjoint seed spaces asserted at checkpoint load (contamination is *impossible by protocol*, and we say why the protocol exists — we caught ourselves once); multi-seed pooled Wilson CIs; Holm correction over the declared comparison family; the full control battery (random-slot, no-context, always-none, gold-oracle, enumeration); cross-pattern holdout; hard-negative confusion; amortization measurement. Source: `scripts/run_invention_eval.py`, `paper/REVIEW_ATTACKS.md`.
+The part reviewers will probe hardest — write it proudly: disjoint seed spaces asserted at checkpoint load (contamination is *impossible by protocol*, and we say why the protocol exists — we caught ourselves once); multi-seed pooled Wilson CIs; Holm correction over the declared comparison family; the full control battery (random-slot, no-context, always-none, gold-oracle, enumeration); cross-pattern holdout; hard-negative confusion; amortization measurement. Source: `scripts/run_invention_eval.py`, `paper/notes/REVIEW_ATTACKS.md`.
 
 ### §6 Results (Akash, once the overnight lands)
 Placeholder tables NOW with the exact JSON keys they will be filled from (`samplers.*.invention_rate`, `arms.enumeration.*`, `comparisons_holm.*`, `invention_heldout.json`). Structure: main table (policy vs. controls, both samplers), cross-pattern table, amortization figure (policy cost vs. enumeration cost as K grows), hard-negative confusion, value-solver context rows.
@@ -77,7 +77,7 @@ AlphaGeometry (closest relative — generalize, don't compete), D3PM/DiGress (fo
 ### §8 Limitations & the ladder (Quang)
 Rungs: menu selection → predicted value → compositional/multi-aux → free-form generation. Current work = rungs 1–2. Also: synthetic families only, MATH coverage 0/48, empirical certificates are budget-relative, single training seed caveat where applicable. Reviewers reward this section — write it first, not last.
 
-## 6. Anticipated reviews and our answers (from `paper/REVIEW_ATTACKS.md`)
+## 6. Anticipated reviews and our answers (from `paper/notes/REVIEW_ATTACKS.md`)
 
 | Attack | Our answer |
 |---|---|
@@ -109,4 +109,4 @@ Rungs: menu selection → predicted value → compositional/multi-aux → free-f
 
 ---
 
-*Questions on framing → this file + `paper/REVIEW_ATTACKS.md` first, then Quang. Questions on any number → `paper/PROVENANCE.md` has its command, seed, and commit.*
+*Questions on framing → this file + `paper/notes/REVIEW_ATTACKS.md` first, then Quang. Questions on any number → `paper/PROVENANCE.md` has its command, seed, and commit.*

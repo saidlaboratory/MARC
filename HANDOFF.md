@@ -36,7 +36,7 @@ included.
 
 ## 3. What IS solid (real, honest)
 - **Learned solver converges** (was diverging/0% → 100% on convex; 5 bugs fixed — see
-  `paper/learned_solver_fix.md`). Trained at scale this run: Stage-A loss **0.60**.
+  `paper/notes/learned_solver_fix.md`). Trained at scale this run: Stage-A loss **0.60**.
 - **Entrapment (RQ2):** deterministic descent 100% trapped → annealed Langevin 0.475; reduction
   **0.525 ± 0.086** (95% CI excludes 0, N=200). Real but textbook Langevin.
 - **Dimension-scaling crossover** (independent traps): random wins n≤2, **learned wins n≥3**
@@ -84,15 +84,15 @@ failed**.
 - `paper/PROVENANCE.md` — every number → command/seed/commit (R1–R14).
 - `AAAI_READINESS.md` — the workshop-vs-main-track call + reframe table.
 - `OVERNIGHT_RESULTS.md` — this run's outcome.
-- Source notes: `paper/{learned_solver_fix,dimension_scaling_result,math_coverage,related_work,
-  ablation_reframe,h2_reframe,structure_invention_negative,llm_verify_negative}.md`.
+- Source notes: `paper/notes/{learned_solver_fix,dimension_scaling_result,math_coverage,
+  related_work,ablation_reframe,h2_reframe}.md`.
 - Process: `FIXING_PLAN.md`, `MEETING_NOTES.md`, `SUMMARY.md`, `RUNBOOK_SPARSH.md`.
 
 ## 8. Next steps (priority)
 1. **Push the pending results commit** (git pull → push; §6).
 2. **Decide target = workshop** (default) unless a new positive appears. Start the `.tex` — ~60%
-   (intro/method/related-work) is experiment-free; `related_work.md` positions vs DIFUSCO /
-   Langevin-CO / amortized inference.
+   (intro/method/related-work) is experiment-free; `paper/notes/related_work.md` positions vs
+   DIFUSCO / Langevin-CO / amortized inference.
 3. If still chasing main-track: only remaining shots are **(a) wire the D512 checkpoint into the
    evals and see if scale changes coupled/hard** (cheap, likely still negative), **(b) a real
    domain with a genuine positive** (geometry at 0.56 is the least-saturated lead), or **(c) new

@@ -43,7 +43,7 @@ contribution is too narrow.
 | Headline = A8.1 hard-suite numbers. | Headline = the **dimension-scaling crossover** (learned > random for n≥3). A8.1 becomes "the hybrid recipe" evidence, with the random control shown. |
 | "Solves math problems." | "Numeric constraint solver; 0/48 MATH coverage; targets the constraint-shaped slice." (Reality check, not a result.) |
 | Report `refine` numbers as system results. | `refine`/`random` are baselines; always labelled; every number has N + CI/z-test. |
-| "Structure invention" as a claim. | "Menu-based structure selection (with predicted defining value)" — built and trained; clean-protocol numbers pending (see §3b, `paper/REVIEW_ATTACKS.md` #2/#3). |
+| "Structure invention" as a claim. | "Menu-based structure selection (with predicted defining value)" — built and trained; clean-protocol numbers pending (see §3b, `paper/notes/REVIEW_ATTACKS.md` #2/#3). |
 
 ---
 
@@ -71,7 +71,7 @@ contribution.
   structure from an open vocabulary, so claim-language is "selection", not
   "invention". **Clean-protocol numbers pending**: the preliminary run is withdrawn
   (test seeds == validation seeds, plus a train/eval data-source mismatch in the
-  harness — both now fixed; see `paper/RESULTS.md` R8 and `paper/REVIEW_ATTACKS.md`
+  harness — both now fixed; see `paper/RESULTS.md` R8 and `paper/notes/REVIEW_ATTACKS.md`
   #2/#3). Regenerate under the seed-space v1 protocol before citing anything.
 - **A real (narrow) domain.** Get the model training+solving on geometry or a real
   polynomial-system slice — moves it from "synthetic toy" to "real problems." ~2–3 days, medium
@@ -86,7 +86,7 @@ contribution.
 
 1. **[P0, ~1 day] Coupled high-dim scaling experiment (§3)** — decides the paper's ceiling.
 2. **[P0, today] Start the `.tex`** — intro/method/related-work are experiment-independent
-   (`related_work.md` is ready). Write to the *corrected* framing (§2).
+   (`paper/notes/related_work.md` is ready). Write to the *corrected* framing (§2).
 3. **[P0] Pick the target** — AAAI main vs an AAAI/NeurIPS workshop vs a different venue. Default
    to **workshop** unless §3 lands; decide at the team meeting.
 4. **[P1] CoT baseline properly** (needs a fresh, funded key): N≥100, k≥4, stronger model,
