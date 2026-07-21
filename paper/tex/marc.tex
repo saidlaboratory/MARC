@@ -509,6 +509,74 @@ because it must hit all $n$ basins by chance. Under coupling neither condition h
 learned diffusion proposal provides no advantage over random search plus refinement. We regard
 this as the most important table in the paper, because it is the boundary of the claim.
 
+\subsection{Relocating the learned component: structural repair beats its controls}
+\label{sec:repair}
+
+Coupling closes the route in which the network predicts continuous values, but it does not
+exhaust what a learned component can contribute. The one decision the classical solvers cannot
+make is discrete and prior to any solve: \emph{which} structure-changing augmentation turns an
+unsolvable graph into a solvable one. We move learning there. A candidate-conditioned ranker
+applies each of $K$ proposed augmentations, encodes the resulting polynomial graph with
+operator-aware node and edge features that expose degree, linear/square/cross participation,
+and constants, and scores the augmented graphs listwise; the highest-scoring repair receives
+one classical solve and the exact checker remains the acceptance gate. A matched candidate-only
+control sees the same augmentation recipe but no problem graph, and \texttt{random} chooses
+uniformly among the same $K$ candidates. The predecessor policy classified menu slots over a
+single fixed graph encoding, could not see nonlinear operator identity, and fell to chance on an
+unseen pattern; the operator-aware encoding is what distinguishes $x + y - 3$ from
+$x \cdot y - 3$.
+
+% provenance: RESULTS.md R10 + PROVENANCE R20--R24; results/p_repair
+\begin{table}[t]
+\centering
+\caption{Candidate-conditioned repair ranker against a candidate-only control and random
+selection, on three generalization tests (Data Version 6, Wilson 95\% CIs). The ranker clears
+both controls on every row; transfer to an unseen relation is positive but partial.}
+\label{tab:repair}
+\begin{tabular}{lccc}
+\toprule
+Test & ranker & candidate-only & random \\
+\midrule
+Linear, unseen pattern ($N{=}400$)      & \textbf{0.565} & 0.343 & 0.283 \\
+Balanced nonlinear ($N{=}360$)          & \textbf{0.889} & 0.422 & 0.253 \\
+Vieta $\to$ unseen relation ($N{=}150$) & \textbf{0.367} & 0.240 & 0.213 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:repair} reports the three tests that probe generalization, each under the Data
+Version 6 protocol that randomizes insertion support and withholds the gold auxiliary value from
+expression-defined candidates. On an unseen linear pattern the ranker reaches $0.565$ against
+$0.283$ for random; on balanced nonlinear menus $0.889$ against $0.253$, with an exact paired
+McNemar test on the shared test set giving $p = 4.1\times10^{-46}$ (172 full-only correct versus
+4 control-only). Transfer to an unseen nonlinear relation is positive but partial ($0.367$), not
+relation-level invariance. Three initialization seeds give a nonlinear mean of $0.881$ with
+population SD $0.006$.
+
+% provenance: paper/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig_repair.pdf}
+\caption{Structural repair, measured. Left: the operator-aware ranker against its candidate-only
+and random controls on the three generalization tests of Table~\ref{tab:repair}; the dotted line
+is $K{=}4$ chance. Right: the $K{=}4$ checkpoint evaluated zero-shot at larger menus stays above
+random while the blind enumeration it displaces grows from $2.5$ to $8.6$ solver calls per
+instance.}
+\label{fig:repair}
+\end{figure}
+
+The learned component is also cheap where value diffusion was not: one forward pass per
+candidate rather than a reverse-diffusion rollout. End to end, applying the selected repair and
+invoking the matched solver, it spends a single solver call where blind enumeration averages
+$2.53$ (linear) to $2.62$ (nonlinear). The $K = 4$ checkpoint transfers to larger menus without
+retraining: at $K = 4/8/16$ its accuracy is $0.540/0.347/0.247$ against random
+$0.253/0.140/0.020$, while the enumeration it displaces grows to $8.56$ solver calls per instance
+(Figure~\ref{fig:repair}, right). Directly training at $K = 16$ reaches only $0.192$, so the
+transferred checkpoint is selected and the direct-training negative is kept in the record. The
+scope is menu-based repair on synthetic factor graphs, and the nonlinear ``unsolvable
+distractor'' label is an empirical multi-restart certificate at a stated budget, not a
+nonexistence theorem.
+
 \subsection{Scope: what these problems are, and are not}
 \label{sec:scope}
 
@@ -520,13 +588,12 @@ is CAS computation, and about 48\% is reasoning or proof, outside the architectu
 The binding constraint is autoformalization from natural language to constraint graphs, not
 the solver. MARC targets continuous algebraic constraint solving; it does not do general
 mathematical reasoning, and we report this coverage number so the scope is quantified rather
-than implied.\footnote{A discrete-diffusion structure-selection policy (choosing among $K$
-candidate graph augmentations and predicting the defining constant) is built and trained in
-the same codebase. Its preliminary evaluation numbers are withdrawn: the evaluation seeds
-overlapped the validation seeds used for checkpoint selection, and the harness evaluated a
-different data source than training. Clean numbers are pending under a protocol with disjoint
-seed ranges asserted at load time, and none are cited in this paper.}
-% provenance: RESULTS.md R6 (prose); footnote provenance: RESULTS.md R8
+than implied.\footnote{The learned structural component is the candidate-conditioned repair
+ranker of Section~\ref{sec:repair}. Its predecessor, a discrete-diffusion slot policy, produced
+preliminary numbers that were withdrawn (evaluation seeds overlapped the validation seeds used
+for checkpoint selection), and those are not cited here; the ranker is evaluated under the
+disjoint-seed Data Version 6 protocol.}
+% provenance: RESULTS.md R6 (prose); footnote provenance: RESULTS.md R8/R10
 
 \section{Limitations}
 \label{sec:limitations}
