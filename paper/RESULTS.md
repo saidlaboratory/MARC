@@ -141,17 +141,38 @@ diffusion model provides **no advantage over random search + refinement**. This 
 "amortized learned proposal beats classical search" route to a main-track claim. Reported, not
 hidden. `python scripts/run_coupled_eval.py`
 
-## R8 · Menu-based structure selection (H2) — **preliminary numbers withdrawn — contaminated eval (test==val seeds); regeneration pending under seed-space v1 protocol**
+## R8 · Menu-based structure selection (H2) — **clean regeneration (seed-space v1, `overlap_instances: 0`); honest null vs random selection**
 The trained structure policy (menu-based structure selection with predicted defining value —
-the honest name for what the code's "invention" identifiers do: pick one of K candidate
-auxiliary structures and predict its defining value) has been trained and evaluated end-to-end,
-but the preliminary run's eval seeds overlapped the validation seeds used for checkpoint
-selection, **and** the harness evaluated a different data source (`toys`) than training
-(`aux_required`). Those numbers are void and are deliberately not recorded here — do not cite
-them. Clean numbers regenerate under the seed-space v1 protocol (disjoint seed ranges, a
-`seed_hygiene` block with `overlap_instances: 0` in the results JSON) via the fixed overnight
-harness (`eval_invention` + the held-out-pattern `eval_invention_heldout`).
-`python3 scripts/run_invention_eval.py --ckpt checkpoints/structure_policy.pt --out results/p5_invention/invention.json --data aux_required`
+pick one of K candidate auxiliary structures and predict its defining value) is now regenerated
+cleanly under the seed-space v1 protocol (train seeds [0,500), val [500000,500050), test
+[900000,…); both output JSONs carry a `seed_hygiene` block with **`overlap_instances: 0`**).
+The earlier 0.45/0.53 numbers stay withdrawn (contaminated). Trained on `aux_required`
+(offset/coupled), 200 epochs, `shared` held out; K=4 menu, 500 instances/arm, Wilson CIs,
+Holm-corrected within the 7-comparison family.
+
+**Invention accuracy (policy picks the gold augmentation; needs no downstream solver):**
+
+| Split | policy (single-shot) | no-context ctrl | vs random (chance 0.25) | vs fixed |
+|---|---|---|---|---|
+| in-pattern (offset/coupled) | **0.410 [0.37,0.45]** | 0.294 | p=0.023, **p_holm=0.16 (ns)** | p_holm=0.16 (ns) |
+| held-out (`shared`, untrained) | **0.234 [0.20,0.27]** | 0.170 | p_holm=0.65 (ties) | **p_holm=0.009 (sig)** |
+
+**Honest conclusion:** the policy invents the gold structure well above the always-fixed / always-
+none floor (significant on held-out, p_holm=0.009), but **does not significantly beat random
+selection after Holm correction** (in-pattern p_holm=0.16; held-out ties). This confirms the
+prior read (HANDOFF: "beats fixed/no-context, ties random") — now with clean, citable numbers.
+Held-out invention (0.234) drops from in-pattern (0.410) but stays above no-context, i.e. partial
+structural generalization to an unseen pattern.
+
+**Solve-rate is NOT reported** for this eval: its positive control fails (gold-oracle solve
+0.024/0.090 ≪ 0.95). The known integer solutions are checker-accepted and scipy Levenberg–Marquardt
+solves the gold-augmented systems 100%, but the eval's reference solver (`refine`, annealed
+Langevin) is too weak for the nonlinear augmented systems (plateaus at ~0.47 with `noise=False`,
+0.00 with noise). **Fix pending a team decision:** switch the invention eval's reference solver to
+LM/exact (which matches aux_required's exact certificate) so solve-rate becomes meaningful; the
+invention-accuracy metric above is independent of this and stands.
+`python3 scripts/train_structure_policy.py --data aux_required --epochs 200 --exclude-family shared --out checkpoints/structure_policy.pt`
+then `run_invention_eval.py … --data aux_required [--families shared]` (RUNBOOK §7; PROVENANCE R16/R16h).
 
 ## R9 · The factorization law — *why* learning helps in R5 and not in R7 (the unifying result)
 The central scientific contribution: one falsifiable, parameter-free law that predicts both
