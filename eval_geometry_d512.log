@@ -1,0 +1,11 @@
+== P4 geometry eval :: arms=refine/random/learned n=25 k=12 ==
+[geometry_in_distribution] solve_rate=0.56
+[geometry_held_out]        solve_rate=0.28
+[generalization_gap]       0.280
+[arm refine] best-of-12 22/50 = 0.44 [0.31,0.58]
+[arm random] best-of-12 22/50 = 0.44 [0.31,0.58]
+[arm learned] best-of-12 0/50 = 0.00 [0.00,0.07]
+[learned vs random] z=-5.31 p=1.000
+wall=11473.6s
+-> results/p4_scale/geometry_eval.json
+-> appended to results/p4_scale/scaling_notes.md
