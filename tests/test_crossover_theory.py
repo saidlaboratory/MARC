@@ -51,6 +51,22 @@ def test_single_start_and_bestofk_consistent():
     assert kK / tK >= k1 / t1 - 1e-9
 
 
+def test_geometry_point_chain_generator():
+    # the scalable coupled geometry family: 2k variables, checker accepts the exact
+    # integer-coordinate solution, and reachability is measurable (>0) at small k.
+    import random
+    from marc.data.geometry import make_point_chain
+    from marc.cas.checker import Checker
+    chk = Checker()
+    for k in (1, 2, 3):
+        g, sol = make_point_chain(k, random.Random(k))
+        assert len(g.variables) == 2 * k
+        assert len(g.factors) == 2 * k          # one coupling + one anchor per point
+        assert chk.verify(g, sol).accepted
+    ok, t = rct.single_start_q_geometry(1, 12, seed0=3)
+    assert 0 <= ok <= t == 12 and ok > 0        # a single triangle is reachably solvable
+
+
 def test_factorization_dichotomy_qualitative():
     # the crux: independent basins factorize (steep negative log-slope) while the
     # coupled chain does not (near-flat). Tiny trials -> assert the ordering only.

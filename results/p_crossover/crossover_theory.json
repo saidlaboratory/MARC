@@ -216,6 +216,70 @@
         "b": -0.12802453026512922,
         "r2": 0.9584414578411963
       }
+    },
+    "geometry": {
+      "ns": [
+        2,
+        4,
+        6,
+        8
+      ],
+      "rows": [
+        {
+          "n": 2,
+          "points": 1,
+          "q": 0.6533333333333333,
+          "k": 98,
+          "trials": 150,
+          "ci95": [
+            0.5742027248462458,
+            0.7248061258157337
+          ],
+          "expected_starts": 1.530612244897959
+        },
+        {
+          "n": 4,
+          "points": 2,
+          "q": 0.14666666666666667,
+          "k": 22,
+          "trials": 150,
+          "ci95": [
+            0.09889364963827856,
+            0.21208595535802932
+          ],
+          "expected_starts": 6.818181818181818
+        },
+        {
+          "n": 6,
+          "points": 3,
+          "q": 0.02666666666666667,
+          "k": 4,
+          "trials": 150,
+          "ci95": [
+            0.010417772291104764,
+            0.06655490610017561
+          ],
+          "expected_starts": 37.5
+        },
+        {
+          "n": 8,
+          "points": 4,
+          "q": 0.006666666666666667,
+          "k": 1,
+          "trials": 150,
+          "ci95": [
+            0.0011777710231334546,
+            0.036793752933975674
+          ],
+          "expected_starts": 150.0
+        }
+      ],
+      "loglin": {
+        "a": 1.119853411253474,
+        "b": -0.772982526412507,
+        "r2": 0.9985875434428589
+      },
+      "note": "real-domain coupled point-chain; steep slope => reachability collapses despite coupling (per-point reflection ambiguity + spurious basins compound) => learning-favorable regime"
     }
   },
   "v_direct": 0.27,

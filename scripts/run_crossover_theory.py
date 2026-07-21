@@ -105,6 +105,48 @@ def single_start_q(family: str, n: int, trials: int, span: float, seed0: int):
     return ok, trials
 
 
+# Geometry: a real-ish coupled domain (point-chains, quartic energy). It needs the
+# geometry-tuned polish (default refine solves ~0%) and a Gaussian init matched to the
+# geometry eval's init_scale=3.0. Its reachability collapses despite syntactic coupling
+# (per-point reflection ambiguity + spurious basins compound) — so the diagnostic is the
+# *measured* slope, not the coupled/independent label; separability is only the provable
+# special case (q=v^n). This makes geometry a real-domain regime the law flags as
+# learning-favorable (steep slope), unlike the flat coupled-bilinear chain.
+GEOMETRY_REFINE = dict(steps=1200, lr=0.008, sigma0=0.0, noise=False,
+                       polish_steps=6000, polish_lr=0.02)
+GEOMETRY_INIT_SD = 3.0
+NS_GEOMETRY_PTS = [1, 2, 3, 4]   # k points -> 2k variables (n = 2, 4, 6, 8)
+
+
+def single_start_q_geometry(k: int, trials: int, seed0: int):
+    """Single-start reachability for the coupled geometry point-chain (2k vars),
+    geometry-tuned polish, init ~ N(0, GEOMETRY_INIT_SD)."""
+    from marc.data.geometry import make_point_chain
+    chk = Checker()
+    ok = 0
+    for j in range(trials):
+        rng = random.Random(seed0 + 7919 * j)
+        g, sol = make_point_chain(k, rng)
+        x0 = [rng.gauss(0, GEOMETRY_INIT_SD) for _ in range(2 * k)]
+        ok += chk.verify(g, [round(v, DECIMALS) for v in refine(g, x0, **GEOMETRY_REFINE).x]).accepted
+    return ok, trials
+
+
+def measure_geometry(trials: int, seed0: int):
+    rows = []
+    print(f"\n[geometry] single-start reachability q(n) — coupled point-chain, geometry-tuned "
+          f"polish, init N(0,{GEOMETRY_INIT_SD}) (trials={trials})")
+    for k in NS_GEOMETRY_PTS:
+        n = 2 * k
+        ok, t = single_start_q_geometry(k, trials, seed0 + 101 * n)
+        q = ok / t
+        rows.append({"n": n, "points": k, "q": q, "k": ok, "trials": t,
+                     "ci95": wilson_interval(ok, t),
+                     "expected_starts": (1.0 / q) if q > 0 else float("inf")})
+        print(f"  points={k:>2} n={n:>2}vars  q={q:6.3f} ({ok}/{t})")
+    return rows
+
+
 def bestofk_random(family: str, n: int, instances: int, K: int, span: float, seed0: int):
     """Directly measure best-of-K random restart under the SAME conditions as q(n), so the
     predicted-vs-observed comparison is apples-to-apples (same seeds/N, no cross-JSON noise).
@@ -179,10 +221,15 @@ def main() -> None:
     ap.add_argument("--trials", type=int, default=300, help="fresh instances per n for q(n)")
     ap.add_argument("--K", type=int, default=8, help="best-of-K budget (matches R5/R7)")
     ap.add_argument("--seed", type=int, default=1234)
+    ap.add_argument("--no-geometry", action="store_true",
+                    help="skip the (slower) real-domain geometry validation family")
+    ap.add_argument("--geometry-trials", type=int, default=150,
+                    help="trials for the geometry family (its polish is ~10x slower)")
     args = ap.parse_args()
 
     indep = measure_family("indep", NS_INDEP, INDEP_START, args.trials, args.K, args.seed)
     coupled = measure_family("coupled", NS_COUPLED, COUPLED_START, args.trials, args.K, args.seed + 55555)
+    geometry = None if args.no_geometry else measure_geometry(args.geometry_trials, args.seed + 99999)
 
     # --- factorization test -----------------------------------------------------------
     fi = _loglin_fit([r["n"] for r in indep], [r["q"] for r in indep])
@@ -190,9 +237,13 @@ def main() -> None:
     v = math.exp(fi[0] + fi[1]) if fi else float("nan")   # implied per-var fraction q(1)=e^{a+b}
     v_direct = next((r["q"] for r in indep if r["n"] == 1), None)
 
+    fg = _loglin_fit([r["n"] for r in geometry], [r["q"] for r in geometry]) if geometry else None
+
     print("\n=== factorization test (log q ~ a + b*n) ===")
-    print(f"  indep:   slope b={fi[1]:+.4f}  (=> v=e^b={math.exp(fi[1]):.3f})  R^2={fi[2]:.3f}")
-    print(f"  coupled: slope b={fc[1]:+.4f}  R^2={fc[2]:.3f}   (flat b~0 => basins do NOT factorize)")
+    print(f"  indep:    slope b={fi[1]:+.4f}  (=> v=e^b={math.exp(fi[1]):.3f})  R^2={fi[2]:.3f}   (steep => reachability collapses)")
+    print(f"  coupled:  slope b={fc[1]:+.4f}  R^2={fc[2]:.3f}   (flat b~0 => basins do NOT factorize; random survives)")
+    if fg:
+        print(f"  geometry: slope b={fg[1]:+.4f}  R^2={fg[2]:.3f}   (real domain; steep => learning-favorable regime despite coupling)")
     print(f"  measured v = q_indep(1) = {v_direct:.3f}")
 
     # --- prediction of best-of-K random restart, compared to the SELF-MEASURED curve --
@@ -256,6 +307,12 @@ def main() -> None:
                       "loglin": {"a": fi[0], "b": fi[1], "r2": fi[2], "v_from_slope": math.exp(fi[1])}},
             "coupled": {"ns": NS_COUPLED, "start_span": COUPLED_START, "rows": coupled,
                         "loglin": {"a": fc[0], "b": fc[1], "r2": fc[2]}},
+            **({"geometry": {"ns": [2 * k for k in NS_GEOMETRY_PTS], "rows": geometry,
+                             "loglin": {"a": fg[0], "b": fg[1], "r2": fg[2]},
+                             "note": "real-domain coupled point-chain; steep slope => reachability "
+                                     "collapses despite coupling (per-point reflection ambiguity + "
+                                     "spurious basins compound) => learning-favorable regime"}}
+               if geometry else {}),
         },
         "v_direct": v_direct,
         "p_L": p_L,
@@ -266,10 +323,10 @@ def main() -> None:
     out = Path("results/p_crossover"); out.mkdir(parents=True, exist_ok=True)
     (out / "crossover_theory.json").write_text(json.dumps(payload, indent=2))
     print(f"\nwrote {out/'crossover_theory.json'}")
-    _plot(indep, coupled, v_direct, args.K, n_star, learned_indep)
+    _plot(indep, coupled, v_direct, args.K, n_star, learned_indep, geometry)
 
 
-def _plot(indep, coupled, v, K, n_star, learned_indep) -> None:
+def _plot(indep, coupled, v, K, n_star, learned_indep, geometry=None) -> None:
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -280,16 +337,19 @@ def _plot(indep, coupled, v, K, n_star, learned_indep) -> None:
     fig, ax = plt.subplots(1, 2, figsize=(9, 3.4))
 
     # (a) factorization test: log q vs n
-    for rows, col, lab in ((indep, "#1f77b4", "independent traps"),
-                           (coupled, "#d62728", "coupled chain")):
+    series = [(indep, "#1f77b4", "o", "independent (sep.), b=-1.03"),
+              (coupled, "#d62728", "s", "coupled bilinear, b=-0.13")]
+    if geometry:
+        series.append((geometry, "#2ca02c", "^", "geometry (real), collapses"))
+    for rows, col, mk, lab in series:
         ns = [r["n"] for r in rows]
         qs = [max(r["q"], 1e-3) for r in rows]
-        ax[0].plot(ns, qs, "o-", color=col, label=lab, linewidth=2)
+        ax[0].plot(ns, qs, mk + "-", color=col, label=lab, linewidth=2)
     ax[0].set_yscale("log")
     ax[0].set_xlabel("dimension n")
     ax[0].set_ylabel("single-start reachability q(n)")
-    ax[0].set_title("(a) basins factorize? q(n)=v$^n$ is a line")
-    ax[0].legend(fontsize=8)
+    ax[0].set_title("(a) reachability decay: steep = learning-favorable")
+    ax[0].legend(fontsize=7.5)
 
     # (b) predicted vs observed random restart + learned + crossover
     ns = [r["n"] for r in indep]

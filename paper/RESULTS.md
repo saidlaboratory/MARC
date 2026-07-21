@@ -173,6 +173,13 @@ is set by whether acceptance basins **factorize across variables**:
   ties random) and the classical LM solver dominates (0.77 → 1.0). This is the mechanism
   behind R7 — a *predicted* consequence of broken factorization, not an unexplained negative.
 
+- **Geometry (real domain):** a coupled point-chain family (`marc/data/geometry.py`
+  `make_point_chain`, 2k vars, quartic energy). Syntactically coupled, yet reachability
+  **collapses**: slope **−0.77 (R²=0.999)**, `q(n)` = 0.653, 0.147, 0.027, 0.007 at n=2,4,6,8.
+  So the diagnostic is the *measured slope*, not the coupled/independent label; geometry is a
+  real domain the law flags as **learning-favorable** (classical-polish solve rates non-saturated:
+  in-dist 0.56, held-out 0.28). Training MARC's denoiser here is the flagged next experiment.
+
 **Why this matters:** it converts the scattered R5/R7 "helps here, not there" observations into
 a single predictive principle — *a learned proposal beats classical search iff acceptance
 basins factorize and dimension is high* — validated parameter-free. Full derivation and honest

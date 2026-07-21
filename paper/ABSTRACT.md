@@ -42,13 +42,16 @@ explosion (from 4 to 600 restarts over dimensions 1–6). Breaking separability 
 coupled chained-bilinear family, the law predicts — and we confirm — that $q(n)$
 stops decaying ($\log$-slope $-0.13$ vs $-1.03$ when separable, both $R^2>0.95$),
 random search never collapses ($\approx4$ restarts at every dimension), the learned
-proposal ties it at every dimension, and the classical solver dominates. Amortization thus pays off
-precisely, and only, when basins factorize and dimension is high. We report the
-negative regimes as primary findings with Wilson intervals and $z$-tests
-throughout, alongside a controlled entrapment result (annealed noise cuts
-deterministic trapping by $0.525\pm0.086$, $N=200$). The law converts scattered
-"helps here, not there" observations into a falsifiable account of when amortized
-inference earns its training cost — and a reproducible protocol for evaluating it.
+proposal ties it at every dimension, and the classical solver dominates. A real-domain
+geometry family sharpens the result: the diagnostic is the *measured* reachability
+slope, not a syntactic label — geometry is coupled yet its reachability collapses,
+flagging it as learning-favorable. Amortization thus pays off precisely, and only,
+when single-start reachability decays with dimension. We report the negative regimes
+as primary findings with Wilson intervals and $z$-tests throughout, alongside a
+controlled entrapment result (annealed noise cuts deterministic trapping by
+$0.525\pm0.086$, $N=200$). The law converts scattered "helps here, not there"
+observations into a falsifiable account of when amortized inference earns its
+training cost — and a reproducible protocol for evaluating it.
 
 ---
 

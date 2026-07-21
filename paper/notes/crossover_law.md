@@ -1,10 +1,11 @@
 # The factorization law for learned-vs-classical constraint solving (R9)
 
 **Status:** canonical derivation + validation writeup for the paper's central claim.
-Numbers marked `⟨run⟩` come from `results/p_crossover/crossover_theory.json`
-(`scripts/run_crossover_theory.py --trials 600 --K 8`). This section unifies R5
-(the independent high-dim positive) and R7 (the coupled negative) under one
-falsifiable, parameter-free law and is the answer to "why should AAAI care."
+Numbers come from `results/p_crossover/crossover_theory.json`
+(`scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721`). This section
+unifies R5 (the independent high-dim positive), R7 (the coupled negative), and a real
+geometry domain under one falsifiable, parameter-free law whose diagnostic is the
+*measured* single-start reachability slope — the answer to "why should AAAI care."
 
 ---
 
@@ -63,13 +64,23 @@ regime, and it is what R5 measured.
 
 **Coupled constraints.** If factors couple variables (our chained bilinear family:
 $x_i+x_{i+1}=s_i,\ x_i x_{i+1}=p_i$), the solution is a joint object and the polish
-propagates constraints along the chain. Basins do **not** factorize, so $q(n)$ does
-**not** decay geometrically — the law predicts $q_{\text{coupled}}(n)\approx$ const
-($\log$-slope $\approx 0$). Random search never collapses, a learned proposal has
-**nothing to amortize** (it ties random), and a classical joint solver
-(Levenberg–Marquardt with the analytic Jacobian) dominates. This is exactly R7 — no
-longer a disappointing negative but the *predicted* consequence of broken
-factorization.
+propagates constraints along the chain. Here basins do **not** factorize, so $q(n)$
+does **not** decay geometrically — measured $\log$-slope $\approx 0$. Random search
+never collapses, a learned proposal has **nothing to amortize** (it ties random), and
+a classical joint solver (Levenberg–Marquardt with the analytic Jacobian) dominates.
+This is exactly R7 — no longer a disappointing negative but the *predicted*
+consequence of a flat reachability curve.
+
+**The diagnostic is the measured slope, not the syntactic label.** Separability is a
+*sufficient* condition for collapse (it forces $q=v^n$ exactly), but it is not
+necessary: a coupled system can still have a steeply decaying $q(n)$ if each local
+subproblem admits several basins so that errors compound down the chain. What
+actually predicts the regime is the **measured** $\log q$ slope: steep (collapse)
+$\Rightarrow$ random search fails in high $n$ $\Rightarrow$ learning can help;
+flat $\Rightarrow$ random survives $\Rightarrow$ learning cannot. Our real-domain
+geometry family (below) is exactly the informative case — syntactically coupled, yet
+its reachability collapses — which is why we state the law in terms of the measured
+slope.
 
 ## 4. The crossover, predicted
 
@@ -120,6 +131,32 @@ $v\to1$. Figure `paper/figures/fig_crossover_theory.pdf`: (a) $\log q$ vs $n$ �
 separable is a line ($R^2{=}0.98$), coupled is flat; (b) parameter-free predicted
 vs measured random curve against the flat learned ceiling.
 
+## 5a. Real-domain validation: geometry (a coupled family that still collapses)
+
+To test the law outside the synthetic traps we add a **real-ish geometric domain**:
+chains of unknown points $P_1,\dots,P_k$ ($n{=}2k$ coordinates) with squared-distance
+constraints to fixed anchors and between consecutive points (the geometry the MARC
+eval already uses, generalized to arbitrary length; `marc/data/geometry.py`
+`make_point_chain`). This is a genuinely nonconvex quartic energy and needs the
+geometry-tuned polish; solutions are integer coordinates the checker accepts exactly.
+
+Geometry is syntactically **coupled** (each point ties to the previous), yet its
+measured single-start reachability **collapses**: slope **b = −0.77 (R²=0.999)** (vs
+−1.03 separable, −0.13 coupled-bilinear), because each point's two-circle subproblem
+has a reflection ambiguity and spurious basins, so a random start rarely places *every*
+point in the right basin and errors compound down the chain. Measured $q(n)$:
+**0.653, 0.147, 0.027, 0.007** at $n=2,4,6,8$.
+
+**Why this matters.** It shows the law's diagnostic is the *measured slope*, not the
+coupled/independent label, and it identifies geometry as a **real domain the law flags
+as learning-favorable** (steep collapse $\Rightarrow$ random search fails
+$\Rightarrow$ an amortized proposal that learns each point's marginal can win). This
+is the concrete, law-guided next experiment (train the denoiser on geometry chains and
+test it against the random-restart control), and it directly answers the
+"all-synthetic" critique of R5/R7. Preliminary geometry solve rates with the classical
+polish alone are non-saturated (in-distribution $0.56$, held-out $0.28$; `results/p4_scale/`),
+consistent with a hard, non-trivial domain rather than a saturated one.
+
 ## 6. Honesty / limitations
 
 - **Instance heterogeneity.** (1) uses instance-averaged $q$; per-instance $q_i$
@@ -127,9 +164,12 @@ vs measured random curve against the flat learned ceiling.
   the *self-measured* best-of-$K$ curve under identical conditions alongside the
   prediction, so the comparison is apples-to-apples; the parameter-free $v^n$
   prediction is validated against that measured curve, not a cross-experiment JSON.
-- **Two families.** The law is derived generally (separable vs coupled) and
-  validated on one family of each type; a coupled *geometry* family is a natural
-  third point (future/appendix). The claim is about the mechanism, which is generic.
+- **Three families, one still open at the solve level.** The law's *reachability*
+  prediction is validated on three families (separable traps, coupled bilinear,
+  coupled geometry). The *solve-rate* consequence (learned beats random) is confirmed
+  on the separable family (R5) and the coupled-bilinear negative (R7); on geometry the
+  law predicts learning can help but training the geometry denoiser and running it
+  against the random control is the flagged next experiment, not yet done.
 - **Learned ceiling is empirical.** $p_L$ (and its capacity-limited decay at large
   $n$, e.g. the independent $n=6$ dropoff) is measured, not derived; the law
   predicts the *random* curve and the crossover, not the learned proposal's absolute
