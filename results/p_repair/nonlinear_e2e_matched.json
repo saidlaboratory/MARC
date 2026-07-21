@@ -1,0 +1,242 @@
+{
+  "status": "ok",
+  "data_version": 6,
+  "method": "operator-aware candidate-conditioned graph repair ranking",
+  "config": {
+    "train_data": "nonlinear",
+    "eval_data": null,
+    "exclude_family": [],
+    "n_train": 500,
+    "n_val": 100,
+    "n_test": 60,
+    "epochs": 80,
+    "batch_size": 12,
+    "K": 4,
+    "D": 96,
+    "L": 3,
+    "lr": 0.001,
+    "seed": 20260722,
+    "device": "cpu",
+    "solve_e2e": true,
+    "eval_only": true,
+    "out": "results/p_repair/nonlinear_e2e_matched.json",
+    "ckpt": "checkpoints/repair_nonlinear_balanced_full.pt",
+    "quick": false
+  },
+  "seed_hygiene": {
+    "train": [
+      20260722,
+      20261222
+    ],
+    "validation": [
+      20760722,
+      20760822
+    ],
+    "test": [
+      21160722,
+      21160782
+    ],
+    "overlap_instances": 0
+  },
+  "best_validation": {
+    "full": null,
+    "control": null
+  },
+  "history": [],
+  "result": {
+    "inference_timing": {
+      "full_forward_s_total": 0.06217158306390047,
+      "full_forward_s_per_instance": 0.0010361930510650078,
+      "candidate_graphs_per_instance": 4,
+      "note": "model forward only; deterministic graph featurization is cached"
+    },
+    "full": {
+      "invention": {
+        "k": 50,
+        "n": 60,
+        "rate": 0.8333333333333334,
+        "ci95": [
+          0.7196814850279217,
+          0.9068692279867897
+        ]
+      }
+    },
+    "control": {
+      "invention": {
+        "k": 23,
+        "n": 60,
+        "rate": 0.38333333333333336,
+        "ci95": [
+          0.2708808958488824,
+          0.5098263545959686
+        ]
+      }
+    },
+    "random": {
+      "invention": {
+        "k": 16,
+        "n": 60,
+        "rate": 0.26666666666666666,
+        "ci95": [
+          0.17132496487078852,
+          0.3900895360189135
+        ]
+      }
+    },
+    "full_gt_control": {
+      "z": 5.049449442041712,
+      "p_one_sided": 2.215425899096225e-07,
+      "paired_mcnemar": {
+        "full_only_correct": 28,
+        "baseline_only_correct": 1,
+        "discordant": 29,
+        "p_one_sided_exact": 5.587935447692871e-08
+      }
+    },
+    "full_gt_random": {
+      "z": 6.238794669049376,
+      "p_one_sided": 2.2047767179742341e-10,
+      "paired_mcnemar": {
+        "full_only_correct": 36,
+        "baseline_only_correct": 2,
+        "discordant": 38,
+        "p_one_sided_exact": 2.699380274862051e-09
+      }
+    },
+    "per_family": {
+      "nonlinear:quad_link": {
+        "full": {
+          "k": 25,
+          "n": 30,
+          "rate": 0.8333333333333334,
+          "ci95": [
+            0.6643529481431982,
+            0.9266356575964831
+          ]
+        },
+        "control": {
+          "k": 6,
+          "n": 30,
+          "rate": 0.2,
+          "ci95": [
+            0.09504978102401235,
+            0.37306047381027446
+          ]
+        },
+        "random": {
+          "k": 5,
+          "n": 30,
+          "rate": 0.16666666666666666,
+          "ci95": [
+            0.07336434240351683,
+            0.33564705185680177
+          ]
+        }
+      },
+      "nonlinear:vieta": {
+        "full": {
+          "k": 25,
+          "n": 30,
+          "rate": 0.8333333333333334,
+          "ci95": [
+            0.6643529481431982,
+            0.9266356575964831
+          ]
+        },
+        "control": {
+          "k": 17,
+          "n": 30,
+          "rate": 0.5666666666666667,
+          "ci95": [
+            0.3919700954540873,
+            0.7262276256938489
+          ]
+        },
+        "random": {
+          "k": 11,
+          "n": 30,
+          "rate": 0.36666666666666664,
+          "ci95": [
+            0.21873702204017678,
+            0.5448675356639506
+          ]
+        }
+      }
+    },
+    "solve": {
+      "full": {
+        "k": 53,
+        "n": 60,
+        "rate": 0.8833333333333333,
+        "ci95": [
+          0.7782097940014187,
+          0.9423235259654995
+        ]
+      },
+      "control": {
+        "k": 26,
+        "n": 60,
+        "rate": 0.43333333333333335,
+        "ci95": [
+          0.31572200394400635,
+          0.5589678534530513
+        ]
+      },
+      "random": {
+        "k": 15,
+        "n": 60,
+        "rate": 0.25,
+        "ci95": [
+          0.1577638557841185,
+          0.372323109454848
+        ]
+      },
+      "oracle": {
+        "k": 57,
+        "n": 60,
+        "rate": 0.95,
+        "ci95": [
+          0.8629926537490016,
+          0.9828508088208587
+        ]
+      },
+      "enumeration": {
+        "k": 57,
+        "n": 60,
+        "rate": 0.95,
+        "ci95": [
+          0.8629926537490016,
+          0.9828508088208587
+        ]
+      },
+      "wall_s": {
+        "full": {
+          "total": 9.087903831154108,
+          "per_instance": 0.15146506385256847
+        },
+        "control": {
+          "total": 8.943831793032587,
+          "per_instance": 0.14906386321720977
+        },
+        "random": {
+          "total": 9.184580584522337,
+          "per_instance": 0.15307634307537227
+        },
+        "oracle": {
+          "total": 9.079171125544235,
+          "per_instance": 0.1513195187590706
+        },
+        "enumeration": {
+          "total": 23.842263960745186,
+          "per_instance": 0.3973710660124198
+        }
+      },
+      "enumeration_cost": {
+        "solver_calls": 157,
+        "calls_per_instance": 2.6166666666666667,
+        "wall_s": 23.842263960745186
+      }
+    }
+  },
+  "wall_s": 116.04358291625977
+}

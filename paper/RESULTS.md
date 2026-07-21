@@ -209,3 +209,55 @@ limitations (instance heterogeneity, learned ceiling measured not derived) in
 `paper/notes/crossover_law.md`. Figure `paper/figures/fig_crossover_theory.pdf`.
 `PYTHONPATH=. python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721`
 (PROVENANCE R17–R19).
+
+## R10 · Candidate-conditioned structural repair (v0.3) — **new primary result**
+
+The v0.2 slot policy encoded the fixed graph once and classified candidate slots; it
+could not see nonlinear operator identity and fell to chance on the held-out `shared`
+pattern (R8).  v0.3 instead applies every candidate augmentation, encodes the resulting
+polynomial graph with operator-aware factor/edge features, and ranks repairs listwise.
+The candidate-only control receives the same augmentation recipe but no problem graph.
+
+Data Version 6 removes four discovered shortcuts: randomized linear insertion support;
+no target aux value for expression-defined candidates; coefficient/support-matched
+nonlinear menus; and family-balanced gold/distractor offset priors.  Earlier development
+files are non-citable and listed in `results/p_repair/README.md`.
+
+| Evaluation | full ranker | candidate-only | random |
+|---|---:|---:|---:|
+| Linear `shared` held out (N=400) | **0.565 [0.516,0.613]** | 0.343 | 0.283 |
+| Linear all patterns (N=1,200) | **0.552 [0.523,0.580]** | 0.351 | 0.253 |
+| Balanced nonlinear (N=360) | **0.889 [0.852,0.917]** | 0.422 | 0.253 |
+| Nonlinear `quad_link` (N=180) | **0.928 [0.880,0.957]** | 0.222 | 0.228 |
+| Nonlinear `vieta` (N=180) | **0.850 [0.791,0.895]** | 0.622 | 0.278 |
+| Vieta→unseen `quad_link` (N=150) | **0.367 [0.294,0.446]** | 0.240 | 0.213 |
+
+The paired comparisons are decisive on the shared test sets: linear full-only correct
+392 vs control-only 151 (exact McNemar p=5.4e-26); nonlinear 172 vs 4
+(p=4.1e-46).  The Vieta candidate-only prior is visibly stronger and is reported
+per-family rather than hidden in the average.  Relation-level transfer is positive but
+partial, not invariance.
+
+Optimization-seed repeats on fixed certified tests:
+
+- linear: 0.430/0.458/0.471, mean 0.453, population SD 0.017 (controls 0.303/0.249);
+- nonlinear: 0.889/0.875/0.881, mean 0.881, population SD 0.006
+  (controls 0.417/0.253).
+
+End-to-end, after actually applying the repair and invoking the matched solver, linear
+K=4 solves 0.540 vs 0.333/0.253 (oracle and enumeration 1.000, N=300).  Nonlinear
+solves 0.883 vs 0.433/0.250, near the 0.950 oracle/enumeration ceiling (N=60).
+Common restart seeds are used across arms.  The policy spends one solver call; enumeration
+uses 2.53 linear and 2.62 nonlinear calls on average.
+
+The K=4 linear checkpoint transfers without retraining: at K=4/8/16 its rates are
+0.540/0.347/0.247 versus random 0.253/0.140/0.020.  Enumeration calls grow
+2.53/4.56/8.56 and measured policy+solve speedup grows 1.21x/2.35x/3.91x.  Direct
+K=16 training reaches only 0.192, so the cross-budget checkpoint is selected and the
+direct-training negative remains reported.
+
+**Conclusion:** the failed value-denoising project now has a positive, controlled learned
+component in the correct division of labor: learn which structural repair deserves a solver
+call, delegate values, and verify exactly.  Scope remains menu-based repair on synthetic
+factor graphs; nonlinear distractor certificates are empirical at a stated refinement budget,
+not mathematical nonexistence theorems.

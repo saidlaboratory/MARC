@@ -146,6 +146,12 @@ def test_deterministic_and_diverse(pattern):
     assert len(golds) >= 2
 
 
+@pytest.mark.parametrize("pattern", PATTERNS)
+def test_gold_insertion_support_is_not_a_family_fingerprint(pattern):
+    supports = {frozenset(inst.insert_coeffs) for inst in _instances(pattern, n=30)}
+    assert len(supports) >= 2
+
+
 def test_generate_instances_round_robin():
     insts = generate_instances(6, seed=10)
     assert [i.pattern for i in insts] == PATTERNS * 2

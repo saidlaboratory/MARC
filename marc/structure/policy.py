@@ -59,7 +59,11 @@ def slot_features(
     pin = torch.zeros(n, 1, dtype=torch.float32)
     coeff = torch.zeros(n, M_MAX, dtype=torch.float32)
     for j, cand in enumerate(inst.candidates):
-        pin[2 * j : 2 * j + 2] = cand.pin_value / 4.0
+        # Expression-defined auxiliaries have no scalar pin in the candidate
+        # recipe.  Their solution value is target information and must not leak
+        # into a candidate-only feature.
+        if cand.defining_expression is None:
+            pin[2 * j : 2 * j + 2] = cand.pin_value / 4.0
         for m, fid in enumerate(factor_ids):
             coeff[2 * j : 2 * j + 2, m] = cand.insert_coeffs.get(fid, 0.0)
     return torch.cat([base, role, t_col, pin, coeff], dim=-1)

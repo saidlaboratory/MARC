@@ -13,9 +13,12 @@ class BipartiteLayer(nn.Module):
     every message to expose constraint structure.
     """
 
-    def __init__(self, D: int):
+    def __init__(self, D: int, edge_dim: int = 1):
         super().__init__()
-        edge_dim = 1  # edge_attr is a single coefficient scalar
+        # ``edge_dim=1`` preserves the original GraphDenoiser/checkpoint
+        # contract.  Semantic proposal models can pass a richer polynomial edge
+        # signature without maintaining a second copy of the message-passing
+        # implementation.
 
         self.msg_v2f = _mlp(D + D + edge_dim, D)
         self.phi_f   = _mlp(D + D, D)

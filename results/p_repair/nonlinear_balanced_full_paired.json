@@ -1,0 +1,162 @@
+{
+  "status": "ok",
+  "data_version": 6,
+  "method": "operator-aware candidate-conditioned graph repair ranking",
+  "config": {
+    "train_data": "nonlinear",
+    "eval_data": null,
+    "exclude_family": [],
+    "n_train": 500,
+    "n_val": 100,
+    "n_test": 360,
+    "epochs": 80,
+    "batch_size": 16,
+    "K": 4,
+    "D": 96,
+    "L": 3,
+    "lr": 0.001,
+    "seed": 20260722,
+    "device": "cpu",
+    "solve_e2e": false,
+    "eval_only": true,
+    "out": "results/p_repair/nonlinear_balanced_full_paired.json",
+    "ckpt": "checkpoints/repair_nonlinear_balanced_full.pt",
+    "quick": false
+  },
+  "seed_hygiene": {
+    "train": [
+      20260722,
+      20261222
+    ],
+    "validation": [
+      20760722,
+      20760822
+    ],
+    "test": [
+      21160722,
+      21161082
+    ],
+    "overlap_instances": 0
+  },
+  "best_validation": {
+    "full": null,
+    "control": null
+  },
+  "history": [],
+  "result": {
+    "full": {
+      "invention": {
+        "k": 320,
+        "n": 360,
+        "rate": 0.8888888888888888,
+        "ci95": [
+          0.8522302756638112,
+          0.9173353814792973
+        ]
+      }
+    },
+    "control": {
+      "invention": {
+        "k": 152,
+        "n": 360,
+        "rate": 0.4222222222222222,
+        "ci95": [
+          0.37228506016009993,
+          0.47380180841127834
+        ]
+      }
+    },
+    "random": {
+      "invention": {
+        "k": 91,
+        "n": 360,
+        "rate": 0.25277777777777777,
+        "ci95": [
+          0.21065435521338757,
+          0.30012176274563634
+        ]
+      }
+    },
+    "full_gt_control": {
+      "z": 13.175851463279129,
+      "p_one_sided": 6.042809153595293e-40,
+      "paired_mcnemar": {
+        "full_only_correct": 172,
+        "baseline_only_correct": 4,
+        "discordant": 176,
+        "p_one_sided_exact": 4.128134895861096e-46
+      }
+    },
+    "full_gt_random": {
+      "z": 17.242553409398766,
+      "p_one_sided": 6.364416654272843e-67,
+      "paired_mcnemar": {
+        "full_only_correct": 240,
+        "baseline_only_correct": 11,
+        "discordant": 251,
+        "p_one_sided_exact": 1.4467812475146378e-57
+      }
+    },
+    "per_family": {
+      "nonlinear:quad_link": {
+        "full": {
+          "k": 167,
+          "n": 180,
+          "rate": 0.9277777777777778,
+          "ci95": [
+            0.8803669851119694,
+            0.9573106678240365
+          ]
+        },
+        "control": {
+          "k": 40,
+          "n": 180,
+          "rate": 0.2222222222222222,
+          "ci95": [
+            0.16764967187317115,
+            0.28840380024630563
+          ]
+        },
+        "random": {
+          "k": 41,
+          "n": 180,
+          "rate": 0.22777777777777777,
+          "ci95": [
+            0.1725736294293337,
+            0.2943587732477535
+          ]
+        }
+      },
+      "nonlinear:vieta": {
+        "full": {
+          "k": 153,
+          "n": 180,
+          "rate": 0.85,
+          "ci95": [
+            0.7905541547797237,
+            0.8948184703497355
+          ]
+        },
+        "control": {
+          "k": 112,
+          "n": 180,
+          "rate": 0.6222222222222222,
+          "ci95": [
+            0.5495367065379416,
+            0.6897997657294886
+          ]
+        },
+        "random": {
+          "k": 50,
+          "n": 180,
+          "rate": 0.2777777777777778,
+          "ci95": [
+            0.21750827764196345,
+            0.3473345000536181
+          ]
+        }
+      }
+    }
+  },
+  "wall_s": 348.7371780872345
+}

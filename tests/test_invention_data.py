@@ -3,6 +3,7 @@
 import sys
 
 import pytest
+import sympy as sp
 import torch
 
 from marc.cas.checker import Checker
@@ -157,7 +158,7 @@ def test_module_constants():
     from marc.data.aux_required import PATTERNS as AUX_PATTERNS
     assert FAMILIES_BY_SOURCE["aux_required"] == tuple(AUX_PATTERNS)
     assert FAMILIES_BY_SOURCE["nonlinear"] == ("vieta", "quad_link")
-    assert DATA_VERSION == 2
+    assert DATA_VERSION == 7
 
 
 def test_reference_solver_literal():
@@ -200,6 +201,12 @@ def test_gold_support_varies(family):
         supports.add(frozenset(inst.candidates[inst.gold_idx].insert_coeffs))
     # support randomization: the gold's touched-factor set is not family-constant
     assert len(supports) > 1
+
+
+def test_linear_gold_and_distractors_share_nonzero_pin_support():
+    ds = make_dataset("aux_required", 12, 40, K=4)
+    pins = [c.pin_value for inst in ds for c in inst.candidates]
+    assert all(v != 0 and abs(v) <= 4 for v in pins)
 
 
 def test_linear_sources_exact_certificate():
@@ -246,6 +253,14 @@ def test_nonlinear_menu_end_to_end():
             and c.insert_coeffs == gold.insert_coeffs
             and c.defining_expression is not None
         ]
-        assert len(hard) == 1
-        assert hard[0].defining_expression.startswith(gold.defining_expression)
-        assert hard[0].defining_expression != gold.defining_expression
+        assert len(hard) == len(inst.candidates) - 1
+        assert all(c.defining_expression != gold.defining_expression for c in hard)
+        assert all(sp.simplify(
+            sp.sympify(c.defining_expression)
+            - sp.sympify(gold.defining_expression)
+        ).is_number for c in hard)
+        # Every nonlinear option comes from the same expression/support prior;
+        # representation type cannot reveal the gold.
+        assert all(c.defining_expression is not None for c in inst.candidates)
+        assert all(set(c.insert_coeffs) == {f.id for f in inst.fixed_graph.factors}
+                   for c in inst.candidates)
