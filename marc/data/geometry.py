@@ -36,6 +36,52 @@ def build_triangle_graph(b_sq: float, a_sq: float, c: float) -> FactorGraph:
     )
 
 
+def build_point_chain_graph(link_sqs, anchor_sqs, origin_sq: float, c: float) -> FactorGraph:
+    """A chain of ``k`` unknown points P_1..P_k (2k variables). P_1 is anchored to the
+    origin (``origin_sq``) and to (c,0) (``anchor_sqs[0]``); each subsequent P_{i+1} is
+    linked to P_i by ``link_sqs[i-1]`` and anchored to (c,0) by ``anchor_sqs[i]``.
+
+    Generalises :func:`build_triangle_graph` (k=1) and :func:`build_linked_graph`
+    (k=2) to arbitrary length, giving a *coupled* geometry family that scales in
+    dimension — used to test the factorization law (R9) on a real-ish domain. Each
+    point contributes exactly two constraints (one coupling, one anchor), so the
+    system stays square and the chain propagates: basins do NOT factorize per
+    variable, so the law predicts a flat single-start reachability q(n)."""
+    k = len(anchor_sqs)
+    vs, fs, es = [], [], []
+    for i in range(k):
+        vs += [VariableNode(f"x{i}"), VariableNode(f"y{i}")]
+    # P_0: anchored to origin and to (c,0)
+    fs.append(FactorNode("eq_origin", f"x0**2 + y0**2 - ({origin_sq})"))
+    fs.append(FactorNode("eq_anchor0", f"(x0 - ({c}))**2 + y0**2 - ({anchor_sqs[0]})"))
+    es += [Edge("x0", "eq_origin", 1), Edge("y0", "eq_origin", 1),
+           Edge("x0", "eq_anchor0", 1), Edge("y0", "eq_anchor0", 1)]
+    for i in range(1, k):
+        fs.append(FactorNode(f"eq_link{i}",
+                             f"(x{i} - x{i-1})**2 + (y{i} - y{i-1})**2 - ({link_sqs[i-1]})"))
+        fs.append(FactorNode(f"eq_anchor{i}", f"(x{i} - ({c}))**2 + y{i}**2 - ({anchor_sqs[i]})"))
+        es += [Edge(f"x{i-1}", f"eq_link{i}", -1), Edge(f"y{i-1}", f"eq_link{i}", -1),
+               Edge(f"x{i}", f"eq_link{i}", 1), Edge(f"y{i}", f"eq_link{i}", 1),
+               Edge(f"x{i}", f"eq_anchor{i}", 1), Edge(f"y{i}", f"eq_anchor{i}", 1)]
+    return FactorGraph(variables=vs, factors=fs, edges=es)
+
+
+def make_point_chain(k: int, rng):
+    """Integer-coordinate coupled geometry chain of ``k`` points (2k variables).
+    Returns (graph, solution). Coordinates are small nonzero integers so the
+    checker's exact-rational gate accepts, matching the geometry eval splits."""
+    c = rng.randint(3, 5)
+    pts = [(rng.choice([v for v in range(-4, 5) if v != 0]),
+            rng.choice([v for v in range(-4, 5) if v != 0])) for _ in range(k)]
+    origin_sq = pts[0][0] ** 2 + pts[0][1] ** 2
+    anchor_sqs = [(x - c) ** 2 + y ** 2 for (x, y) in pts]
+    link_sqs = [(pts[i][0] - pts[i - 1][0]) ** 2 + (pts[i][1] - pts[i - 1][1]) ** 2
+                for i in range(1, k)]
+    g = build_point_chain_graph(link_sqs, anchor_sqs, origin_sq, c)
+    sol = [float(v) for p in pts for v in p]
+    return g, sol
+
+
 def build_linked_graph(b1_sq: float, a1_sq: float, link_sq: float, a2_sq: float, c: float) -> FactorGraph:
     """Two unknown points: P1=(x1,y1) as in :func:`build_triangle_graph`, plus a
     second point P2=(x2,y2) linked to P1 by ``link_sq`` and to the anchor (c, 0) by
