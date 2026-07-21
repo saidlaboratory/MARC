@@ -179,6 +179,13 @@ def template_registry() -> dict:
     except ImportError:
         pass
     try:
+        from marc.data.geometry import PointChainTemplate
+
+        for inst in (PointChainTemplate(2), PointChainTemplate(3), PointChainTemplate(4)):
+            registry[inst.name] = inst  # PointChain2 / PointChain3 / PointChain4
+    except ImportError:
+        pass
+    try:
         from marc.data.aux_required import AUX_REQUIRED_TEMPLATES
 
         for inst in AUX_REQUIRED_TEMPLATES:

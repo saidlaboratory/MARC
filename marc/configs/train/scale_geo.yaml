@@ -1,0 +1,62 @@
+# R9 geometry-training mix: scale.yaml + the PointChain point-chain geometry family.
+# Use with: python3 scripts/train_scale.py --config marc/configs/train/scale_geo.yaml --out-dir checkpoints/scale_geo_D512_L8
+
+model:
+  D: 512           # hidden dimension (baseline=128, mid=256, large=512)
+  L: 8             # message-passing rounds (baseline=4, mid=6, large=8)
+  step_dim: 64     # sinusoidal time embedding dimension
+  var_attn: false  # cross-variable self-attention after message passing (joint proposals)
+
+training:
+  T: 1000          # diffusion timesteps (cosine schedule)
+  epochs_A: 50     # Stage A (DSM pretraining) epochs
+  epochs_B: 20     # Stage B (GRPO RL fine-tuning) epochs
+  batch_size: 32
+  lr_A: 3.0e-4
+  lr_B: 3.0e-5   # 1.0e-4 diverged at D512 (GRPO loss 12.9 -> 1.3e5)
+  device: "auto"   # auto = cuda > mps > cpu; or set cuda/mps/cpu explicitly
+  seed: 42
+  amp: "auto"      # bf16 autocast iff cuda supports it; true/false to force
+  grad_clip: 1.0
+  warmup_frac: 0.03  # fraction of Stage-A steps spent in linear LR warmup
+  num_workers: 2
+  ema: true          # keep an EMA shadow of the weights (ema_state_dict in checkpoints)
+  ema_decay: 0.999
+
+data:
+  n_train: 10000   # TOTAL training-set target across all templates
+  n_test: 2000
+  templates:
+    - "LinearSystem2x2"
+    - "LinearSystem3x3"
+    - "TriangleDistance"
+    - "PointSlope"
+    - "BilinearSystem"
+    - "BilinearProduct"
+    - "QuadraticSystem"
+    - "CircleLine"
+    - "CoupledChain4"
+    - "CoupledChain6"
+    - "PointChain2"
+    - "PointChain3"
+    - "PointChain4"
+  # AuxRequired_* templates are registered but deliberately NOT in this mix:
+  # the aux-required family trains the structure policy, not the value denoiser.
+  # Own data dir: the templates differ from scale.yaml, so sharing
+  # results/scale/train_data would invalidate the live run's manifest.
+  dir: "results/scale_geo/train_data"
+  seed: 42
+
+grpo:
+  N: 8             # rollouts per problem (group size)
+  B: 10.0          # terminal checker reward magnitude
+  beta: 0.01       # KL regularisation weight
+  eps_clip: 0.2    # PPO clip ratio
+  steps: 40        # DDIM steps per rollout
+  guidance_weight: 1.0
+  problems_subset: 256  # cap on problems used for GRPO fine-tuning
+  shaping_clip: 100.0   # bound on the energy-delta shaping term (10*B); raw deltas hit O(1e16) on diverged rollouts
+
+checkpointing:
+  dir: "checkpoints/scale_geo_D512_L8"
+  save_every_n_epochs: 5
