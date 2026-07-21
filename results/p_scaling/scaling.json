@@ -2,47 +2,259 @@
   "K": 8,
   "test_per_n": 40,
   "epochs": 200,
-  "tol": 0.05,
+  "seeds": 1,
+  "methodology": "unified-v2",
+  "note": "unified-v2: solver and acceptance unified with run_hard_eval/run_coupled_eval (shared marc.refine.iterative.refine + Checker gate). Numbers are NOT comparable to pre-change R6 rows, which used a bespoke line-search descent and solution-space acceptance |x_i - R_i| < 0.05.",
   "rows": [
     {
       "n": 1,
-      "deterministic": 0.0,
-      "langevin": 0.225,
-      "mean_prior": 0.0,
-      "random_restart": 0.875,
-      "learned_x0": 0.675
+      "deterministic": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "langevin": {
+        "k": 31,
+        "n": 40,
+        "rate": 0.775,
+        "ci95": [
+          0.6249660359590695,
+          0.8768404674532148
+        ]
+      },
+      "mean_prior": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "random_restart": {
+        "k": 40,
+        "n": 40,
+        "rate": 1.0,
+        "ci95": [
+          0.9123754607496077,
+          1.0
+        ]
+      },
+      "learned_x0": {
+        "k": 38,
+        "n": 40,
+        "rate": 0.95,
+        "ci95": [
+          0.834958291820748,
+          0.9861796228538989
+        ]
+      },
+      "p_learned_gt_random": 0.9239609596035125,
+      "p_learned_gt_langevin": 0.011525283034981118
     },
     {
       "n": 2,
-      "deterministic": 0.0,
-      "langevin": 0.025,
-      "mean_prior": 0.0,
-      "random_restart": 0.7,
-      "learned_x0": 0.425
+      "deterministic": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "langevin": {
+        "k": 9,
+        "n": 40,
+        "rate": 0.225,
+        "ci95": [
+          0.1231595325467853,
+          0.3750339640409305
+        ]
+      },
+      "mean_prior": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "random_restart": {
+        "k": 29,
+        "n": 40,
+        "rate": 0.725,
+        "ci95": [
+          0.5716474916687543,
+          0.8389214656685692
+        ]
+      },
+      "learned_x0": {
+        "k": 38,
+        "n": 40,
+        "rate": 0.95,
+        "ci95": [
+          0.834958291820748,
+          0.9861796228538989
+        ]
+      },
+      "p_learned_gt_random": 0.0031899828778363393,
+      "p_learned_gt_langevin": 2.2556280032687818e-11
     },
     {
       "n": 3,
-      "deterministic": 0.0,
-      "langevin": 0.0,
-      "mean_prior": 0.0,
-      "random_restart": 0.05,
-      "learned_x0": 0.55
+      "deterministic": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "langevin": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "mean_prior": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "random_restart": {
+        "k": 3,
+        "n": 40,
+        "rate": 0.075,
+        "ci95": [
+          0.025835556771858226,
+          0.19864530159097524
+        ]
+      },
+      "learned_x0": {
+        "k": 39,
+        "n": 40,
+        "rate": 0.975,
+        "ci95": [
+          0.8711834051199223,
+          0.9955732825922052
+        ]
+      },
+      "p_learned_gt_random": 3.8170345564668627e-16,
+      "p_learned_gt_langevin": 1.3499527625220033e-18
     },
     {
       "n": 4,
-      "deterministic": 0.0,
-      "langevin": 0.0,
-      "mean_prior": 0.0,
-      "random_restart": 0.0,
-      "learned_x0": 0.65
+      "deterministic": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "langevin": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "mean_prior": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "random_restart": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "learned_x0": {
+        "k": 37,
+        "n": 40,
+        "rate": 0.925,
+        "ci95": [
+          0.8013546984090248,
+          0.9741644432281419
+        ]
+      },
+      "p_learned_gt_random": 5.346795473916867e-17,
+      "p_learned_gt_langevin": 5.346795473916867e-17
     },
     {
       "n": 6,
-      "deterministic": 0.0,
-      "langevin": 0.0,
-      "mean_prior": 0.0,
-      "random_restart": 0.025,
-      "learned_x0": 0.1
+      "deterministic": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "langevin": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "mean_prior": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "random_restart": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "learned_x0": {
+        "k": 10,
+        "n": 40,
+        "rate": 0.25,
+        "ci95": [
+          0.14186967895549518,
+          0.40194259066970106
+        ]
+      },
+      "p_learned_gt_random": 0.000361616358215097,
+      "p_learned_gt_langevin": 0.000361616358215097
     }
   ]
 }

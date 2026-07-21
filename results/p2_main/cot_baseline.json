@@ -7,13 +7,39 @@
       "n_problems": 25,
       "solve_rate": 1.0,
       "pass_at_k": 1.0,
-      "perturbation_robustness": 0.0
+      "perturbation_robustness": 0.0,
+      "wall_ms_total": 195.1665009255521,
+      "wall_ms_mean": 7.806660037022084,
+      "restart_curve": [
+        {
+          "k": 1,
+          "n": 25,
+          "rate": 1.0,
+          "ci95": [
+            0.8668035060468213,
+            1.0
+          ]
+        }
+      ]
     },
     "held_out_structure": {
       "n_problems": 25,
       "solve_rate": 1.0,
       "pass_at_k": 1.0,
-      "perturbation_robustness": 0.36
+      "perturbation_robustness": 0.36,
+      "wall_ms_total": 196.31549905170687,
+      "wall_ms_mean": 7.852619962068275,
+      "restart_curve": [
+        {
+          "k": 1,
+          "n": 25,
+          "rate": 1.0,
+          "ci95": [
+            0.8668035060468213,
+            1.0
+          ]
+        }
+      ]
     }
   },
   "generalization_gap": 0.0,
@@ -29,7 +55,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 19.093750015599653,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_001",
@@ -41,7 +72,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.708832999924198,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_002",
@@ -53,7 +89,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.529916998464614,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_003",
@@ -65,7 +106,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.553125004051253,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_004",
@@ -77,7 +123,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.7484590001404285,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_005",
@@ -89,7 +140,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.401042006677017,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_006",
@@ -101,7 +157,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.383582997135818,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_007",
@@ -113,7 +174,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.302666985196993,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_008",
@@ -125,7 +191,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.279832992935553,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_009",
@@ -137,7 +208,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.218082988401875,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_010",
@@ -149,7 +225,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.159417000366375,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_011",
@@ -161,7 +242,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.136458996683359,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_012",
@@ -173,7 +259,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.182125002145767,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_013",
@@ -185,7 +276,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.434875005856156,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_014",
@@ -197,7 +293,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.295957999303937,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_015",
@@ -209,7 +310,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.202125008916482,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_016",
@@ -221,7 +327,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.167540985392407,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_017",
@@ -233,7 +344,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.212541997432709,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_018",
@@ -245,7 +361,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.182707980973646,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_019",
@@ -257,7 +378,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.331667002290487,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_020",
@@ -269,7 +395,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.237749989144504,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_021",
@@ -281,7 +412,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.607874984387308,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_022",
@@ -293,7 +429,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.269374997122213,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_023",
@@ -305,7 +446,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.2977920062839985,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "id_024",
@@ -317,7 +463,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.228999980725348,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_000",
@@ -330,7 +481,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 7.551416987553239,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_001",
@@ -343,7 +499,12 @@
       ],
       "max_residual": 4.440892098500626e-16,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.452165998984128,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_002",
@@ -356,7 +517,12 @@
       ],
       "max_residual": 3.3306690738754696e-16,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 7.4646669963840395,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_003",
@@ -369,7 +535,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.350041996687651,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_004",
@@ -382,7 +553,12 @@
       ],
       "max_residual": 1.000088900582341e-11,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.473042001947761,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_005",
@@ -395,7 +571,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 7.3853750072885305,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_006",
@@ -408,7 +589,12 @@
       ],
       "max_residual": 9.999973071828094e-11,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.3259999917354435,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_007",
@@ -421,7 +607,12 @@
       ],
       "max_residual": 9.99982319171977e-11,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.347708015004173,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_008",
@@ -434,7 +625,12 @@
       ],
       "max_residual": 1.0000611450067254e-11,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.49529100721702,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_009",
@@ -447,7 +643,12 @@
       ],
       "max_residual": 9.999667760496322e-12,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.719415996689349,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_010",
@@ -460,7 +661,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.780250016367063,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_011",
@@ -473,7 +679,12 @@
       ],
       "max_residual": 1.000088900582341e-11,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 8.766417013248429,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_012",
@@ -486,7 +697,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.480375003069639,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_013",
@@ -499,7 +715,12 @@
       ],
       "max_residual": 1.000000082740371e-11,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 7.636124995769933,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_014",
@@ -512,7 +733,12 @@
       ],
       "max_residual": 1.7763568394002505e-15,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.5182920263614506,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_015",
@@ -525,7 +751,12 @@
       ],
       "max_residual": 1.0000023031864202e-10,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.594791997689754,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_016",
@@ -538,7 +769,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 7.654042012291029,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_017",
@@ -551,7 +787,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 8.389208000153303,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_018",
@@ -564,7 +805,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 8.065583009738475,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_019",
@@ -577,7 +823,12 @@
       ],
       "max_residual": 3.3306690738754696e-16,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 7.952958985697478,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_020",
@@ -590,7 +841,12 @@
       ],
       "max_residual": 1.0000666961218485e-11,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 9.592957998393103,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_021",
@@ -603,7 +859,12 @@
       ],
       "max_residual": 1.000000082740371e-10,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 8.318666979903355,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_022",
@@ -616,7 +877,12 @@
       ],
       "max_residual": 1.000000082740371e-10,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 7.936582987895235,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_023",
@@ -629,7 +895,12 @@
       ],
       "max_residual": 1.0000611450067254e-11,
       "reject_stage": "",
-      "perturbed_accepted": false
+      "perturbed_accepted": false,
+      "wall_ms": 8.888458018191159,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     },
     {
       "id": "ho_024",
@@ -642,7 +913,12 @@
       ],
       "max_residual": 0.0,
       "reject_stage": "",
-      "perturbed_accepted": true
+      "perturbed_accepted": true,
+      "wall_ms": 8.175666007446125,
+      "first_success_index": 0,
+      "n_steps": null,
+      "final_energy": null,
+      "energies": null
     }
   ],
   "model": "gemini-flash-lite-latest"

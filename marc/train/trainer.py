@@ -79,6 +79,7 @@ DEFAULTS = {
         "steps": 40,
         "guidance_weight": 1.0,
         "problems_subset": 256,
+        "shaping_clip": 100.0,
     },
     "checkpointing": {"dir": "checkpoints/scale_D512_L8", "save_every_n_epochs": 5},
 }
@@ -516,6 +517,7 @@ def run_stage_b(model, train_pairs, alpha_bar, cfg, device, out_dir, model_kwarg
         "seed": tr["seed"],
         "entropy_coef": g.get("entropy_coef", 0.0),
         "eps_clip": g["eps_clip"],
+        "shaping_clip": g["shaping_clip"],
     }
     start = time.time()
     model = train_stage_b(model, ref_policy, problems, alpha_bar,
@@ -551,8 +553,6 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
         description="Config-driven Stage-A (DSM) / Stage-B (GRPO) trainer for the scale run.",
         epilog=(
-            "NOTE: on current main, Stage-B GRPO carries a known log-prob bug; "
-            "recommend --stage a unless the Stage-B fix has merged. "
             "EMA (training.ema, default on, decay training.ema_decay): Stage-A "
             "checkpoints carry the shadow weights under the additive key "
             "'ema_state_dict'; 'model_state_dict' is always the raw weights "

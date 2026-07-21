@@ -52,7 +52,7 @@ MARC v0.1 bet on **value diffusion**: a learned denoiser iteratively refining no
 | **GNN numerical capacity** | The denoiser could not overfit `Ax = b` on four fixed systems from raw coefficients | Propagating precise numbers through message passing is a structural limitation, not a tuning problem |
 | **Structure selection** (trained policy over candidate augmentations) | Beats random-slot and no-context controls at small scale; clean-protocol regeneration pending | **The one learned component that beat its controls** — the live bet |
 
-Full evidence ledger: [`paper/RESULTS.md`](paper/RESULTS.md) · every number's command/seed/commit: [`paper/PROVENANCE.md`](paper/PROVENANCE.md) · standing review-attack checklist: [`paper/REVIEW_ATTACKS.md`](paper/REVIEW_ATTACKS.md).
+Full evidence ledger: [`paper/RESULTS.md`](paper/RESULTS.md) · every number's command/seed/commit: [`paper/PROVENANCE.md`](paper/PROVENANCE.md) · standing review-attack checklist: [`paper/notes/REVIEW_ATTACKS.md`](paper/notes/REVIEW_ATTACKS.md).
 
 **Results integrity rules (house law):** classical solvers (`refine`, `lm`, `exact`) are always labeled baselines; every rate carries N and a Wilson CI; every comparison carries a z-test; structure-selection numbers are citable **only** from runs whose JSON records `seed_hygiene.overlap_instances: 0`. Numbers predating the seed-protocol fix are withdrawn and must not be cited.
 
@@ -160,7 +160,7 @@ marc/
   eval/        harness, metrics (Wilson/z/Holm), solver registry incl. lm/exact,
                structure evals
 scripts/       run_overnight.py (the one command) + per-experiment scripts
-paper/         RESULTS.md, PROVENANCE.md, REVIEW_ATTACKS.md, figures
+paper/         RESULTS.md, PROVENANCE.md, notes/ (working notes), figures
 ```
 
 ---

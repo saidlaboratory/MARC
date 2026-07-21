@@ -36,7 +36,7 @@ included.
 
 ## 3. What IS solid (real, honest)
 - **Learned solver converges** (was diverging/0% → 100% on convex; 5 bugs fixed — see
-  `paper/learned_solver_fix.md`). Trained at scale this run: Stage-A loss **0.60**.
+  `paper/notes/learned_solver_fix.md`). Trained at scale this run: Stage-A loss **0.60**.
 - **Entrapment (RQ2):** deterministic descent 100% trapped → annealed Langevin 0.475; reduction
   **0.525 ± 0.086** (95% CI excludes 0, N=200). Real but textbook Langevin.
 - **Dimension-scaling crossover** (independent traps): random wins n≤2, **learned wins n≥3**
@@ -69,11 +69,10 @@ failed**.
 - Relaunch trick that worked: `--skip tests,train_stage_a,train_stage_b`; kill a stuck eval
   subprocess and the harness marks it failed and continues.
 
-## 6. Git / repo state (IMPORTANT — unfinished)
-- **On branch `main`.** There is a **local commit not yet pushed** (the overnight results in
-  `OVERNIGHT_RESULTS.md`); `git push origin HEAD:main` was **rejected — needs `git pull` first**
-  (main advanced). **First action for next context: `git pull --no-rebase origin main`, resolve
-  any conflict in `OVERNIGHT_RESULTS.md`, then push.**
+## 6. Git / repo state
+- **On branch `main`.** The overnight-results commit (`OVERNIGHT_RESULTS.md` +
+  `results/overnight/`, b8d6d31) **landed on `origin/main`** after the pull; the tree is
+  clean — nothing pending.
 - Merged this session: PR #75 (stale-test fix + status). PR #56 (coupled negative) and branches
   `sparsh/structure-invention`, `sparsh/aaai-readiness` carry the negatives (may be open).
 - Test suite: **green (365 passed)** — fixed a stale `test_invention_eval` Holm-family assertion.
@@ -84,15 +83,15 @@ failed**.
 - `paper/PROVENANCE.md` — every number → command/seed/commit (R1–R14).
 - `AAAI_READINESS.md` — the workshop-vs-main-track call + reframe table.
 - `OVERNIGHT_RESULTS.md` — this run's outcome.
-- Source notes: `paper/{learned_solver_fix,dimension_scaling_result,math_coverage,related_work,
-  ablation_reframe,h2_reframe,structure_invention_negative,llm_verify_negative}.md`.
+- Source notes: `paper/notes/{learned_solver_fix,dimension_scaling_result,math_coverage,
+  related_work,ablation_reframe,h2_reframe}.md`.
 - Process: `FIXING_PLAN.md`, `MEETING_NOTES.md`, `SUMMARY.md`, `RUNBOOK_SPARSH.md`.
 
 ## 8. Next steps (priority)
-1. **Push the pending results commit** (git pull → push; §6).
+1. ~~Push the pending results commit~~ — **done** (b8d6d31 on `origin/main`; §6).
 2. **Decide target = workshop** (default) unless a new positive appears. Start the `.tex` — ~60%
-   (intro/method/related-work) is experiment-free; `related_work.md` positions vs DIFUSCO /
-   Langevin-CO / amortized inference.
+   (intro/method/related-work) is experiment-free; `paper/notes/related_work.md` positions vs
+   DIFUSCO / Langevin-CO / amortized inference.
 3. If still chasing main-track: only remaining shots are **(a) wire the D512 checkpoint into the
    evals and see if scale changes coupled/hard** (cheap, likely still negative), **(b) a real
    domain with a genuine positive** (geometry at 0.56 is the least-saturated lead), or **(c) new
@@ -108,4 +107,4 @@ failed**.
 ## 10. One-line status
 Rigorous, honest, working system with one narrow positive (high-dim independent amortization);
 **workshop-ready, not main-track**; overnight run confirmed the findings and exposed the
-harness/checkpoint wiring gap; a pending results commit needs pull+push.
+harness/checkpoint wiring gap; the results commit is pushed (b8d6d31 on `origin/main`).

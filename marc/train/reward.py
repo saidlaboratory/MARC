@@ -31,7 +31,8 @@ Shaping term — potential-based, optimum-preserving
     group-relative advantages. The potential-based form is the correct one.
 
 Public API (stable — import without changes):
-    compute_reward(trajectory, G, checker, cas, *, B=10.0, use_shaping=True) -> float
+    compute_reward(trajectory, G, checker, cas, *, B=10.0, use_shaping=True,
+                   shaping_clip=100.0) -> float
     terminal_reward(trajectory, G, checker, *, B=10.0) -> float
     shaping_reward(trajectory, *, cas=None) -> float
 
@@ -48,6 +49,11 @@ from typing import Any, Dict, List, Optional, Sequence
 
 # Default terminal reward magnitude B (the checker-acceptance bonus).
 TERMINAL_B: float = 10.0
+
+# Symmetric bound on the shaping term inside compute_reward. Energy is a raw
+# 0.5*sum(residual^2) on unnormalized values, so one diverging rollout (x clamped
+# at +-1e4) can push the delta to O(1e16) and swamp the group-relative advantage.
+SHAPING_CLIP: float = 10.0 * TERMINAL_B
 
 
 def _x_values(trajectory: Dict[str, Any]) -> List[float]:
@@ -109,6 +115,7 @@ def compute_reward(
     *,
     B: float = TERMINAL_B,
     use_shaping: bool = True,
+    shaping_clip: float = SHAPING_CLIP,
 ) -> float:
     """Total scalar reward for one denoising rollout.
 
@@ -120,11 +127,14 @@ def compute_reward(
         B:          terminal reward magnitude for a checker-accepted solution.
         use_shaping: include potential-based energy shaping (set False for the
                      "purist" checker-only ablation).
+        shaping_clip: symmetric bound on the shaping term; keeps a single
+                     diverged rollout from dominating the GRPO group std.
 
     Returns:
-        float reward R = terminal + (shaping if use_shaping).
+        float reward R = terminal + (clipped shaping if use_shaping).
     """
     reward = terminal_reward(trajectory, G, checker, B=B)
     if use_shaping:
-        reward += shaping_reward(trajectory, cas=cas)
+        shaping = shaping_reward(trajectory, cas=cas)
+        reward += max(-shaping_clip, min(shaping_clip, shaping))
     return float(reward)

@@ -40,7 +40,7 @@ import torch.nn as nn
 from torch.nn.utils import clip_grad_norm_
 
 from marc.cas.checker import Checker
-from marc.train.reward import compute_reward
+from marc.train.reward import SHAPING_CLIP, compute_reward
 from marc.train.rollout import recompute_log_prob, run_rollout
 
 
@@ -62,6 +62,7 @@ def grpo_step(
     purist: bool = False,
     grad_clip: float = 1.0,
     entropy_coef: float = 0.0,
+    shaping_clip: float = SHAPING_CLIP,
     generator: Optional[torch.Generator] = None,
 ) -> Dict[str, float]:
     """One GRPO update for a single ``FactorGraph`` problem.
@@ -84,6 +85,7 @@ def grpo_step(
         purist:      terminal reward only — no energy shaping, no energy evals.
         grad_clip:   max gradient norm.
         entropy_coef: accepted for API completeness; adds NO term (see below).
+        shaping_clip: symmetric bound on the shaping reward (see compute_reward).
         generator:   optional torch.Generator for reproducible rollouts.
 
     Returns:
@@ -117,7 +119,8 @@ def grpo_step(
     # --- 2. Rewards and group-relative advantages ---
     rewards = torch.tensor(
         [
-            compute_reward(traj, G, checker, cas_engine, B=B, use_shaping=not purist)
+            compute_reward(traj, G, checker, cas_engine, B=B,
+                           use_shaping=not purist, shaping_clip=shaping_clip)
             for traj in trajectories
         ],
         dtype=torch.float,
@@ -187,6 +190,7 @@ def train_stage_b(
     seed: Optional[int] = None,
     entropy_coef: float = 0.0,
     eps_clip: float = 0.2,
+    shaping_clip: float = SHAPING_CLIP,
     checker=None,
 ) -> nn.Module:
     """Full Stage B GRPO training loop.
@@ -212,6 +216,7 @@ def train_stage_b(
         seed: if set, seeds torch globally and each rollout group deterministically
         entropy_coef: forwarded to grpo_step (no-op; see grpo_step)
         eps_clip: PPO clip range
+        shaping_clip: symmetric bound on the shaping reward (see compute_reward)
         checker: authoritative terminal gate; defaults to ``Checker()``
     """
     checker = checker or Checker()
@@ -239,7 +244,8 @@ def train_stage_b(
                 policy, ref_policy, graph, cas_engine, alpha_bar, optimizer,
                 checker=checker, N=N, B=B, beta=beta, eps_clip=eps_clip,
                 steps=steps, device=device, purist=purist, grad_clip=grad_clip,
-                entropy_coef=entropy_coef, generator=generator,
+                entropy_coef=entropy_coef, shaping_clip=shaping_clip,
+                generator=generator,
             )
             epoch_stats.append(stats)
 

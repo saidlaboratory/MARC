@@ -5,6 +5,7 @@ conservative Checker built from the shipped two-equation example, so they run wi
 torch_geometric. Solution of {x+y-3=0, x-y-1=0} is (x, y) = (2, 1).
 """
 
+import math
 import os
 
 import pytest
@@ -13,6 +14,7 @@ from marc.cas.engine import CASEngine
 from marc.graph.serialize import load_graph
 from marc.cas.checker import Checker
 from marc.train.reward import (
+    SHAPING_CLIP,
     TERMINAL_B,
     compute_reward,
     shaping_reward,
@@ -106,6 +108,38 @@ def test_compute_reward_rejected_solution(graph, checker, cas):
     traj = {"x_final": _WRONG, "energy_trajectory": [5.0, 5.0]}
     # no terminal, shaping 5 - 5 = 0
     assert compute_reward(traj, graph, checker, cas) == pytest.approx(0.0)
+
+
+# --- shaping clip ----------------------------------------------------------
+
+def test_pathological_energy_blowup_is_clipped(graph, checker, cas):
+    """Diverged rollout (x clamped at 1e4 -> energy O(1e16)): reward stays bounded."""
+    traj = {"x_final": _WRONG, "energy_trajectory": [1.0, 1e16]}
+    r = compute_reward(traj, graph, checker, cas)
+    assert math.isfinite(r)
+    assert -SHAPING_CLIP <= r <= TERMINAL_B + SHAPING_CLIP
+    assert r == pytest.approx(-SHAPING_CLIP)  # no terminal, shaping pinned at the bound
+
+
+def test_huge_energy_drop_clips_positive_side(graph, checker, cas):
+    traj = {"x_final": _SOLUTION, "energy_trajectory": [1e16, 0.0]}
+    assert compute_reward(traj, graph, checker, cas) == pytest.approx(
+        TERMINAL_B + SHAPING_CLIP
+    )
+
+
+def test_normal_magnitude_unaffected_by_clip(graph, checker, cas):
+    traj = {"x_final": _SOLUTION, "energy_trajectory": [6.0, 0.0]}
+    assert compute_reward(traj, graph, checker, cas) == pytest.approx(
+        compute_reward(traj, graph, checker, cas, shaping_clip=float("inf"))
+    )
+
+
+def test_purist_ignores_pathological_energies(graph, checker, cas):
+    traj = {"x_final": _SOLUTION, "energy_trajectory": [1e16, 1e16]}
+    assert compute_reward(traj, graph, checker, cas, use_shaping=False) == pytest.approx(
+        TERMINAL_B
+    )
 
 
 def test_x_values_read_from_tensor_like(cas):
