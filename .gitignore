@@ -8,11 +8,28 @@ __pycache__/
 
 # Runtime outputs
 results/
+!results/
+results/*
 !results/p4_scale/scaling_notes.md
 !results/p4_scale/roadmap.md
 !results/p3_h2/h2_report.md
 !results/p2_main/cot_baseline.json
 !results/p_crossover/crossover_theory.json
+# v0.3 structural-repair evidence (selected Data Version 6 files only)
+!results/p_repair/
+results/p_repair/*
+!results/p_repair/README.md
+!results/p_repair/random_support_holdout_shared.json
+!results/p_repair/random_support_holdout_shared_paired.json
+!results/p_repair/nonlinear_balanced_full.json
+!results/p_repair/nonlinear_balanced_full_paired.json
+!results/p_repair/linear_multiseed.json
+!results/p_repair/nonlinear_multiseed.json
+!results/p_repair/linear_e2e.json
+!results/p_repair/nonlinear_e2e_matched.json
+!results/p_repair/nonlinear_holdout_quad.json
+!results/p_repair/linear_K8_e2e.json
+!results/p_repair/linear_K16_e2e.json
 checkpoints/
 
 # Virtual environments & IDE

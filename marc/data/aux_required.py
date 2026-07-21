@@ -6,12 +6,13 @@ factor, procedurally generalizing the 3 hand-built toys in
 ``marc/eval/structure_toys.py`` (see its docstring for why the latent must be a
 *free* variable with its own defining factor, not an inline expression).
 
-The three patterns generalize the toys' structural signatures — which equations
-the latent enters:
+The three patterns generalize the toys' base-graph signatures.  The equations
+the latent enters are randomized per instance; otherwise insertion support is a
+family fingerprint and a policy can win without reading equation content:
 
-* ``offset``  — toy1 shape: base (x, y); u enters eq1, eq2, eq3 (3 eqs + aux).
-* ``coupled`` — toy2 shape: base (x, y, z); u enters eq4 only (4 eqs + aux).
-* ``shared``  — toy3 shape: base (x, y); u enters eq1 and eq2 (3 eqs + aux).
+* ``offset``  — toy1 base shape: three equations over ``(x, y)``.
+* ``coupled`` — toy2 base shape: four equations over ``(x, y, z)``.
+* ``shared``  — toy3 base shape: three equations with two unary rows.
 
 Constants and coefficients are resampled per seed. Certificates are exact
 integer linear algebra: the fixed graph is inconsistent iff
@@ -35,24 +36,23 @@ from marc.graph.schema import Edge, FactorNode, VariableNode
 
 AUX_VAR = "u"
 _AUX_COEF = [-2, -1, 1, 2]
+_AUX_PIN = [-4, -3, -2, -1, 1, 2, 3, 4]
 
 #: pattern -> base variable ids, base variables per equation ("rows"), and the
-#: equation indices the latent u enters ("u_rows"). Shapes mirror the toys.
+#: The fixed-graph row shapes mirror the toys.  Gold insertion support is sampled
+#: uniformly from nonempty subsets of these rows on every rejection-loop attempt.
 _PATTERN_SPECS: Dict[str, dict] = {
     "offset": {
         "base": ["x", "y"],
         "rows": [["x", "y"], ["x", "y"], ["x"]],
-        "u_rows": (0, 1, 2),
     },
     "coupled": {
         "base": ["x", "y", "z"],
         "rows": [["x", "y", "z"], ["x", "y"], ["y", "z"], ["x"]],
-        "u_rows": (3,),
     },
     "shared": {
         "base": ["x", "y"],
         "rows": [["x"], ["y"], ["x", "y"]],
-        "u_rows": (0, 1),
     },
 }
 PATTERNS: List[str] = list(_PATTERN_SPECS)
@@ -143,8 +143,12 @@ class AuxRequiredTemplate:
     def _sample(self, spec: dict, rng: random.Random, seed: int) -> AuxRequiredInstance:
         base = spec["base"]
         gold = {v: rng.randint(-4, 4) for v in base}
-        u_star = rng.choice(_NONZERO)  # nonzero so dropping u matters
+        u_star = rng.choice(_AUX_PIN)  # matches the menu distractor prior exactly
         full_gold = {**gold, AUX_VAR: u_star}
+        # Load-bearing anti-shortcut rule: insertion support cannot be constant for
+        # a family.  The exact rank gates below reject supports that do not make a
+        # valid aux-required instance.
+        u_rows = set(rng.sample(range(len(spec["rows"])), rng.randint(1, len(spec["rows"]))))
 
         aug_factors, fix_factors = [], []
         aug_edges, fix_edges = [], []
@@ -153,7 +157,7 @@ class AuxRequiredTemplate:
             fid = f"eq{i + 1}"
             names = list(row_vars)
             coeffs = [rng.choice(_NONZERO) for _ in names]
-            if i in spec["u_rows"]:
+            if i in u_rows:
                 names.append(AUX_VAR)
                 coeffs.append(rng.choice(_AUX_COEF))
                 insert_coeffs[fid] = float(coeffs[-1])

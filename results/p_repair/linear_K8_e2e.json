@@ -1,0 +1,273 @@
+{
+  "status": "ok",
+  "data_version": 6,
+  "method": "operator-aware candidate-conditioned graph repair ranking",
+  "config": {
+    "train_data": "aux_required",
+    "eval_data": null,
+    "exclude_family": [
+      "shared"
+    ],
+    "n_train": 500,
+    "n_val": 100,
+    "n_test": 150,
+    "epochs": 80,
+    "batch_size": 24,
+    "K": 8,
+    "D": 128,
+    "L": 4,
+    "lr": 0.001,
+    "seed": 20260722,
+    "device": "cpu",
+    "solve_e2e": true,
+    "eval_only": true,
+    "out": "results/p_repair/linear_K8_e2e.json",
+    "ckpt": "checkpoints/repair_random_support_holdout.pt",
+    "quick": false
+  },
+  "seed_hygiene": {
+    "train": [
+      20260722,
+      20261222
+    ],
+    "validation": [
+      20760722,
+      20760822
+    ],
+    "test": [
+      21160722,
+      21160872
+    ],
+    "overlap_instances": 0
+  },
+  "best_validation": {
+    "full": null,
+    "control": null
+  },
+  "history": [],
+  "result": {
+    "inference_timing": {
+      "full_forward_s_total": 0.12671291595324874,
+      "full_forward_s_per_instance": 0.0008447527730216582,
+      "candidate_graphs_per_instance": 8,
+      "note": "model forward only; deterministic graph featurization is cached"
+    },
+    "full": {
+      "invention": {
+        "k": 52,
+        "n": 150,
+        "rate": 0.3466666666666667,
+        "ci95": [
+          0.27519387418426633,
+          0.4257972751537541
+        ]
+      }
+    },
+    "control": {
+      "invention": {
+        "k": 32,
+        "n": 150,
+        "rate": 0.21333333333333335,
+        "ci95": [
+          0.15536143670182534,
+          0.28562201640838675
+        ]
+      }
+    },
+    "random": {
+      "invention": {
+        "k": 21,
+        "n": 150,
+        "rate": 0.14,
+        "ci95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ]
+      }
+    },
+    "full_gt_control": {
+      "z": 2.571722499368198,
+      "p_one_sided": 0.005059698366439329,
+      "paired_mcnemar": {
+        "full_only_correct": 37,
+        "baseline_only_correct": 17,
+        "discordant": 54,
+        "p_one_sided_exact": 0.0045366701697935885
+      }
+    },
+    "full_gt_random": {
+      "z": 4.171074650237669,
+      "p_one_sided": 1.5158325920701514e-05,
+      "paired_mcnemar": {
+        "full_only_correct": 43,
+        "baseline_only_correct": 12,
+        "discordant": 55,
+        "p_one_sided_exact": 1.6526882366030282e-05
+      }
+    },
+    "per_family": {
+      "aux_required:coupled": {
+        "full": {
+          "k": 20,
+          "n": 50,
+          "rate": 0.4,
+          "ci95": [
+            0.2760818978624575,
+            0.5381881089724063
+          ]
+        },
+        "control": {
+          "k": 9,
+          "n": 50,
+          "rate": 0.18,
+          "ci95": [
+            0.0977008273245379,
+            0.3079631945470261
+          ]
+        },
+        "random": {
+          "k": 6,
+          "n": 50,
+          "rate": 0.12,
+          "ci95": [
+            0.05617523710624646,
+            0.23805078886623582
+          ]
+        }
+      },
+      "aux_required:offset": {
+        "full": {
+          "k": 17,
+          "n": 50,
+          "rate": 0.34,
+          "ci95": [
+            0.2243676963506106,
+            0.47846431458517147
+          ]
+        },
+        "control": {
+          "k": 15,
+          "n": 50,
+          "rate": 0.3,
+          "ci95": [
+            0.1910338908960936,
+            0.4375061227736339
+          ]
+        },
+        "random": {
+          "k": 7,
+          "n": 50,
+          "rate": 0.14,
+          "ci95": [
+            0.06950745262022862,
+            0.2618645719852809
+          ]
+        }
+      },
+      "aux_required:shared": {
+        "full": {
+          "k": 15,
+          "n": 50,
+          "rate": 0.3,
+          "ci95": [
+            0.1910338908960936,
+            0.4375061227736339
+          ]
+        },
+        "control": {
+          "k": 8,
+          "n": 50,
+          "rate": 0.16,
+          "ci95": [
+            0.08337321362087696,
+            0.2851448096176598
+          ]
+        },
+        "random": {
+          "k": 8,
+          "n": 50,
+          "rate": 0.16,
+          "ci95": [
+            0.08337321362087696,
+            0.2851448096176598
+          ]
+        }
+      }
+    },
+    "solve": {
+      "full": {
+        "k": 52,
+        "n": 150,
+        "rate": 0.3466666666666667,
+        "ci95": [
+          0.27519387418426633,
+          0.4257972751537541
+        ]
+      },
+      "control": {
+        "k": 32,
+        "n": 150,
+        "rate": 0.21333333333333335,
+        "ci95": [
+          0.15536143670182534,
+          0.28562201640838675
+        ]
+      },
+      "random": {
+        "k": 21,
+        "n": 150,
+        "rate": 0.14,
+        "ci95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ]
+      },
+      "oracle": {
+        "k": 150,
+        "n": 150,
+        "rate": 1.0,
+        "ci95": [
+          0.9750288608542812,
+          1.0
+        ]
+      },
+      "enumeration": {
+        "k": 150,
+        "n": 150,
+        "rate": 1.0,
+        "ci95": [
+          0.9750288608542812,
+          1.0
+        ]
+      },
+      "wall_s": {
+        "full": {
+          "total": 0.5454104267992079,
+          "per_instance": 0.0036360695119947196
+        },
+        "control": {
+          "total": 0.42278263228945434,
+          "per_instance": 0.0028185508819296955
+        },
+        "random": {
+          "total": 0.40461457846686244,
+          "per_instance": 0.0026974305231124165
+        },
+        "oracle": {
+          "total": 0.38666049181483686,
+          "per_instance": 0.0025777366120989125
+        },
+        "enumeration": {
+          "total": 1.5780370638240129,
+          "per_instance": 0.010520247092160085
+        }
+      },
+      "enumeration_cost": {
+        "solver_calls": 684,
+        "calls_per_instance": 4.56,
+        "wall_s": 1.5780370638240129
+      }
+    }
+  },
+  "wall_s": 8.359217166900635
+}

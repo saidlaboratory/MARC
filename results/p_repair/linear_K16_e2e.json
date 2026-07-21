@@ -1,0 +1,273 @@
+{
+  "status": "ok",
+  "data_version": 6,
+  "method": "operator-aware candidate-conditioned graph repair ranking",
+  "config": {
+    "train_data": "aux_required",
+    "eval_data": null,
+    "exclude_family": [
+      "shared"
+    ],
+    "n_train": 500,
+    "n_val": 100,
+    "n_test": 150,
+    "epochs": 80,
+    "batch_size": 12,
+    "K": 16,
+    "D": 128,
+    "L": 4,
+    "lr": 0.001,
+    "seed": 20260722,
+    "device": "cpu",
+    "solve_e2e": true,
+    "eval_only": true,
+    "out": "results/p_repair/linear_K16_e2e.json",
+    "ckpt": "checkpoints/repair_random_support_holdout.pt",
+    "quick": false
+  },
+  "seed_hygiene": {
+    "train": [
+      20260722,
+      20261222
+    ],
+    "validation": [
+      20760722,
+      20760822
+    ],
+    "test": [
+      21160722,
+      21160872
+    ],
+    "overlap_instances": 0
+  },
+  "best_validation": {
+    "full": null,
+    "control": null
+  },
+  "history": [],
+  "result": {
+    "inference_timing": {
+      "full_forward_s_total": 0.23578387475572526,
+      "full_forward_s_per_instance": 0.0015718924983715017,
+      "candidate_graphs_per_instance": 16,
+      "note": "model forward only; deterministic graph featurization is cached"
+    },
+    "full": {
+      "invention": {
+        "k": 37,
+        "n": 150,
+        "rate": 0.24666666666666667,
+        "ci95": [
+          0.18458062005199127,
+          0.3214047571151728
+        ]
+      }
+    },
+    "control": {
+      "invention": {
+        "k": 21,
+        "n": 150,
+        "rate": 0.14,
+        "ci95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ]
+      }
+    },
+    "random": {
+      "invention": {
+        "k": 3,
+        "n": 150,
+        "rate": 0.02,
+        "ci95": [
+          0.006824627715648315,
+          0.05714766586424165
+        ]
+      }
+    },
+    "full_gt_control": {
+      "z": 2.3391546214642793,
+      "p_one_sided": 0.00966371632249907,
+      "paired_mcnemar": {
+        "full_only_correct": 24,
+        "baseline_only_correct": 8,
+        "discordant": 32,
+        "p_one_sided_exact": 0.0035001833457499743
+      }
+    },
+    "full_gt_random": {
+      "z": 5.774612874137438,
+      "p_one_sided": 3.856510539900767e-09,
+      "paired_mcnemar": {
+        "full_only_correct": 37,
+        "baseline_only_correct": 3,
+        "discordant": 40,
+        "p_one_sided_exact": 9.732502803672105e-09
+      }
+    },
+    "per_family": {
+      "aux_required:coupled": {
+        "full": {
+          "k": 13,
+          "n": 50,
+          "rate": 0.26,
+          "ci95": [
+            0.15871379651367384,
+            0.3955342198899992
+          ]
+        },
+        "control": {
+          "k": 9,
+          "n": 50,
+          "rate": 0.18,
+          "ci95": [
+            0.0977008273245379,
+            0.3079631945470261
+          ]
+        },
+        "random": {
+          "k": 1,
+          "n": 50,
+          "rate": 0.02,
+          "ci95": [
+            0.0035391680889764604,
+            0.10495686471836953
+          ]
+        }
+      },
+      "aux_required:offset": {
+        "full": {
+          "k": 10,
+          "n": 50,
+          "rate": 0.2,
+          "ci95": [
+            0.11243629945973886,
+            0.3303737210448524
+          ]
+        },
+        "control": {
+          "k": 5,
+          "n": 50,
+          "rate": 0.1,
+          "ci95": [
+            0.04347512399157111,
+            0.2136049033478839
+          ]
+        },
+        "random": {
+          "k": 2,
+          "n": 50,
+          "rate": 0.04,
+          "ci95": [
+            0.011038652660826577,
+            0.13460337877954667
+          ]
+        }
+      },
+      "aux_required:shared": {
+        "full": {
+          "k": 14,
+          "n": 50,
+          "rate": 0.28,
+          "ci95": [
+            0.17474014357680362,
+            0.4166538714598967
+          ]
+        },
+        "control": {
+          "k": 7,
+          "n": 50,
+          "rate": 0.14,
+          "ci95": [
+            0.06950745262022862,
+            0.2618645719852809
+          ]
+        },
+        "random": {
+          "k": 0,
+          "n": 50,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.07135003417431873
+          ]
+        }
+      }
+    },
+    "solve": {
+      "full": {
+        "k": 37,
+        "n": 150,
+        "rate": 0.24666666666666667,
+        "ci95": [
+          0.18458062005199127,
+          0.3214047571151728
+        ]
+      },
+      "control": {
+        "k": 21,
+        "n": 150,
+        "rate": 0.14,
+        "ci95": [
+          0.09342578874476014,
+          0.20455343144015736
+        ]
+      },
+      "random": {
+        "k": 3,
+        "n": 150,
+        "rate": 0.02,
+        "ci95": [
+          0.006824627715648315,
+          0.05714766586424165
+        ]
+      },
+      "oracle": {
+        "k": 150,
+        "n": 150,
+        "rate": 1.0,
+        "ci95": [
+          0.9750288608542812,
+          1.0
+        ]
+      },
+      "enumeration": {
+        "k": 150,
+        "n": 150,
+        "rate": 1.0,
+        "ci95": [
+          0.9750288608542812,
+          1.0
+        ]
+      },
+      "wall_s": {
+        "full": {
+          "total": 0.5235045019071549,
+          "per_instance": 0.0034900300127143663
+        },
+        "control": {
+          "total": 0.4248220040462911,
+          "per_instance": 0.0028321466936419406
+        },
+        "random": {
+          "total": 0.4078977108001709,
+          "per_instance": 0.0027193180720011395
+        },
+        "oracle": {
+          "total": 0.43002650421112776,
+          "per_instance": 0.0028668433614075185
+        },
+        "enumeration": {
+          "total": 2.9700066840741783,
+          "per_instance": 0.01980004456049452
+        }
+      },
+      "enumeration_cost": {
+        "solver_calls": 1284,
+        "calls_per_instance": 8.56,
+        "wall_s": 2.9700066840741783
+      }
+    }
+  },
+  "wall_s": 14.395367860794067
+}
