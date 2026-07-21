@@ -14,13 +14,18 @@ If learned_hybrid's CI is disjoint from (above) refine_langevin's, the diffusion
 is a statistically significant win — the paper's central claim (answers "what does the
 learned denoiser add over refine?", A8.1).
 
-Run:  python scripts/run_hard_eval.py [--quick]
+The learned arm self-trains a toy x0 net per family by default; pass --ckpt (or set
+MARC_CKPT) to use a trained Stage-A checkpoint through the LearnedSolver DDIM path
+instead — same polish and acceptance either way.
+
+Run:  python scripts/run_hard_eval.py [--quick] [--ckpt checkpoints/denoiser_stage_a.pt]
 Writes results/p_hard/hard_eval.json.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import torch
@@ -31,7 +36,7 @@ from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
 from marc.eval.metrics import two_proportion_z, wilson_interval
 from marc.eval.runner import Problem
-from marc.eval.solver import ScipySolver
+from marc.eval.solver import ScipySolver, load_solver
 from marc.refine.iterative import refine
 from marc.diffusion.schedule import cosine_beta_schedule
 from marc.diffusion.forward import corrupt
@@ -101,6 +106,26 @@ def hybrid_count(items, net, K):
     return ok, len(items)
 
 
+def hybrid_count_ckpt(items, solver, K):
+    # same polish + exact-accept as hybrid_count; only the proposer differs
+    # (trained Stage-A checkpoint via the DDIM rollout instead of the self-trained x0 net)
+    chk = Checker()
+    ok = 0
+    for g, sol in items:
+        nv = len(sol)
+        solved = False
+        for s in range(K):
+            torch.manual_seed(1000 * s + nv)
+            prop = solver.sample(Problem(id="hyb", graph=g, solution=list(sol)), 1)[0]
+            if prop is None:
+                continue
+            if chk.verify(g, refine(g, prop, noise=False, seed=0).x).accepted:
+                solved = True
+                break
+        ok += int(solved)
+    return ok, len(items)
+
+
 def random_count(items, K, lo=-5.0, hi=5.0):
     """Control: K random starts + deterministic polish, best-of-K (no learning).
     Isolates whether the learned proposal beats blind multi-start. On these
@@ -145,24 +170,38 @@ def main() -> None:
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--K", type=int, default=8)
     ap.add_argument("--test", type=int, default=60)
+    ap.add_argument("--ckpt", default=os.environ.get("MARC_CKPT"),
+                    help="trained checkpoint for the learned arm (defaults to $MARC_CKPT); "
+                         "omit to self-train the toy x0 net as before")
     args = ap.parse_args()
 
     epochs = 20 if args.quick else 250
     ntrain = 60 if args.quick else 300
     families = HARD_TEMPLATES_EXT[:2] if args.quick else HARD_TEMPLATES_EXT
 
-    print(f"Hard-suite eval — best-of-{args.K}, {args.test} test/family, 95% Wilson CIs")
+    if args.ckpt:
+        # polish=False: hybrid_count_ckpt applies the same noise-free refine polish
+        # as the self-train arm, so the two learned modes stay comparable
+        solver = load_solver("learned", checkpoint=args.ckpt, polish=False)
+        learned_mode = f"ckpt:{Path(args.ckpt).name}"
+    else:
+        solver = None
+        learned_mode = "selftrain"
+
+    print(f"Hard-suite eval — best-of-{args.K}, {args.test} test/family, 95% Wilson CIs, learned arm: {learned_mode}")
     print(f"{'family':18s} {'refine_cold':>18} {'refine_langevin':>22} {'lm':>18} {'learned_hybrid':>22} {'sig?':>5}")
     rows = []
     for template in families:
-        train = gen(template, ntrain, seed0=0)
         test = gen(template, args.test, seed0=100000)
-        net = train_x0(train, epochs)
         c_cold = refine_count(test, False, args.K)
         c_lang = refine_count(test, True, args.K)
         c_rand = random_count(test, args.K)
         c_lm = lm_count(test, args.K)
-        c_hyb = hybrid_count(test, net, args.K)
+        if solver is not None:
+            c_hyb = hybrid_count_ckpt(test, solver, args.K)
+        else:
+            net = train_x0(gen(template, ntrain, seed0=0), epochs)
+            c_hyb = hybrid_count(test, net, args.K)
         # significant if learned lower-CI > langevin upper-CI
         hyb_lo = wilson_interval(*c_hyb)[0]
         lang_hi = wilson_interval(*c_lang)[1]
@@ -192,6 +231,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "hard_eval.json").write_text(
         json.dumps({"K": args.K, "test_per_family": args.test, "epochs": epochs,
+                    "learned_mode": learned_mode,
                     "n_significant": n_sig, "rows": rows}, indent=2))
     print(f"wrote {out_dir/'hard_eval.json'}")
 
