@@ -1,0 +1,245 @@
+{
+  "started_at": "2026-07-20T20:31:48+00:00",
+  "finished_at": "2026-07-21T01:37:31+00:00",
+  "git_commit": "d4c438c8e594eefe7e5220b29c5103c1c596b111",
+  "smoke": false,
+  "phases": [
+    {
+      "phase": "env_check",
+      "cmd": "(inline)",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 0.8,
+      "outputs": []
+    },
+    {
+      "phase": "tests",
+      "cmd": "python3 -m pytest -q",
+      "status": "skipped",
+      "reason": "--skip",
+      "wall_s": 0.0,
+      "outputs": []
+    },
+    {
+      "phase": "train_stage_a",
+      "cmd": "python3 scripts/train_scale.py --config marc/configs/train/scale.yaml --stage a --out-dir checkpoints/scale_D512_L8",
+      "status": "skipped",
+      "reason": "--skip",
+      "wall_s": 0.0,
+      "outputs": []
+    },
+    {
+      "phase": "train_stage_b",
+      "cmd": "python3 scripts/train_scale.py --config marc/configs/train/scale.yaml --stage b --resume latest --out-dir checkpoints/scale_D512_L8",
+      "status": "skipped",
+      "reason": "--skip",
+      "wall_s": 0.0,
+      "outputs": []
+    },
+    {
+      "phase": "train_structure_policy",
+      "cmd": "python3 scripts/train_structure_policy.py --data aux_required --epochs 200 --device auto --out checkpoints/structure_policy.pt --exclude-family shared",
+      "status": "ok",
+      "reason": "first attempt failed (exit code 1 (see results/overnight/logs/train_structure_policy.log)); retry with --data toys succeeded",
+      "wall_s": 222.4,
+      "outputs": [
+        "checkpoints/structure_policy.pt"
+      ]
+    },
+    {
+      "phase": "eval_p1_learned",
+      "cmd": "python3 scripts/run_p1_eval.py --solver learned --out results/p1_baselines/metrics_learned.json",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 866.2,
+      "outputs": [
+        "results/p1_baselines/metrics_learned.json"
+      ]
+    },
+    {
+      "phase": "eval_p1_refine",
+      "cmd": "python3 scripts/run_p1_eval.py --solver refine --out results/p1_baselines/metrics.json",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 3.6,
+      "outputs": [
+        "results/p1_baselines/metrics.json",
+        "results/p1_baselines/metrics_learned.json"
+      ]
+    },
+    {
+      "phase": "eval_main",
+      "cmd": "python3 scripts/run_main_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 3210.2,
+      "outputs": [
+        "results/p1_baselines/metrics.json",
+        "results/p2_main/ablation_guidance.json",
+        "results/p2_main/ablation_noise.json",
+        "results/p2_main/ablation_purist.json",
+        "results/p2_main/generalization.json",
+        "results/p2_main/length_extrapolation.json",
+        "results/p2_main/perturbation.json"
+      ]
+    },
+    {
+      "phase": "eval_main_learned",
+      "cmd": "python3 scripts/run_main_eval.py --solver learned --out results/p2_main_learned --skip-ablations",
+      "status": "failed",
+      "reason": "exit code -15 (see results/overnight/logs/eval_main_learned.log)",
+      "wall_s": 7550.1,
+      "outputs": []
+    },
+    {
+      "phase": "eval_hard",
+      "cmd": "python3 scripts/run_hard_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 1349.8,
+      "outputs": [
+        "results/p_hard/hard_eval.json"
+      ]
+    },
+    {
+      "phase": "eval_crossfamily",
+      "cmd": "python3 scripts/run_crossfamily_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 2139.1,
+      "outputs": [
+        "results/p_hard/crossfamily.json"
+      ]
+    },
+    {
+      "phase": "eval_coupled",
+      "cmd": "python3 scripts/run_coupled_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 1812.3,
+      "outputs": [
+        "results/p_coupled/coupled.json",
+        "results/p_hard/crossfamily.json"
+      ]
+    },
+    {
+      "phase": "eval_dimension_scaling",
+      "cmd": "python3 scripts/run_dimension_scaling.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 910.8,
+      "outputs": [
+        "results/p_scaling/scaling.json",
+        "paper/figures/fig_dimension_scaling.pdf"
+      ]
+    },
+    {
+      "phase": "eval_geometry",
+      "cmd": "python3 scripts/run_geometry_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 28.7,
+      "outputs": [
+        "results/p4_scale/geometry_eval.json",
+        "results/p4_scale/scaling_notes.md",
+        "paper/figures/fig_dimension_scaling.pdf"
+      ]
+    },
+    {
+      "phase": "eval_h2",
+      "cmd": "python3 scripts/run_h2_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 17.0,
+      "outputs": [
+        "results/p3_h2/summary.json",
+        "results/p3_h2/trajectories.jsonl",
+        "results/p4_scale/geometry_eval.json",
+        "results/p4_scale/scaling_notes.md"
+      ]
+    },
+    {
+      "phase": "eval_structure_toys",
+      "cmd": "python3 scripts/run_structure_toys.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 0.6,
+      "outputs": [
+        "results/p3_h2/summary.json",
+        "results/p3_h2/trajectories.jsonl",
+        "results/p3_structure/structure_toys_baseline.json"
+      ]
+    },
+    {
+      "phase": "eval_invention",
+      "cmd": "python3 scripts/run_invention_eval.py --ckpt checkpoints/structure_policy.pt --out results/p5_invention/invention.json --data toys --eval-seeds 5",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 220.9,
+      "outputs": [
+        "results/p3_structure/structure_toys_baseline.json",
+        "results/p5_invention/invention.json"
+      ]
+    },
+    {
+      "phase": "eval_invention_heldout",
+      "cmd": "(resolved at run time)",
+      "status": "skipped",
+      "reason": "policy trained on fallback 'toys' data \u2014 no held-out 'shared' pattern to eval",
+      "wall_s": 0.0,
+      "outputs": []
+    },
+    {
+      "phase": "eval_math_coverage",
+      "cmd": "python3 scripts/run_math_coverage.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 2.3,
+      "outputs": [
+        "results/p_math/coverage.json"
+      ]
+    },
+    {
+      "phase": "eval_cot",
+      "cmd": "python3 -m marc.eval.baselines.cot_baseline",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 3.0,
+      "outputs": [
+        "results/p2_main/cot_baseline.json",
+        "results/p_math/coverage.json"
+      ]
+    },
+    {
+      "phase": "figures",
+      "cmd": "python3 scripts/plot_results.py && python3 scripts/plot_hard_eval.py",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 0.9,
+      "outputs": [
+        "results/p2_main/cot_baseline.json",
+        "paper/figures/fig_generalization.pdf",
+        "paper/figures/fig_hard_suite.pdf",
+        "paper/figures/fig_length_extrapolation.pdf",
+        "paper/figures/fig_perturbation.pdf",
+        "paper/figures/hard_suite_table.md",
+        "paper/figures/summary_table.md"
+      ]
+    },
+    {
+      "phase": "summarize",
+      "cmd": "(inline)",
+      "status": "ok",
+      "reason": "",
+      "wall_s": 4.0,
+      "outputs": [
+        "paper/figures/fig_generalization.pdf",
+        "paper/figures/fig_hard_suite.pdf",
+        "paper/figures/fig_length_extrapolation.pdf",
+        "paper/figures/fig_perturbation.pdf",
+        "paper/figures/hard_suite_table.md",
+        "paper/figures/summary_table.md"
+      ]
+    }
+  ]
+}

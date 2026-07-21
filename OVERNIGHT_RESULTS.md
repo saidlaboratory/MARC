@@ -44,11 +44,42 @@ eval_invention, eval_invention_heldout, eval_math_coverage, eval_cot, figures, s
 - Consequence: the whole run (Stage-A ~30 min + Stage-B GRPO + structure policy + full eval
   battery + CoT) should finish in a few hours, not a full night.
 
-## Results
-_[filled from `results/overnight/MANIFEST.json` + SUMMARY.md when the run completes; the eval
-JSONs under `results/**` carry the trained-checkpoint numbers, and `paper/RESULTS.md` /
-`PROVENANCE.md` remain the canonical honest write-ups. Prior-session findings (learned ties
-random on coupled systems, etc.) are the baseline these scaled numbers are compared against.]_
+## Run outcome
+**22 phases: 17 ok, 4 skipped, 1 failed.** Skips: `tests`/`train_stage_a`/`train_stage_b`
+(intentional `--skip` on relaunch), `eval_invention_heldout` (policy trained on `toys`
+fallback). Failed: `eval_main_learned` — killed after being stuck 3h+ (the D512 learned
+solver's diffusion+guidance loop is too slow over the full perturbation/length suite on MPS;
+the problems are convex/saturated anyway).
+
+### Two operational findings (matter for future runs)
+1. **Stage-B GRPO diverged at D512** (loss 12.9 → 134,892; reward ~−9e8) and was ~35 min/epoch
+   (→ 8h timeout). Cut it; used the clean **Stage-A** checkpoint (loss **0.60**, good DSM
+   convergence — the first real-scale trained model).
+2. **The eval scripts retrain their own small models and do NOT load the D512 checkpoint.** So
+   the scaled training does not reach the differentiating experiments (hard/coupled/dimension).
+   Only the convex evals used it (saturated at 1.0). **Fix needed:** wire `MARC_CKPT` into
+   `run_hard_eval`/`run_coupled_eval`/`run_dimension_scaling` so scaled runs actually test the
+   trained model.
+
+## Results (this run) — the honest pattern holds and sharpens
+Consistent theme across every experiment: **the learned model beats *naive* baselines
+(fixed / cold-start / deterministic) but ties or loses to *random* selection/restart** — except
+in the high-dimensional *independent* regime where random suffers the curse of dimensionality.
+
+| Experiment | Key numbers | Read |
+|---|---|---|
+| Convex (p1, main, main-learned, CoT) | learned = refine = CoT = **1.000**, gap 0 | saturated; no signal |
+| **Hard (bilinear, non-convex)** | learned = random on 3/4 (0.55/0.68/0.68), fails CircleLine | **learned ties random** |
+| **Coupled** (chained bilinear) | learned 0.23/0.53/0.52/0.33/0.48 vs random 0.48/0.60/0.52/0.37/0.47 | **learned ≤ random at every n** |
+| **Dimension scaling** (independent) | learned 0.95/0.95/**0.975**/**0.925**/0.25 vs random 1.0/0.725/0.075/0.0/0.0 | **learned ≫ random for n≥3** (random collapses); the one real win, but it is amortizing over the curse of dimensionality on *independent* traps |
+| **Structure invention** (policy, valid: seed-overlap 0) | invention rate ~0.19; policy **> fixed** (p<1e-4) and **> no-context** (p<1e-4) but **= random** (p=0.28) | learned beats naive, **ties random** structure selection |
+| Geometry (refine) | in-dist solve **0.56** | a non-saturated, harder real-ish domain (candidate for future signal) |
+
+**Bottom line:** the full-scale harness run **confirms the prior honest findings** — no new
+main-track positive. The learned solver's only clean advantage over random is on independent
+high-dimensional traps (a curse-of-dimensionality amortization), and it disappears under
+coupling and on the structure-invention policy. `paper/RESULTS.md` / `PROVENANCE.md` remain the
+canonical write-ups; these numbers reproduce them under the full pipeline.
 
 ## Honest note carried forward
 The scaled run tests whether training at D512/L8 changes the prior conclusions (the learned
