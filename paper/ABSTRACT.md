@@ -9,12 +9,12 @@ A Controlled Study on Continuous Algebraic Systems
 > (2) structural repair, where relocating learning to the decision with no classical
 > baseline yields a decisive positive. Keep both.
 >
-> **Length / trimming:** ~255 words. If the submission form caps tighter, the
-> external-validity sentence ("The characterization holds beyond the synthetic
-> families...") is the first to cut — it is the strongest *main-track* signal
-> (answers synthetic-only) but not load-bearing for the two-act arc.
+> **Length / trimming:** ~265 words. The validation sentence covers both the geometry
+> test and the eight real systems; if the form caps tighter, cut the geometry clause
+> first (a law nuance) and keep the real-systems clause (the strongest main-track
+> signal, answering synthetic-only).
 
-## Primary (v4 — repair co-headlined + real-systems external validity, em-dash-free) — ~255 words
+## Primary (v5 — repair co-headlined + geometry & real-systems validation, em-dash-free) — ~265 words
 
 Diffusion models are increasingly used to propose solutions for constraint and
 optimization problems, but evaluations usually omit the control that matters most:
@@ -30,10 +30,11 @@ variables couple. Because every method shares one polish operator and one checke
 best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
 $q(n)$, and the measured slope of $\log q(n)$ decides the regime; one measured constant
 reproduces the whole random-restart curve with no free parameters (mean absolute error
-0.012). The characterization holds beyond the synthetic families: across eight standard
-real systems (robotics, positioning, optimization, and computer-algebra benchmarks)
-classical multi-start solves all eight and none falls in the learning-favorable regime.
-The decision classical solvers cannot make is discrete: which structural
+0.012). Both conditions are necessary and the boundary holds outside the synthetic
+families: a real geometric domain collapses in reachability yet a trained proposal ties
+random there, and across eight standard real systems (robotics, positioning,
+optimization, and algebra) classical multi-start solves all eight, none in the
+learning-favorable regime. The decision classical solvers cannot make is discrete: which structural
 augmentation turns an unsolvable system solvable. Moving learning there, an
 operator-aware repair ranker clears its controls decisively (0.997 versus 0.236 on
 balanced nonlinear menus, $p<10^{-70}$; $0.982\pm0.006$ across optimization seeds) and

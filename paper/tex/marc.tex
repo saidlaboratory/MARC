@@ -27,16 +27,17 @@ computer-algebra energy, and accepts only assignments that pass an exact symboli
 first ask whether the learned proposal helps the value decision (which numbers satisfy the
 equations). It does, but only in a narrow and predictable regime: it ties random restart on
 trapped low-dimensional families, wins only in high dimension where random search collapses
-(0.550 at $n{=}3$, 0.650 at $n{=}4$, against random $0.050$ and $0.000$), and loses that
-advantage once variables couple. Because every method shares one polish operator and one
-checker, best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
-$q(n)$, and the measured slope of $\log q(n)$ decides the regime: learning wins precisely when
-acceptance basins factorize across variables and dimension is high. One measured constant
-reproduces the entire random-restart curve with no free parameters (mean absolute error 0.012).
-The characterization holds beyond the synthetic families: across eight standard real systems
-(robotics, positioning, optimization, and computer-algebra benchmarks) classical multi-start
-solves all eight and none falls in the learning-favorable regime.
-The decision classical solvers cannot make is discrete: which structural augmentation turns an
+(0.550 versus 0.050 at $n{=}3$), and loses that advantage once variables couple. Because every
+method shares one polish operator and one checker, best-of-$K$ random restart is exactly
+$1-(1-q(n))^K$ in the single-start reachability $q(n)$, and the measured slope of $\log q(n)$
+decides the regime: learning wins precisely when acceptance basins factorize across variables
+and dimension is high. One measured constant reproduces the entire random-restart curve with no
+free parameters (mean absolute error 0.012). Both conditions are necessary and the boundary
+holds outside the synthetic families: a real geometric domain collapses in reachability yet a
+trained proposal ties random there, and across eight standard real systems (robotics,
+positioning, optimization, and algebra) classical multi-start solves all eight, none in the
+learning-favorable regime. The decision classical solvers cannot make is discrete: which
+structural augmentation turns an
 unsolvable system solvable. Moving learning there, an operator-aware repair ranker clears its
 controls decisively ($0.997$ versus $0.236$ on balanced nonlinear menus, $p<10^{-70}$;
 $0.982\pm0.006$ across optimization seeds) and beats a cheap per-candidate solver probe on
