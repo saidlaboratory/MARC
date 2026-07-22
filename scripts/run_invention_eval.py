@@ -65,8 +65,9 @@ LEGACY_VAL_SIZE = 50        # seed-space contract v1 — must match scripts/trai
 # augmented systems (gold-oracle positive control collapsed to ~0.02, floor-ing every
 # solve rate), while LM solves the certified-solvable systems 100% (gold-oracle ~1.0),
 # so solve-rate comparisons across arms become meaningful. Invention-accuracy (pick==gold)
-# is independent of this choice.
-REFERENCE_SOLVER = {"name": "lm", "k_refine": 4}
+# is independent of this choice. The dict is OWNED by invention_data so distractor
+# certification and arm grading can never diverge again.
+REFERENCE_SOLVER = invention_data.REFERENCE_SOLVER
 
 #: capability probe P4: sibling data units may widen the source list.
 SOURCES = tuple(getattr(invention_data, "SOURCES", ("toys", "aux_required")))
@@ -80,13 +81,15 @@ def _rate(k: int, n: int) -> dict:
     return {"k": k, "n": n, "rate": k / n, "ci95": [lo, hi]}
 
 
-def _hard_negative_idx(inst: InventionInstance) -> int | None:
-    """Index of the gold-structure/wrong-value distractor, if the menu has one."""
+def _hard_negative_idxs(inst: InventionInstance) -> set[int]:
+    """Indices of gold-structure/wrong-value distractors. Scalar-pin menus have
+    one; exchangeable expression menus coefficient-match EVERY distractor, so
+    confusion must be counted against the whole set, not the first hit."""
     gold = inst.candidates[inst.gold_idx]
-    for j, c in enumerate(inst.candidates):
-        if j != inst.gold_idx and c.insert_coeffs == gold.insert_coeffs:
-            return j
-    return None
+    return {
+        j for j, c in enumerate(inst.candidates)
+        if j != inst.gold_idx and c.insert_coeffs == gold.insert_coeffs
+    }
 
 
 def evaluate(policy, instances, *, k_refine: int = 4, T: int = 20, seed: int = 0) -> dict:
@@ -123,7 +126,7 @@ def evaluate(policy, instances, *, k_refine: int = 4, T: int = 20, seed: int = 0
         row = {
             "family": inst.family,
             "gold_idx": inst.gold_idx,
-            "hard_idx": _hard_negative_idx(inst),
+            "hard_idxs": sorted(_hard_negative_idxs(inst)),
             "fixed_ok": solved(None),
             "gold_ok": solved(inst.gold_idx),
             "random_ok": solved(None if r == K else r),
@@ -155,7 +158,7 @@ def evaluate(policy, instances, *, k_refine: int = 4, T: int = 20, seed: int = 0
         misses = [r for r in rows if r[sampler]["pick"] != r["gold_idx"]]
         hn_k = sum(
             1 for r in misses
-            if r["hard_idx"] is not None and r[sampler]["pick"] == r["hard_idx"]
+            if r[sampler]["pick"] in r["hard_idxs"]
         )
         pol_k = sum(r[sampler]["ok"] for r in rows)
         z_r, p_r = two_proportion_z(pol_k, n, rnd_k, n)
@@ -333,7 +336,7 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
                 "seed": s,
                 "family": inst.family,
                 "gold_idx": inst.gold_idx,
-                "hard_idx": _hard_negative_idx(inst),
+                "hard_idxs": sorted(_hard_negative_idxs(inst)),
                 "certificate": getattr(inst, "certificate", "exact"),  # P3b
                 "fixed_ok": solved(None),
                 "gold_ok": solved(inst.gold_idx),
@@ -434,7 +437,7 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
         none_k = sum(r[sampler]["pick"] is None for r in rows)
         misses = [r for r in rows if r[sampler]["pick"] != r["gold_idx"]]
         hn_k = sum(1 for r in misses
-                   if r["hard_idx"] is not None and r[sampler]["pick"] == r["hard_idx"])
+                   if r[sampler]["pick"] in r["hard_idxs"])
         pol_k = sum(r[sampler]["ok"] for r in rows)
         z_r, p_r = two_proportion_z(pol_k, N, rnd_k, N)
         z_f, p_f = two_proportion_z(pol_k, N, fix_k, N)

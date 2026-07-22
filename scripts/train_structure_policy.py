@@ -43,8 +43,9 @@ VAL_SEED_OFFSET = 500000
 VAL_SIZE = 50
 TEST_SEED_MIN = 900000
 
-# reference solver — must match run_invention_eval.py and invention_data gold certification
-REFERENCE_SOLVER = {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+# reference solver — owned by invention_data, shared with run_invention_eval and
+# gold/distractor certification, so training reward and eval grading cannot diverge
+REFERENCE_SOLVER = invention_data.REFERENCE_SOLVER
 
 RL_GROUP = 4  # instances per REINFORCE step
 
@@ -92,7 +93,7 @@ def rl_loss_from_scores(scores_list, picks, rewards: torch.Tensor,
 
 
 def candidate_solves(inst, pick, solver, checker, cache: dict) -> bool:
-    """Best-of-k_refine refine at REFERENCE_SOLVER + Checker accept, cached per
+    """Best-of-k_refine REFERENCE_SOLVER + Checker accept, cached per
     (instance, pick) — rewards are deterministic, so later epochs are nearly free.
 
     ``pick=None`` is the fixed graph, which build_menu certifies inconsistent:
@@ -192,8 +193,7 @@ def main(argv=None) -> None:
     solver = checker = None
     solve_cache: dict = {}
     if args.rl_weight > 0 or args.filter_unsolvable:
-        solver = load_solver(REFERENCE_SOLVER["name"], seed=args.seed,
-                             polish_steps=REFERENCE_SOLVER["polish_steps"])
+        solver = load_solver(REFERENCE_SOLVER["name"], seed=args.seed)
         checker = Checker()
 
     def solves(inst, pick):

@@ -226,7 +226,26 @@ def test_n_exceeding_stride_errors(mod, tmp_path):
 def test_reference_solver_pinned(mod):
     # scipy Levenberg–Marquardt: matches aux_required's exact solvability certificate;
     # the gradient-descent `refine` solver floor-ed the gold-oracle positive control.
+    # The dict is OWNED by invention_data — certification and grading cannot diverge.
+    from marc.structure.invention_data import REFERENCE_SOLVER
+
+    assert mod.REFERENCE_SOLVER is REFERENCE_SOLVER
     assert mod.REFERENCE_SOLVER == {"name": "lm", "k_refine": 4}
+
+
+def test_hard_negative_idxs_counts_all_matched(mod):
+    # v7 exchangeable nonlinear menus give EVERY distractor the gold's
+    # insert_coeffs; confusion must count the whole matched set, not the first hit
+    from marc.structure.invention_data import Candidate
+
+    [inst] = make_dataset("toys", 1, 0, K=4)
+    gold = inst.candidates[inst.gold_idx]
+    inst.candidates = [
+        Candidate(gold.aux_var, gold.pin_value + j, dict(gold.insert_coeffs))
+        for j in range(4)
+    ]
+    inst.gold_idx = 2
+    assert mod._hard_negative_idxs(inst) == {0, 1, 3}
 
 
 def test_seed_space_constants(mod):

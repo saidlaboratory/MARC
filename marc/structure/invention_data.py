@@ -17,13 +17,15 @@ depends on the graph, and the certificate is recorded per instance:
 * Linear graphs (sources ``"toys"``/``"aux_required"``): an exact symbolic rank
   check — ``certificate="exact"``; "exactly one solvable option" is a theorem
   about the data.
-* Nonlinear graphs (source ``"nonlinear"``): the rank check does not apply, so
-  "unsolvable" means "not solved by the reference-family solver
-  (:class:`~marc.eval.solver.GradientRefinementSolver` + :class:`~marc.cas.checker.Checker`)
-  at the probe budget" (``DEFAULT_PROBE``: ``n_seeds * k_refine`` random
-  restarts). Real roots may still exist outside the probe's reach — that is why
-  these instances carry ``certificate="empirical"`` with the probe config
-  attached, an empirical claim at a stated budget, not a theorem.
+* Nonlinear graphs (source ``"nonlinear"``): the rank check does not apply.
+  Primary certificate: an exact CAS real-root decision — a distractor whose
+  augmented system provably has no real solution is unsolvable by ANY solver at
+  ANY budget (``certificate="exact"``, method ``cas_no_real_roots``). Only when
+  the CAS cannot decide does the empirical probe run (``DEFAULT_PROBE``:
+  ``n_seeds * k_refine`` restarts of ``REFERENCE_SOLVER`` — the same scipy-LM
+  protocol that grades every eval arm); those instances carry
+  ``certificate="empirical"`` with the probe config attached, an empirical
+  claim at a stated budget, not a theorem.
 """
 
 from __future__ import annotations
@@ -38,29 +40,88 @@ import sympy as sp
 import torch
 
 from marc.cas.checker import Checker
-from marc.eval.solver import GradientRefinementSolver
+from marc.eval.solver import load_solver
 from marc.graph.graph import FactorGraph
 from marc.graph.schema import Edge, FactorNode, VariableNode
 
 from .schema import ABSENT, PaddedGraph, SlotType
 
-#: Bump whenever identical seeds generate different menus.  Version 7 adds
-#: randomized linear support plus expression/value masking and balanced,
-#: coefficient-matched nonlinear offsets, and matched nonzero scalar-pin priors
-#: to remove candidate-only shortcuts.
-DATA_VERSION: int = 7
+#: Bump whenever identical seeds generate different menus.  Version 8 unifies
+#: the reference solver: certification (gold solvability AND distractor
+#: unsolvability) now uses the same scipy-LM protocol that grades the eval
+#: arms, expression distractors can no longer duplicate the gold via a zero
+#: shift, and menu-filler insertion support is size-uniform like the gold's.
+DATA_VERSION: int = 8
 
 SOURCES: Tuple[str, ...] = ("toys", "aux_required", "nonlinear")
-SCALAR_PIN_PRIOR: Tuple[float, ...] = (-4.0, -3.0, -2.0, -1.0, 1.0, 2.0, 3.0, 4.0)
 
-# reference solver — must match run_invention_eval.py and train_structure_policy.py
-REFERENCE_SOLVER = {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+# aux_required owns the shared gold/distractor priors (pin values, support
+# sampling) and its OWN pattern vocabulary (offset/coupled/shared). Literal
+# fallbacks preserve the "aux_required import is optional" design: this module
+# still works on a branch without marc/data/aux_required.py.
+try:  # pragma: no cover - trivial import guard
+    from marc.data.aux_required import _AUX_PIN
+    from marc.data.aux_required import PATTERNS as _AUX_PATTERNS
+    from marc.data.aux_required import sample_support
+    _AUX_FAMILIES: Tuple[str, ...] = tuple(_AUX_PATTERNS)
+except Exception:  # pragma: no cover
+    _AUX_PIN = [-4, -3, -2, -1, 1, 2, 3, 4]
+    _AUX_FAMILIES = ("offset", "coupled", "shared")
 
-#: budget for the empirical unsolvability probe: n_seeds solvers x k_refine
-#: restarts each. Cheaper than REFERENCE_SOLVER on purpose (asymmetric budgets:
-#: gold solvability is verified at eval grade, distractor unsolvability at probe
-#: grade — a false "solvable" distractor is worse than a slow probe).
-DEFAULT_PROBE = {"n_seeds": 3, "k_refine": 4, "steps": 300, "polish_steps": 400}
+    def sample_support(rng: random.Random, items) -> list:
+        items = list(items)
+        return rng.sample(items, rng.randint(1, len(items)))
+
+#: gold pins AND menu-distractor pins draw from this one prior — deriving it
+#: from aux_required's gold prior is the matched-pin anti-leak invariant
+SCALAR_PIN_PRIOR: Tuple[float, ...] = tuple(float(v) for v in _AUX_PIN)
+
+#: THE reference solver. Single source of truth for gold certification (here),
+#: the eval arms (run_invention_eval.py), the training reward
+#: (train_structure_policy.py), and nonlinear end-to-end repair grading
+#: (run_repair_ranker.py) — all of them import this dict, so a distractor is
+#: only ever "unsolvable" under the same solver family that grades the arms.
+REFERENCE_SOLVER = {"name": "lm", "k_refine": 4}
+
+#: budget for the empirical unsolvability probe: n_seeds x k_refine restarts of
+#: the REFERENCE_SOLVER (12 LM multistarts >= the 4-start grading budget, so a
+#: certified-unsolvable distractor is vetted at least as hard as any eval arm
+#: can try to solve it).
+DEFAULT_PROBE = {"n_seeds": 3, "k_refine": 4}
+
+#: family -> the exchangeable defining-expression support: every menu option
+#: (gold AND distractors) instantiates the family template at one (a, delta)
+#: combo from this table, so neither representation shape nor parameter
+#: frequency can reveal the gold. Golds cycle the support uniformly by seed;
+#: distractors draw from the same support and must be certified rootless.
+#: Both templates are ONE-SIDED (a square / a sum of squares): substituting a
+#: wrong-parameter defining relation forces "square = negative constant"
+#: (quad_link) or an empty circle (vieta: eq1 becomes
+#: (x+h)^2 + (y+h)^2 = R with R linear in delta, slope -1/a), so rootless
+#: distractors exist on BOTH sides of every gold. A linear defining relation
+#: (the old "u - (x-y) - d") cannot work: eliminating u leaves a line meeting a
+#: hyperbola, which almost always intersects over the reals — those menus were
+#: only ever "unsolvable" as probe artifacts.
+#: quad_link (-1, 1) is excluded: u0 = -1 + 1 = 0 leaves fixed == augmented.
+NONLINEAR_SUPPORTS: Dict[str, Tuple[Tuple[float, float], ...]] = {
+    "vieta": tuple(
+        (float(a), float(d)) for a in (1, -1) for d in range(-4, 5)
+    ),
+    "quad_link": tuple(
+        (float(s), float(d)) for s in (1, -1) for d in range(5) if (s, d) != (-1, 1)
+    ),
+}
+
+
+def nonlinear_expression(family: str, a: float, d: float) -> str:
+    """The family's canonical defining-expression template at combo (a, d).
+    Gold and distractors go through this one function so every menu option has
+    the same syntactic shape."""
+    if family == "vieta":
+        return f"u - ({a})*(x**2 + y**2) - ({d})"
+    if family == "quad_link":
+        return f"u - ({a})*x**2 - ({d})"
+    raise ValueError(f"unknown nonlinear family {family!r}")
 
 
 @dataclass(frozen=True)
@@ -136,7 +197,7 @@ class InventionInstance:
     gold_idx: int
     aux_value: float                   # value of u in the augmented gold solution
     solution: Dict[str, float] = field(default_factory=dict)  # augmented gold incl. u
-    certificate: str = "exact"         # "exact" (rank theorem) | "empirical" (probe)
+    certificate: str = "exact"         # "exact" (rank/CAS theorem) | "empirical" (probe)
     certificate_config: Optional[dict] = None  # probe budget + honest claim wording
 
 
@@ -158,12 +219,40 @@ def _is_inconsistent(graph: FactorGraph) -> bool:
 def _solvable_at_eval_grade(graph: FactorGraph, *, rng_seed: int) -> bool:
     """Best-of-k solve at the REFERENCE_SOLVER budget + Checker gate — the same
     grade run_invention_eval.py holds every arm to. Used for GOLD solvability."""
-    solver = GradientRefinementSolver(
-        seed=rng_seed, polish_steps=REFERENCE_SOLVER["polish_steps"]
-    )
+    solver = load_solver(REFERENCE_SOLVER["name"], seed=rng_seed)
     prob = SimpleNamespace(graph=graph, metadata={})
-    cands = solver.sample(prob, REFERENCE_SOLVER["k_refine"])
+    cands = [c for c in solver.sample(prob, REFERENCE_SOLVER["k_refine"]) if c is not None]
     return Checker().first_accepted(graph, cands) is not None
+
+
+def _real_solutions_exist(graph: FactorGraph) -> Optional[bool]:
+    """Exact CAS decision: does the polynomial system have any real solution?
+
+    ``None`` when sympy cannot decide (unsolved-for symbols in a solution,
+    solver failure) — callers fall back to the empirical probe. The nonlinear
+    menu families reduce to single quadratics under substitution, so this
+    decides them exactly.
+    """
+    syms = [sp.Symbol(v.id) for v in graph.variables]
+    exprs = [sp.sympify(f.expression) for f in graph.factors]
+    try:
+        sols = sp.solve(exprs, syms, dict=True)
+    except Exception:
+        return None
+    if not sols:
+        return False
+    saw_undecided = False
+    for sol in sols:
+        vals = list(sol.values())
+        if len(sol) < len(syms) or any(v.free_symbols for v in vals):
+            saw_undecided = True  # positive-dimensional/parametric: not decided here
+            continue
+        try:
+            if all(abs(complex(sp.N(v)).imag) < 1e-9 for v in vals):
+                return True
+        except Exception:
+            saw_undecided = True
+    return None if saw_undecided else False
 
 
 def certify_unsolvable(
@@ -172,24 +261,30 @@ def certify_unsolvable(
     """Certify a graph unsolvable; returns ``{"unsolvable": bool, "method": str}``.
 
     Linear graphs get the exact rank certificate (``method="linear_rank"`` — a
-    theorem). When sympy rejects the graph as nonlinear, fall back to an
-    empirical probe (``method="empirical_probe"``): ``n_seeds * k_refine``
-    refine restarts, any Checker-accepted candidate means solvable. An
-    "unsolvable" probe verdict only means the reference-family solver failed at
-    this budget — real roots may exist. Callers must surface that honestly
+    theorem). Nonlinear graphs first get an exact CAS real-root decision
+    (``method="cas_no_real_roots"``/``"cas_real_roots"`` — also a theorem: no
+    solver at any budget can solve a system with no real roots). Only when the
+    CAS cannot decide does the empirical probe run
+    (``method="empirical_probe"``): ``n_seeds * k_refine`` REFERENCE_SOLVER
+    restarts, any Checker-accepted candidate means solvable — an "unsolvable"
+    probe verdict is budget-relative, and callers must surface that honestly
     (see ``InventionInstance.certificate``).
     """
     try:
         return {"unsolvable": _is_inconsistent(graph), "method": "linear_rank"}
     except (ValueError, sp.PolynomialError):
-        pass  # nonlinear graph (sympy NonlinearError <= ValueError) -> probe
+        pass  # nonlinear graph (sympy NonlinearError <= ValueError) -> CAS/probe
+    real = _real_solutions_exist(graph)
+    if real is not None:
+        return {
+            "unsolvable": not real,
+            "method": "cas_no_real_roots" if not real else "cas_real_roots",
+        }
     prob = SimpleNamespace(graph=graph, metadata={})
     checker = Checker()
     for s in range(probe["n_seeds"]):
-        solver = GradientRefinementSolver(
-            steps=probe["steps"], polish_steps=probe["polish_steps"], seed=rng_seed + s
-        )
-        cands = solver.sample(prob, probe["k_refine"])
+        solver = load_solver(REFERENCE_SOLVER["name"], seed=rng_seed + s)
+        cands = [c for c in solver.sample(prob, probe["k_refine"]) if c is not None]
         if checker.first_accepted(graph, cands) is not None:
             return {"unsolvable": False, "method": "empirical_probe"}
     return {"unsolvable": True, "method": "empirical_probe"}
@@ -209,18 +304,22 @@ def build_menu(
     K: int,
     rng: random.Random,
     hard_negatives: bool = True,
+    expression_support: Optional[Sequence[str]] = None,
 ) -> Tuple[List[Candidate], int]:
     """Assemble a K-candidate menu around the gold fix; returns (menu, gold_idx).
 
-    Distractors: random nonempty factor subsets + coefficients from {-2,-1,1,2} +
-    integer scalar pin in [-4,4], each CERTIFIED unsolvable via
-    :func:`certify_unsolvable` (exact rank check on linear graphs, empirical
-    probe on nonlinear ones; accidental-solvable or gold-duplicate draws are
-    resampled). When ``hard_negatives``, one distractor shares the gold
-    insert_coeffs but differs in the defining factor's constant: a wrong scalar
-    pin for scalar-pin golds, or the gold ``defining_expression`` shifted by a
-    nonzero integer (e.g. ``"u - x**2"`` -> ``"u - x**2 - 2"``) for expression
-    golds — it forces the policy to read constants, not just insertion topology.
+    Scalar-pin golds: distractors are random size-uniform factor subsets +
+    coefficients from {-2,-1,1,2} + a pin from SCALAR_PIN_PRIOR, each CERTIFIED
+    unsolvable via :func:`certify_unsolvable`; when ``hard_negatives``, one
+    distractor shares the gold insert_coeffs with a wrong pin.
+
+    Expression golds need ``expression_support`` — the family's full canonical
+    template support (see NONLINEAR_SUPPORTS). Every option keeps the gold's
+    insertion coefficients and the family's syntactic shape; distractors are
+    certified unsolvable, and anything mathematically equal to the gold is
+    excluded so the menu can never contain a second correct answer. All K-1
+    distractors are coefficient-matched hard negatives by construction
+    (``hard_negatives`` has no additional effect here).
     """
     if K < 2:
         raise ValueError("K must be >= 2 (gold + at least one distractor)")
@@ -235,62 +334,53 @@ def build_menu(
     seen = {_candidate_key(gold_candidate)}
 
     # Expression-defined nonlinear menus need an exchangeable candidate prior.
-    # If fillers are scalar pins, or if their offsets are generated by adding a
-    # displacement to the gold, a candidate-only classifier can spot the gold
-    # from representation type or distribution width.  Here every option uses
-    # the same defining-expression family, insertion support, coefficients, and
-    # absolute offset prior.  Only compatibility with ``fixed``
-    # distinguishes the gold.
+    # If fillers are scalar pins, or if their parameters come from a different
+    # distribution than the gold's, a candidate-only classifier can spot the
+    # gold from representation type or parameter frequency.  Here every option
+    # instantiates the same family template over the same support with the same
+    # insertion coefficients.  Only compatibility with ``fixed`` distinguishes
+    # the gold.
     if gold_candidate.defining_expression is not None:
-        expr = sp.sympify(gold_candidate.defining_expression)
-        zeros = {s: 0 for s in expr.free_symbols}
-        gold_delta = -float(expr.subs(zeros))
-        # These are also the balanced gold priors in _nonlinear_variant.  Draw
-        # distractors from the identical family-conditional support so absolute
-        # offset frequency cannot identify the gold.
-        x_symbol = sp.Symbol("x")
-        offset_prior = (
-            (0.0, 1.0, 2.0, 3.0, 4.0)
-            if int(sp.Poly(
-                expr, *sorted(expr.free_symbols, key=lambda s: s.name)
-            ).degree(x_symbol)) >= 2
-            else tuple(float(v) for v in range(-4, 5))
-        )
-
-        def expression_candidate() -> Candidate:
-            target_delta = float(rng.choice(offset_prior))
-            shift = target_delta - gold_delta
-            return Candidate(
+        if expression_support is None:
+            raise ValueError(
+                "expression-defined golds need expression_support (the family's "
+                "canonical template support, see NONLINEAR_SUPPORTS)"
+            )
+        gold_expr = sp.sympify(gold_candidate.defining_expression)
+        gold_delta = -float(gold_expr.subs({s: 0 for s in gold_expr.free_symbols}))
+        options = []
+        for expr_str in expression_support:
+            expr = sp.sympify(expr_str)
+            if sp.simplify(expr - gold_expr) == 0:
+                continue  # mathematically the gold — a second correct answer
+            options.append((expr_str, expr))
+        rng.shuffle(options)
+        for expr_str, expr in options:
+            if len(menu) == K:
+                break
+            delta_c = -float(expr.subs({s: 0 for s in expr.free_symbols}))
+            cand = Candidate(
                 gold_candidate.aux_var,
-                gold_candidate.pin_value + shift,
+                # pin is masked for expression candidates in every feature path;
+                # keep it deterministic and derivable from the expression alone
+                # (offset difference) so nothing about the gold leaks through it
+                gold_candidate.pin_value + (delta_c - gold_delta),
                 # Match coefficients exactly across the menu.  Gold coefficient
                 # draws are conditioned by the generator's solvability gates;
                 # resampling filler coefficients from the unconditional prior
                 # makes that conditioning a candidate-only label leak.
                 dict(gold_candidate.insert_coeffs),
-                f"({gold_candidate.defining_expression}) - ({shift})",
+                expr_str,
             )
-
-        # Every distractor is a topology/coefficients-matched hard negative.
-        for _ in range(500):
-            cand = expression_candidate()
-            if _candidate_key(cand) not in seen and unsolvable(cand):
-                menu.append(cand)
-                seen.add(_candidate_key(cand))
-                break
-        else:
-            raise RuntimeError("could not certify an expression hard negative")
-
-        attempts = 0
-        while len(menu) < K:
-            attempts += 1
-            if attempts > 1000:
-                raise RuntimeError("could not fill exchangeable nonlinear menu")
-            cand = expression_candidate()
             if _candidate_key(cand) in seen or not unsolvable(cand):
                 continue
             menu.append(cand)
             seen.add(_candidate_key(cand))
+        if len(menu) < K:
+            raise RuntimeError(
+                "could not fill the exchangeable expression menu with certified "
+                "distractors from the family support"
+            )
         rng.shuffle(menu)
         return menu, menu.index(gold_candidate)
 
@@ -315,9 +405,9 @@ def build_menu(
         attempts += 1
         if attempts > 500:
             raise RuntimeError("could not fill the menu with certified distractors")
-        subset = [fid for fid in factor_ids if rng.random() < 0.5]
-        if not subset:
-            continue
+        # size-uniform, matching the gold insertion-support prior — a Bernoulli
+        # subset has a different size marginal, a candidate-only label leak
+        subset = sample_support(rng, factor_ids)
         cand = Candidate(
             gold_candidate.aux_var,
             float(rng.choice(SCALAR_PIN_PRIOR)),
@@ -359,16 +449,6 @@ _TEMPLATES: Dict[str, Tuple[Tuple[str, ...], List[Tuple[str, Dict[str, int]]], T
 
 FAMILIES: Tuple[str, ...] = tuple(_TEMPLATES)
 
-# aux_required has its OWN pattern vocabulary (offset/coupled/shared), not the toy
-# family names — track it from the source of truth so make_dataset(source="aux_required")
-# and the eval/train --families defaults pass patterns aux_required.generate_instances
-# actually accepts. Literal fallback preserves the "aux_required import is optional" design.
-try:  # pragma: no cover - trivial import guard
-    from marc.data.aux_required import PATTERNS as _AUX_PATTERNS
-    _AUX_FAMILIES: Tuple[str, ...] = tuple(_AUX_PATTERNS)
-except Exception:  # pragma: no cover
-    _AUX_FAMILIES = ("offset", "coupled", "shared")
-
 FAMILIES_BY_SOURCE: Dict[str, Tuple[str, ...]] = {
     "toys": FAMILIES,
     "aux_required": _AUX_FAMILIES,
@@ -394,7 +474,7 @@ def _toy_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, Dict[s
     touched = tuple(rng.sample(eligible, rng.randint(1, len(eligible))))
     for _ in range(200):
         sol = {v: float(rng.randint(-3, 3)) for v in var_names}
-        u0 = float(rng.choice((-4, -3, -2, -1, 1, 2, 3, 4)))  # u0 == 0 would leave fixed consistent
+        u0 = float(rng.choice(SCALAR_PIN_PRIOR))  # u0 == 0 would leave fixed consistent
         coeffs = {fid: float(rng.choice((-2, -1, 1, 2))) for fid in touched}
         factors, edges = [], []
         for fid, terms in base_factors:
@@ -431,34 +511,14 @@ def _toy_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, Dict[s
 #
 # Built augmented-first, like _toy_variant: pick an integer gold solution, derive
 # the constants so the augmented system holds exactly, then DROP the c*u terms to
-# get the fixed graph. The rank certificate does not apply to these graphs, so
-# both directions are checked empirically (asymmetric budgets):
-#   fixed graph  — must FAIL the DEFAULT_PROBE (empirically unsolvable/unreachable
-#                  at probe budget; real roots may exist — certificate="empirical")
-#   gold-applied — must SOLVE at eval grade (REFERENCE_SOLVER: k=4, polish 4000)
+# get the fixed graph. The rank certificate does not apply to these graphs:
+#   fixed graph  — must be certified unsolvable (CAS no-real-roots theorem when
+#                  decidable, DEFAULT_PROBE otherwise)
+#   gold-applied — must SOLVE at eval grade (REFERENCE_SOLVER, best of k_refine)
+#                  under two independent seeds
 # Draws failing either check are resampled.
 
 _NONZERO = (-4, -3, -2, -1, 1, 2, 3, 4)
-
-
-def _gold_lambda_max(aug: FactorGraph, solution: Dict[str, float]) -> float:
-    """lambda_max(J^T J) of the augmented residuals' Jacobian at the gold solution.
-
-    The nonlinear analogue of _toy_variant's stability filter: near a zero-residual
-    solution the energy Hessian is J^T J, and the frozen reference polish
-    (lr=0.2) diverges when lambda_max >= 10. Draws at or above 9.8 are resampled
-    (thin margin on purpose — feasible vieta draws are rare, and the eval-grade
-    solve gate remains the final arbiter for anything the filter lets through).
-    """
-    syms = [sp.Symbol(v.id) for v in aug.variables]
-    subs = {sp.Symbol(k): v for k, v in solution.items()}
-    J = np.array(
-        [
-            [float(sp.diff(sp.sympify(f.expression), s).subs(subs)) for s in syms]
-            for f in aug.factors
-        ]
-    )
-    return float(np.linalg.eigvalsh(J.T @ J)[-1])
 
 
 def _nonlinear_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, Dict[str, float]]:
@@ -473,58 +533,37 @@ def _nonlinear_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, 
     # candidate-only model.  Consecutive seeds cycle uniformly through each
     # family's empirically feasible support (gcd(2, |support|)=1 for alternating
     # two-family datasets, so each family remains balanced).
-    offset_prior = (
-        tuple(float(v) for v in range(-4, 5))
-        if family == "vieta" else (0.0, 1.0, 2.0, 3.0, 4.0)
-    )
-    fixed_delta = offset_prior[int(seed) % len(offset_prior)]
-    # 1000 attempts: the cheap filters (constants + lambda_max) reject ~99% of
-    # vieta draws; only survivors pay for the probe + eval-grade solve.
+    support = NONLINEAR_SUPPORTS[family]
+    a_g, delta = support[int(seed) % len(support)]
+    # 1000 attempts: the cheap constant filters reject most draws; only
+    # survivors pay for the CAS check + eval-grade solve gates. (The old
+    # lambda_max stability filter is gone: it protected the frozen refine
+    # polish's fixed lr, and the LM reference solver has no such bound — its
+    # removal is what un-degenerates the gold coefficient distribution.)
     for _ in range(1000):
         c1 = float(rng.choice((-2, -1, 1, 2)))
         c2 = float(rng.choice((-2, -1, 1, 2)))
         if family == "vieta":
             # augmented: x + y + c1*u = k1, x*y + c2*u = k2,
-            # u = x - y + delta.  Random delta is load-bearing anti-leakage:
-            # otherwise the gold is always the expression candidate with zero
-            # offset and a candidate-only policy can identify it without reading
-            # the problem graph.
-            # ponytail: diversity ceiling — only |x*-y*| <= 2 draws survive the
-            # lambda_max stability filter (J's y column carries x*, and vice
-            # versa), so gold pins land in {+-1, +-2}. Same upgrade path as
-            # quad_link: adaptive lr in refine lifts the bound.
+            # u = a*(x**2 + y**2) + delta, with (a, delta) cycled from the support.
             x_star = float(rng.choice(_NONZERO))
             y_star = float(rng.choice(_NONZERO))
-            if y_star == x_star:
-                continue  # u0 = x-y must be nonzero or fixed == augmented
-            delta = fixed_delta
-            u0 = x_star - y_star + delta
+            u0 = a_g * (x_star ** 2 + y_star ** 2) + delta
             if u0 == 0:
-                continue
+                continue  # fixed would equal augmented
             k1 = x_star + y_star + c1 * u0
             k2 = x_star * y_star + c2 * u0
             if k1 ** 2 - 4 * k2 >= 0:
                 continue  # fixed x+y=k1, x*y=k2 has real roots -> not aux-required
             exprs = [("eq1", f"x + y - ({k1})", {"x": 1, "y": 1}),
                      ("eq2", f"x*y - ({k2})", {"x": 1, "y": 1})]
-            defining = f"u - (x - y) - ({delta})"
             sol = {"x": x_star, "y": y_star}
         else:  # quad_link
             # augmented: 0.5*x**2 + 0.5*y + c1*u = k1,
-            # 0.5*x**2 - 0.5*y + c2*u = k2, u = x**2 + delta.
-            # Random delta removes the analogous zero-offset shortcut. The 0.5
-            # scale on the quadratic equations is load-bearing:
-            # "u - x**2" alone puts 4*x*^2 into the x column of J, so integer golds
-            # force x* = +-1 and unscaled equations would push lambda_max(J^T J) to
-            # 12 — past the frozen polish's stability bound (10). At scale 0.5 the
-            # c1=c2=-1 draws sit at lambda_max ~ 8.8, inside the filter.
-            # ponytail: gold diversity ceiling — x* in {-1,1}, u0 = 1, c1 = c2 = -1
-            # survive the stability filter; only y* and sign(x*) vary. Upgrade path:
-            # a line search / adaptive lr in refine lifts the lambda_max bound.
+            # 0.5*x**2 - 0.5*y + c2*u = k2, u = a*x**2 + delta.
             x_star = float(rng.choice((-1, 1)))
             y_star = float(rng.randint(-6, 6))
-            delta = fixed_delta
-            u0 = x_star ** 2 + delta
+            u0 = a_g * x_star ** 2 + delta
             if u0 == 0:
                 continue
             x_sq = x_star ** 2
@@ -534,8 +573,8 @@ def _nonlinear_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, 
                 continue  # fixed has real roots (0.5*x**2 = (k1+k2)/2)
             exprs = [("eq1", f"0.5*x**2 + 0.5*y - ({k1})", {"x": 1, "y": 0.5}),
                      ("eq2", f"0.5*x**2 - 0.5*y - ({k2})", {"x": 1, "y": -0.5})]
-            defining = f"u - x**2 - ({delta})"
             sol = {"x": x_star, "y": y_star}
+        defining = nonlinear_expression(family, a_g, delta)
         fixed = FactorGraph(
             variables=[VariableNode(v) for v in ("x", "y")],
             factors=[FactorNode(fid, e) for fid, e, _ in exprs],
@@ -545,11 +584,14 @@ def _nonlinear_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, 
         solution = dict(sol)
         solution["u"] = u0
         aug = gold.apply(fixed)
-        if _gold_lambda_max(aug, solution) >= 9.8:
-            continue  # outside the frozen polish's stability region -> resample
         if not certify_unsolvable(fixed, rng_seed=rng.randrange(2 ** 31))["unsolvable"]:
-            continue  # probe found a root of the fixed graph -> not aux-required
-        if not _solvable_at_eval_grade(aug, rng_seed=rng.randrange(2 ** 31)):
+            continue  # fixed graph has a real root -> not aux-required
+        # gold must be RELIABLY reachable at eval grade: multistart LM is seed-
+        # stochastic, so demand two independent successes or the e2e oracle
+        # ceiling wobbles with the evaluation's restart stream
+        gate_seed = rng.randrange(2 ** 31)
+        if not (_solvable_at_eval_grade(aug, rng_seed=gate_seed)
+                and _solvable_at_eval_grade(aug, rng_seed=gate_seed + 1000003)):
             continue  # reference solver can't reach the gold basin -> resample
         return fixed, gold, solution
     raise RuntimeError(f"could not sample a certified {family} variant (seed={seed})")
@@ -575,8 +617,9 @@ def make_dataset(
     ``source="aux_required"`` consumes ``marc.data.aux_required`` (contract C3) when
     present; raises an actionable ImportError otherwise. ``source="nonlinear"``
     uses the local nonlinear resampler (families ``vieta``/``quad_link``); those
-    instances carry ``certificate="empirical"`` — see the module docstring for
-    what that claim does and does not cover. Deterministic per
+    instances carry ``certificate="exact"`` when every distractor has a CAS
+    no-real-roots proof and ``certificate="empirical"`` otherwise — see the
+    module docstring. Deterministic per
     ``(source, n, seed, K, families, hard_negatives)``.
     """
     fams = tuple(families) if families else FAMILIES_BY_SOURCE.get(source, FAMILIES)
@@ -613,24 +656,63 @@ def make_dataset(
     else:
         raise ValueError(f"unknown source {source!r} (expected one of {SOURCES})")
 
-    if source == "nonlinear":
-        n_restarts = DEFAULT_PROBE["n_seeds"] * DEFAULT_PROBE["k_refine"]
-        certificate = "empirical"
-        certificate_config = {
-            **DEFAULT_PROBE,
-            "claim": (
-                f"each distractor failed a {n_restarts}-restart refine+Checker "
-                "probe; 'exactly one solvable option' is an empirical claim at "
-                "this probe budget, not a theorem"
-            ),
-        }
-    else:
-        certificate, certificate_config = "exact", None
+    n_restarts = DEFAULT_PROBE["n_seeds"] * DEFAULT_PROBE["k_refine"]
+    empirical_config = {
+        **DEFAULT_PROBE,
+        "solver": REFERENCE_SOLVER["name"],
+        "claim": (
+            f"at least one distractor is only probe-certified: it failed a "
+            f"{n_restarts}-restart {REFERENCE_SOLVER['name']}+Checker probe; "
+            "'exactly one solvable option' is an empirical claim at this probe "
+            "budget, not a theorem"
+        ),
+    }
+    exact_nl_config = {
+        "method": "cas_no_real_roots",
+        "claim": (
+            "every distractor-augmented system is CAS-certified to have no real "
+            "solution; 'exactly one solvable option' is exact for this instance"
+        ),
+    }
 
     out: List[InventionInstance] = []
     for family, inst_seed, fixed, gold, solution in raw:
-        rng = random.Random(f"menu:{family}:{inst_seed}:{K}:{hard_negatives}")
-        menu, gold_idx = build_menu(fixed, gold, K, rng, hard_negatives=hard_negatives)
+        # A variant whose feasible-offset set is too small to certify K-1
+        # distractors under the reference solver cannot fill its menu; resample
+        # the variant deterministically far outside the base seed range.
+        support = (
+            [nonlinear_expression(family, a, d) for a, d in NONLINEAR_SUPPORTS[family]]
+            if source == "nonlinear" else None
+        )
+        for _retry in range(20):
+            rng = random.Random(f"menu:{family}:{inst_seed}:{K}:{hard_negatives}")
+            try:
+                menu, gold_idx = build_menu(fixed, gold, K, rng,
+                                            hard_negatives=hard_negatives,
+                                            expression_support=support)
+                break
+            except RuntimeError:
+                if source != "nonlinear":
+                    raise
+                inst_seed += 9999991
+                fixed, gold, solution = _nonlinear_variant(family, inst_seed)
+        else:
+            raise RuntimeError(
+                f"could not fill a certified {family} menu after 20 variant resamples"
+            )
+        if source == "nonlinear":
+            # per-instance certificate: exact iff every distractor carries the
+            # CAS no-real-roots proof (re-deriving it is cheap and deterministic)
+            methods = {
+                certify_unsolvable(c.apply(fixed), rng_seed=inst_seed)["method"]
+                for j, c in enumerate(menu) if j != gold_idx
+            }
+            if methods == {"cas_no_real_roots"}:
+                certificate, certificate_config = "exact", exact_nl_config
+            else:
+                certificate, certificate_config = "empirical", empirical_config
+        else:
+            certificate, certificate_config = "exact", None
         out.append(
             InventionInstance(
                 id=f"{source}_{family}_s{inst_seed}",

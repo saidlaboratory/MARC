@@ -103,7 +103,12 @@ def test_ablate_kwarg_written_only_when_set(mod, monkeypatch):
 
 
 def test_reference_solver_literal(mod):
-    assert mod.REFERENCE_SOLVER == {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+    # owned by invention_data: training reward, eval arms, and certification
+    # grade with the same object by construction
+    from marc.structure.invention_data import REFERENCE_SOLVER
+
+    assert mod.REFERENCE_SOLVER is REFERENCE_SOLVER
+    assert mod.REFERENCE_SOLVER == {"name": "lm", "k_refine": 4}
 
 
 def test_rl_path_runs(mod, tmp_path, monkeypatch):

@@ -38,6 +38,17 @@ AUX_VAR = "u"
 _AUX_COEF = [-2, -1, 1, 2]
 _AUX_PIN = [-4, -3, -2, -1, 1, 2, 3, 4]
 
+
+def sample_support(rng: random.Random, items) -> list:
+    """Size-uniform nonempty subset: |S| ~ U{1..m}, then uniform at that size.
+
+    The single support prior for gold insertion AND menu distractors — sampling
+    them from different marginals (e.g. Bernoulli per item) makes support size a
+    candidate-only label leak.
+    """
+    items = list(items)
+    return rng.sample(items, rng.randint(1, len(items)))
+
 #: pattern -> base variable ids, base variables per equation ("rows"), and the
 #: The fixed-graph row shapes mirror the toys.  Gold insertion support is sampled
 #: uniformly from nonempty subsets of these rows on every rejection-loop attempt.
@@ -148,7 +159,7 @@ class AuxRequiredTemplate:
         # Load-bearing anti-shortcut rule: insertion support cannot be constant for
         # a family.  The exact rank gates below reject supports that do not make a
         # valid aux-required instance.
-        u_rows = set(rng.sample(range(len(spec["rows"])), rng.randint(1, len(spec["rows"]))))
+        u_rows = set(sample_support(rng, range(len(spec["rows"]))))
 
         aug_factors, fix_factors = [], []
         aug_edges, fix_edges = [], []
