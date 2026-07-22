@@ -135,6 +135,90 @@ def make_pruned_chain(k: int, rng, n_extra: int | None = None):
     return graph, sol, givens
 
 
+def build_point_chain_graph_3d(link_sqs, anchor2_sqs, anchor3_sqs, origin_sq, c, d):
+    """3D (DMDGP) point chain: k unknown points P_0..P_{k-1} (3k variables), each
+    determined by THREE squared-distance spheres so the intersection is two points
+    (a binary reflection branch across the anchor plane) exactly like molecular
+    distance geometry.
+
+    Three fixed, non-collinear anchors span the z=0 plane: A1=origin, A2=(c,0,0),
+    A3=(0,d,0). P_0 is pinned to all three (origin_sq, anchor2_sqs[0],
+    anchor3_sqs[0]); each P_i (i>=1) is linked to P_{i-1} (link_sqs[i-1]) and pinned
+    to A2, A3 (anchor2_sqs[i], anchor3_sqs[i]) -- three constraints, so the system
+    is square and every point is a sphere-sphere-sphere intersection with a binary
+    branch. Squared distances only, so every factor is an exact polynomial."""
+    k = len(anchor2_sqs)
+    vs, fs, es = [], [], []
+    for i in range(k):
+        vs += [VariableNode(f"x{i}"), VariableNode(f"y{i}"), VariableNode(f"z{i}")]
+    fs.append(FactorNode("eq_origin", f"x0**2 + y0**2 + z0**2 - ({origin_sq})"))
+    fs.append(FactorNode("eq_a2_0", f"(x0 - ({c}))**2 + y0**2 + z0**2 - ({anchor2_sqs[0]})"))
+    fs.append(FactorNode("eq_a3_0", f"x0**2 + (y0 - ({d}))**2 + z0**2 - ({anchor3_sqs[0]})"))
+    es += [Edge("x0", "eq_origin", 1), Edge("y0", "eq_origin", 1), Edge("z0", "eq_origin", 1),
+           Edge("x0", "eq_a2_0", 1), Edge("y0", "eq_a2_0", 1), Edge("z0", "eq_a2_0", 1),
+           Edge("x0", "eq_a3_0", 1), Edge("y0", "eq_a3_0", 1), Edge("z0", "eq_a3_0", 1)]
+    for i in range(1, k):
+        fs.append(FactorNode(f"eq_link{i}",
+                             f"(x{i} - x{i-1})**2 + (y{i} - y{i-1})**2 + (z{i} - z{i-1})**2 "
+                             f"- ({link_sqs[i-1]})"))
+        fs.append(FactorNode(f"eq_a2_{i}", f"(x{i} - ({c}))**2 + y{i}**2 + z{i}**2 - ({anchor2_sqs[i]})"))
+        fs.append(FactorNode(f"eq_a3_{i}", f"x{i}**2 + (y{i} - ({d}))**2 + z{i}**2 - ({anchor3_sqs[i]})"))
+        es += [Edge(f"x{i-1}", f"eq_link{i}", -1), Edge(f"y{i-1}", f"eq_link{i}", -1),
+               Edge(f"z{i-1}", f"eq_link{i}", -1),
+               Edge(f"x{i}", f"eq_link{i}", 1), Edge(f"y{i}", f"eq_link{i}", 1),
+               Edge(f"z{i}", f"eq_link{i}", 1),
+               Edge(f"x{i}", f"eq_a2_{i}", 1), Edge(f"y{i}", f"eq_a2_{i}", 1),
+               Edge(f"z{i}", f"eq_a2_{i}", 1),
+               Edge(f"x{i}", f"eq_a3_{i}", 1), Edge(f"y{i}", f"eq_a3_{i}", 1),
+               Edge(f"z{i}", f"eq_a3_{i}", 1)]
+    return FactorGraph(variables=vs, factors=fs, edges=es)
+
+
+def make_pruned_chain_3d(k: int, rng, n_extra: int | None = None):
+    """3D DMDGP-style instance: a k-point 3D chain (:func:`build_point_chain_graph_3d`)
+    plus ``n_extra`` long-range squared distances between non-adjacent points
+    (default ceil(k/2)), which prune the ~2^k reflection tree the way molecular
+    DMDGP benchmarks do -- most reflection strings become infeasible and multistart
+    genuinely fails.
+
+    Returns (graph, solution, givens) with ``givens`` holding exactly what a solver
+    may see: {"c", "d", "origin_sq", "anchor2_sqs", "anchor3_sqs", "link_sqs",
+    "extra": [(i, j, d_sq), ...]}. Vocabularies derive from givens only, never the
+    solution. Integer coordinates keep every squared distance an exact integer so
+    the checker's exact-rational gate accepts the planted config and its z-mirror."""
+    if n_extra is None:
+        n_extra = (k + 1) // 2
+    c = rng.randint(3, 5)
+    d = rng.randint(3, 5)
+    nz = [v for v in range(-4, 5) if v != 0]
+    # z strictly nonzero so each point sits off the anchor plane (a real branch)
+    pts = [(rng.choice(nz), rng.choice(nz), rng.choice(nz)) for _ in range(k)]
+    origin_sq = pts[0][0] ** 2 + pts[0][1] ** 2 + pts[0][2] ** 2
+    anchor2_sqs = [(x - c) ** 2 + y ** 2 + z ** 2 for (x, y, z) in pts]
+    anchor3_sqs = [x ** 2 + (y - d) ** 2 + z ** 2 for (x, y, z) in pts]
+    link_sqs = [sum((pts[i][t] - pts[i - 1][t]) ** 2 for t in range(3))
+                for i in range(1, k)]
+    g = build_point_chain_graph_3d(link_sqs, anchor2_sqs, anchor3_sqs, origin_sq, c, d)
+    pairs = [(i, j) for i in range(k) for j in range(i + 2, k)]
+    rng.shuffle(pairs)
+    vs, fs, es = list(g.variables), list(g.factors), list(g.edges)
+    extra = []
+    for (i, j) in pairs[:n_extra]:
+        d_sq = sum((pts[i][t] - pts[j][t]) ** 2 for t in range(3))
+        fid = f"eq_long{i}_{j}"
+        fs.append(FactorNode(fid, f"(x{i} - x{j})**2 + (y{i} - y{j})**2 + (z{i} - z{j})**2 - ({d_sq})"))
+        es += [Edge(f"x{i}", fid, 1), Edge(f"y{i}", fid, 1), Edge(f"z{i}", fid, 1),
+               Edge(f"x{j}", fid, -1), Edge(f"y{j}", fid, -1), Edge(f"z{j}", fid, -1)]
+        extra.append((i, j, d_sq))
+    graph = FactorGraph(variables=vs, factors=fs, edges=es)
+    sol = [float(v) for p in pts for v in p]
+    givens = {"c": float(c), "d": float(d), "origin_sq": float(origin_sq),
+              "anchor2_sqs": [float(v) for v in anchor2_sqs],
+              "anchor3_sqs": [float(v) for v in anchor3_sqs],
+              "link_sqs": [float(v) for v in link_sqs], "extra": extra}
+    return graph, sol, givens
+
+
 @dataclass
 class PointChainTemplate:
     """Point-chain geometry as a generator template: k points, 2k variables.
