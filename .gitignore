@@ -31,6 +31,7 @@ results/p_repair/*
 !results/p_repair/linear_K8_e2e.json
 !results/p_repair/linear_K16_e2e.json
 !results/p_repair/linear_K16_trained.json
+!results/p_repair/third_family_feasibility.json
 checkpoints/
 
 # Virtual environments & IDE
