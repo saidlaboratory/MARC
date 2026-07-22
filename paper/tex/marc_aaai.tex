@@ -95,17 +95,22 @@ chained-bilinear systems, where the solution is a joint object rather than a pro
 per-variable marginals, the learned advantage vanishes: zero significant wins in five
 comparisons (the coupling experiment).
 
-We therefore claim a characterization, not a victory. Learned diffusion proposals amortize
-independent search: they help when solutions are per-variable separable and the dimension
-defeats random restart, and this advantage disappears under coupling. the factorization-law section
-states the characterization as a parameter-free law in the measured single-start reachability
-and validates it on synthetic families and a geometric domain; the structural-repair section
-relocates the learned component to the discrete structural decision, where a
-candidate-conditioned repair ranker clears matched controls on certificate-grade menus.
-Alongside these we contribute the substrate itself (factor graphs with an exact CAS and an
-exact accept checker in the loop), a pre-registered entrapment result, a partial cross-family
-transfer result, and a scope measurement on the MATH benchmark showing that autoformalization,
-not solving, is the binding constraint. We make no claim against combinatorial-optimization
+We therefore claim a characterization, not a victory, and we present the sequence of
+controls that produced it as the contribution. First, the missing control shrinks the claim:
+random multi-start with identical polish and budget erases most of the learned proposal's
+apparent advantage, leaving the crossover regime of the dimension-scaling study
+(\S\ref{sec:scaling}). Second, the shrunken claim compresses into a law: a parameter-free
+factorization in the measured single-start reachability $q(n)$ reproduces the entire
+best-of-$K$ curve and predicts where the favorable regime can occur at all
+(\S\ref{sec:law}). Third, the learned component relocates: moved off the value decision onto
+the discrete structural decision, a candidate-conditioned repair ranker clears every matched
+control on certificate-grade menus (\S\ref{sec:repair}). Fourth, the same discipline turned
+on our own pilot exposes a trap: defining ``failure'' on a single stochastic stream
+manufactures repair effects that two-stream selection removes, and we state the protocol in
+reusable form (\S\ref{sec:entrapment}). Alongside the arc we contribute the substrate itself
+(factor graphs with an exact CAS and an exact accept checker in the loop), a pre-registered
+entrapment result, a partial cross-family transfer result, and a scope measurement on the
+MATH benchmark showing that autoformalization, not solving, is the binding constraint. We make no claim against combinatorial-optimization
 solvers such as DIFUSCO; the problem class is different (Related Work). Every
 rate we report carries $N$ and a 95\% Wilson interval or a $z$-test, and the negative results
 are reported in full because they are the boundary of the claim.
@@ -251,6 +256,22 @@ entrapment rate to 0.475, a reduction of $0.525 \pm 0.086$ whose 95\% interval e
 confirmed premise, not a novel finding: stochasticity matters in this search space, whether or
 not the noise source is learned.
 % provenance: RESULTS.md R2 (entrapment table folded into prose; full table was tab:entrapment)
+
+\paragraph{Two-stream failure selection.}
+One protocol element is stated in reusable form because a later result
+(\S\ref{sec:repair}) lives or dies by it. Repair-style studies build their population from
+instances a reference pipeline fails, and when the pipeline is stochastic, failure is a
+noisy event: conditioning on one bad draw selects instances that tend to succeed under any
+fresh randomness, and every intervention evaluated on that population --- constructions,
+reformulations, learned repairs --- inherits the regression as apparent lift. The
+discipline: (i) admit an instance only if the direct solve fails on two independent restart
+streams; (ii) measure intervention labels on a third stream, majority-voted over
+independent streams whenever the labels train a model; (iii) grade all arms end-to-end on a
+fourth stream, common across arms; (iv) always field a matched-budget restart control
+beside the interventions. On our geometry population the difference is not subtle:
+single-stream selection put the construction-repair ceiling at $0.63$--$0.74$ against
+$0.09$--$0.27$ for matched restarts, and two-stream selection collapsed the margin
+(\S\ref{sec:repair}).
 
 \subsection{The hybrid recipe: a good proposal plus polish beats cold-start refinement}
 \label{sec:hybrid}
@@ -656,9 +677,17 @@ symbolic residuals, energy guidance, an exact checker wrapped around any propose
 division of labor it supports: the decision classical solvers cannot make is not which values
 to try but which structure to add, and there the certificate-grade repair ranker clears every
 control it faces, on menus where ``exactly one solvable option'' is a theorem rather than a
-budget-relative claim.
+budget-relative claim. The lesson we generalize is about evaluation itself. Four times in
+this paper the answer changed when a control was added: the matched-budget restart control
+shrank the headline, the factorization law replaced a story with one measured constant,
+relocation moved learning to the decision where its advantage is real, and two-stream
+failure selection turned our own geometry pilot from a positive into a caution. Systems
+that intervene on hard instances are evaluated on populations defined by failure, and when
+failure is stochastic, that population is an artifact of the draw unless the protocol makes
+it stable. The two-stream discipline of \S\ref{sec:entrapment} costs one extra direct solve
+per admitted instance; repair-style results that omit it should be read as upper bounds.
 
-\bibliographystyle{aaai2026}
+% aaai2026.sty already sets \bibliographystyle{aaai2026}; a second one breaks bibtex
 \bibliography{refs}
 
 % ---- Technical appendix (supplementary material under AAAI rules) ----
