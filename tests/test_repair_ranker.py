@@ -4,13 +4,13 @@ import sys
 from pathlib import Path
 
 import torch
+from torch_geometric.data import Batch
 
 from marc.graph.semantics import build_semantic_heterodata
 from marc.model.repair_ranker import (
     CANDIDATE_FEATURE_DIM,
     CandidateOnlyRanker,
     GraphRepairRanker,
-    batch_candidate_graphs,
     candidate_features,
 )
 from marc.structure.invention_data import make_dataset
@@ -18,7 +18,11 @@ from marc.structure.invention_data import make_dataset
 
 def test_repair_ranker_scores_a_whole_menu():
     instances = make_dataset("aux_required", 2, 17, K=4)
-    batch = batch_candidate_graphs(instances, build_semantic_heterodata)
+    batch = Batch.from_data_list([
+        build_semantic_heterodata(candidate.apply(inst.fixed_graph))
+        for inst in instances
+        for candidate in inst.candidates
+    ])
     scores = GraphRepairRanker(D=24, L=2)(batch)
     assert scores.shape == (8,)
     assert torch.isfinite(scores).all()
