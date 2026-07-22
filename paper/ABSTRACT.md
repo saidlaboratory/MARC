@@ -14,35 +14,35 @@ A Controlled Study on Continuous Algebraic Systems
 > first (a law nuance) and keep the real-systems clause (the strongest main-track
 > signal, answering synthetic-only).
 
-## Primary (v5 — repair co-headlined + geometry & real-systems validation, em-dash-free) — ~265 words
+## Primary (v6 — v5 claims, lightly rephrased; numbers re-verified) — ~270 words
 
-Diffusion models are increasingly used to propose solutions for constraint and
-optimization problems, but evaluations usually omit the control that matters most:
+Diffusion models are increasingly being applied to propose solutions to constraint and
+optimization problems, but evaluations typically neglect the control that matters most:
 random multi-start under the same refinement budget. We run that control, and our own
-headline claim shrinks. MARC represents a continuous algebraic constraint system as a
+headline claim shrinks. MARC encodes a continuous algebraic constraint system as a
 factor graph, proposes assignments with a graph-neural diffusion denoiser, polishes
-each by descent on an exact computer-algebra energy, and accepts only assignments an
-exact symbolic checker verifies. We first ask whether the learned proposal helps the
-value decision (which numbers satisfy the equations). It does, but only in a narrow and
-predictable regime: it ties random restart on trapped low-dimensional families, wins
-only in high dimension where random search collapses, and loses that advantage once
-variables couple. Because every method shares one polish operator and one checker,
-best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
-$q(n)$, and the measured slope of $\log q(n)$ decides the regime; one measured constant
-reproduces the whole random-restart curve with no free parameters (mean absolute error
-0.012). Factorized acceptance basins and high dimension are both necessary, and the
-boundary holds outside the synthetic
-families: a real geometric domain collapses in reachability yet a trained proposal ties
-random there, and across eight standard real systems (robotics, positioning,
-optimization, and algebra) classical multi-start solves all eight, none in the
-learning-favorable regime. The decision classical solvers cannot make is discrete: which structural
-augmentation turns an unsolvable system solvable. Moving learning there, an
-operator-aware repair ranker clears its controls decisively (0.997 versus 0.236 on
-balanced nonlinear menus, $p<10^{-70}$; $0.982\pm0.006$ across optimization seeds) and
-beats a cheap per-candidate solver probe on accuracy and cost together. We report every
-negative with confidence intervals. The contribution is a characterization of where
-learned proposals help continuous constraint solving, and a positive result once
-learning moves to the decision that has no classical baseline.
+each candidate by descent on an exact computer-algebra energy, and accepts only
+assignments verified by an exact symbolic checker. We first ask whether the learned
+proposal helps the value decision (which assignments satisfy the constraints). It does,
+but only narrowly and predictably: it ties random restart on trapped low-dimensional
+families, wins only in high dimension where random search collapses, and loses that
+advantage once variables couple. Because every method shares one polish operator and
+one checker, best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start
+reachability $q(n)$; one measured constant, the slope of $\log q(n)$, reproduces the
+full random-restart curve with no free parameters (mean absolute error 0.012).
+Factorized acceptance basins and high dimension are both required, and the boundary
+holds beyond synthetic problems: a real geometric domain collapses in reachability and
+a trained proposal ties random restart there, while across eight standard real-world
+systems (robotics, positioning, optimization, algebra) classical multi-start solves all
+eight, none falling in the learning-favorable regime. The decision classical solvers
+cannot make is discrete: which structural augmentation turns an unsolvable system
+solvable. Moving learning there, an operator-aware repair ranker clears its controls
+(0.997 versus 0.236 against random on balanced nonlinear menus, $p<10^{-70}$;
+$0.982\pm0.006$ across optimization seeds) and beats a budget-matched per-candidate
+solver probe on accuracy and cost together. We report every negative result with
+confidence intervals. The contribution is a characterization of where learned proposals
+help continuous constraint solving, and a positive result on the decision that has no
+classical baseline.
 
 ---
 
