@@ -65,3 +65,8 @@ paper/tex/*.pdf
 !results/p_scaling/crossover_families.json
 !results/p_geometry/pointchain_learned_3seed.json
 !results/p_real/real_systems.json
+!results/p_geo_repair/
+!results/p_geo_repair/geo_repair_s11.json
+!results/p_geo_repair/geo_repair_s29.json
+!results/p_geo_repair/geo_repair_s47.json
+!results/p_geo_repair/analysis.json

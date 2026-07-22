@@ -257,3 +257,31 @@ PYTHONPATH=. python3 scripts/run_invention_eval.py \
 
 Then check each output JSON for the `seed_hygiene` block with
 `"overlap_instances": 0`. **Nothing gets cited until that block is present.**
+
+## R28: geometry construction-repair seeds (branch quang/geo-repair, PR #118)
+
+Seed 11 is running on Quang's machine. Seeds 29 and 47 are yours; each run
+regenerates the identical dataset deterministically (that is the slow part,
+~1.5-2h solo per run on CPU) and then trains + evaluates (~1h). Run them one
+at a time if the box is busy, both in parallel if not:
+
+    OMP_NUM_THREADS=6 python3 scripts/run_geo_repair.py --opt-seed 29 \
+        --out results/p_geo_repair/geo_repair_s29.json --ckpt checkpoints/geo_repair_s29.pt
+    OMP_NUM_THREADS=6 python3 scripts/run_geo_repair.py --opt-seed 47 \
+        --out results/p_geo_repair/geo_repair_s47.json --ckpt checkpoints/geo_repair_s47.pt
+
+If Quang's seed-11 run dies, the same command with `--opt-seed 11` and the
+matching out/ckpt paths reproduces it exactly (data seed is fixed; opt-seed
+only moves torch init, shuffle, and the random arm).
+
+When any subset of the three JSONs exists:
+
+    python3 scripts/analyze_geo_repair.py
+
+aggregates whatever landed (multiseed mean/SD per arm per pool, Holm over the
+six ranker-vs-baseline McNemars, label-agreement stats) into
+results/p_geo_repair/analysis.json plus paste-ready RESULTS/tex blocks. The
+result JSONs and analysis.json are gitignore-whitelisted — commit them to the
+branch as they land. The paper stub they fill is in marc_aaai.tex (search
+TODO(R28)); framing rules for a mixed outcome are in
+paper/notes/REVIEW_ATTACKS.md ("If R28 comes back mixed").
