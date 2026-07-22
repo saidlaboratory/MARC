@@ -1,0 +1,141 @@
+% marc_aaai_appendix.tex — technical appendix for marc_aaai.tex (input after \bibliography).
+% Under AAAI rules this is supplementary material; it does not count against the 7 content
+% pages. Every table and number here is moved verbatim from marc.tex (port + cut, no rewrite).
+
+\section{Per-Family Hybrid Battery and Cross-Family Transfer}
+\label{app:hybrid}
+
+The five implementation faults fixed before any comparison (Section~\ref{sec:entrapment}): the denoiser never
+received $x_t$; constants were absent from the graph tensors; $t$ did not condition variable
+nodes; guidance magnitudes exploded; and a shape-handling fault in the one-variable case.
+After the fixes, the solve rate on convex linear systems went from 0 to 1.000 in-distribution
+and held out.
+
+Table~\ref{tab:hybrid} is the full mechanism ablation behind Section~\ref{sec:hybrid}: four non-convex
+families where deterministic descent is fully trapped (best-of-8, 60 held-out instances per
+family, 95\% Wilson CIs). The random-init control uses identical polish and budget with no
+learning.
+
+% provenance: RESULTS.md R3
+\begin{table}[ht]
+\centering
+\caption{Mechanism ablation on trapped non-convex families (best-of-8, 60 held-out per
+family, 95\% Wilson CIs).}
+\label{tab:hybrid}
+\footnotesize
+\begin{tabular}{lccccl}
+\toprule
+Family & refine cold & refine+Langevin & random-init+polish & learned hybrid & learned $>$ random? \\
+\midrule
+BilinearSystem  & 0.000 & 0.300 & 0.550 [0.42, 0.67] & 0.550 & tie ($p = 0.50$) \\
+BilinearProduct & 0.000 & 0.100 & 0.717 [0.59, 0.81] & 0.683 & no (random wins) \\
+QuadraticSystem & 0.000 & 0.300 & 0.683 [0.56, 0.79] & 0.683 & tie ($p = 0.50$) \\
+CircleLine      & 0.000 & 0.033 & 0.200 [0.12, 0.32] & 0.000 & no (random wins) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\label{app:transfer}
+Cross-family transfer is partial. We train on three non-convex families and test the hybrid
+on the held-out fourth (best-of-8, 60 test instances per family, 200 epochs);
+Table~\ref{tab:transfer} reports the outcome. On two of four held-out families the
+cross-trained model reaches 0.683, significantly above the refine+Langevin baseline
+($p < 10^{-4}$): the model solves a family it never trained on. On the other two it solves
+nothing. The BilinearSystem failure is the informative one, because that family is solvable
+in-distribution (0.550 in Table~\ref{tab:hybrid}). A smoke run trained on only the two
+similar families \{Product, Quadratic\} recovered it at 0.70, whereas adding the pathological
+CircleLine family to the training mix collapsed it to 0.00. Dissimilar training families can
+actively disrupt transfer. We read this as transfer across related non-convex structure, not
+as a universal solver.
+
+% provenance: RESULTS.md R4
+\begin{table}[ht]
+\centering
+\caption{Leave-one-family-out transfer (best-of-8, 60 test per family, 200 epochs). $p$ from
+a $z$-test of learned (cross) $>$ refine+Langevin.}
+\label{tab:transfer}
+\small
+\begin{tabular}{lllll}
+\toprule
+Held-out family & Trained on & refine+Langevin & learned (cross) & $p$ \\
+\midrule
+BilinearProduct & Sys, Quad, Circle  & 0.100 [0.05, 0.20] & 0.683 [0.56, 0.79] & $<10^{-4}$ \\
+QuadraticSystem & Sys, Prod, Circle  & 0.300 [0.20, 0.43] & 0.683 [0.56, 0.79] & $<10^{-4}$ \\
+BilinearSystem  & Prod, Quad, Circle & 0.300 [0.20, 0.43] & 0.000 & fails \\
+CircleLine      & Sys, Prod, Quad    & 0.033 [0.01, 0.11] & 0.000 & fails \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Dimension Scaling: Full Battery}
+\label{app:scaling}
+
+Table~\ref{tab:scaling} is the full five-arm battery behind Section~\ref{sec:scaling}; the main text and
+Figure~\ref{fig:law} carry the two arms that decide the claim (random restart and learned).
+
+% provenance: RESULTS.md R15 (methodology unified-v2, results/p_scaling/scaling.json)
+\begin{table}[ht]
+\centering
+\caption{Dimension scaling on bundled traps with per-instance-varying roots in $\pm[3,8]$
+(best-of-8, unified-v2 protocol: one shared polish and one checker for every arm, $N{=}40$
+per cell). Bold marks the best method per row.}
+\label{tab:scaling}
+\begin{tabular}{cccccc}
+\toprule
+$n$ & deterministic & Langevin & mean-prior & random restart & learned \\
+\midrule
+1 & 0.000 & 0.775 & 0.000 & \textbf{1.000} & 0.950 \\
+2 & 0.000 & 0.225 & 0.000 & 0.725 & \textbf{0.950} \\
+3 & 0.000 & 0.000 & 0.000 & 0.075 & \textbf{0.975} \\
+4 & 0.000 & 0.000 & 0.000 & 0.000 & \textbf{0.925} \\
+6 & 0.000 & 0.000 & 0.000 & 0.000 & \textbf{0.250} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The Factorization Dichotomy, Tabulated}
+\label{app:law}
+
+Table~\ref{tab:law} tabulates the measured dichotomy plotted in Figure~\ref{fig:law} (600 fresh instances
+per $n$, Wilson CIs, $K = 8$). Expected restarts $1/q(n)$ are listed over the tested
+dimensions in increasing order.
+
+% provenance: RESULTS.md R9 + paper/notes/crossover_law.md §5
+\begin{table}[ht]
+\centering
+\caption{The factorization dichotomy, measured.}
+\label{tab:law}
+\small
+\begin{tabular}{lll}
+\toprule
+Quantity & Independent (separable) & Coupled \\
+\midrule
+$\log q(n)$ slope & $-1.03$ & $-0.13$ \\
+fit $R^2$ & 0.98 & 0.96 \\
+measured $v = q(1)$ & 0.27 & --- \\
+$E[\text{starts}] = 1/q(n)$ & $3.7 \to 13 \to 32 \to 150 \to 600$ & $2.0 \to 2.5 \to 2.9 \to 3.8 \to 4.3$ \\
+$P_{\text{random}}$ MAE, parameter-free & 0.012 & law N/A (not separable) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Repair: Menu-Size Scaling and Cost Accounting}
+\label{app:kscaling}
+
+The $K = 4$ checkpoint transfers to larger linear menus without retraining, but the accuracy
+advantage shrinks with $K$ and is gone by $K = 16$ ($0.300/0.187/0.113$ against random
+$0.227/0.120/0.107$ at $K = 4/8/16$, $N = 300/150/150$); what survives at large $K$ is only
+the cost gap, as the enumeration it displaces grows to $9.05$ solver calls per instance
+(Figure~\ref{fig:repair}, right). Directly training at $K = 16$ performs at chance, so the
+transferred checkpoint is selected and both negatives are kept in the record.
+
+% provenance: paper/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\textwidth]{../figures/fig_repair.pdf}
+\caption{Structural repair, measured. Left: the operator-aware ranker against its
+candidate-only and random controls on the three generalization tests of Table~\ref{tab:repair}; the dotted line is $K{=}4$ chance. Right: the $K{=}4$ checkpoint evaluated zero-shot at
+larger menus retains an accuracy edge at $K{=}8$ that closes by $K{=}16$, while the blind
+enumeration it displaces grows from $2.5$ to $9.1$ solver calls per instance.}
+\label{fig:repair}
+\end{figure}

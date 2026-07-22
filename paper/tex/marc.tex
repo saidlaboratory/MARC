@@ -492,7 +492,11 @@ to 600 over the separable dimensions while staying between 2.0 and 4.3 on the co
 Any fixed restart budget is therefore exhausted on the separable family, and random search
 must eventually lose to a proposal whose ceiling stays comparatively flat. On the coupled
 family random search never collapses, a finite crossover dimension does not exist, and a
-learned proposal has nothing to amortize. We do not claim a sharp crossover at a particular
+learned proposal has nothing to amortize. An oracle control closes the mechanism: sampling
+each variable from its \emph{true} per-variable marginal (pooled from disjoint instances) and
+polishing identically also ties random restart at every $n \ge 3$ on the coupled family (0/4
+significant wins), so the coupled null is a representational ceiling of any marginal
+proposal --- no better-trained denoiser could cross it. We do not claim a sharp crossover at a particular
 $n$; the robust, predicted quantity is the geometric collapse of the restart cost against the
 learned ceiling, and the coupled negative that follows is the law's other prediction.
 
