@@ -280,9 +280,11 @@ def main(argv=None):
     ap.add_argument("--out", default="results/p_repair/probe_baseline.json")
     ap.add_argument("--quick", action="store_true", help="pilot scale")
     args = ap.parse_args(argv)
-    if args.quick:
-        args.n_test = 48
-        args.Ks = "4,8"
+    if args.quick:  # pilot defaults; explicit flags win
+        if args.n_test == ap.get_default("n_test"):
+            args.n_test = 48
+        if args.Ks == ap.get_default("Ks"):
+            args.Ks = "4,8"
 
     bad = [s for s in args.eval_data.split(",") if s.strip() not in FAMILIES_BY_SOURCE]
     if bad:
