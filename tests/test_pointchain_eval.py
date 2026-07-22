@@ -4,15 +4,9 @@ Fast: tiny trial counts, k=1 only. Verifies the house-rules schema (k/n/rate/ci9
 per arm, z-test when the learned arm runs), the skipped-learned path without a
 checkpoint, and that a checkpoint routes through load_solver with polish off. The
 real result is produced by ``scripts/run_pointchain_eval.py`` (too heavy here)."""
-import importlib.util
-from pathlib import Path
+from conftest import StubSolver, diverge_then_zeros, load_script, patch_load_solver
 
-_spec = importlib.util.spec_from_file_location(
-    "run_pointchain_eval",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_pointchain_eval.py",
-)
-rpe = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(rpe)
+rpe = load_script("run_pointchain_eval")
 
 
 def test_skipped_learned_schema():
@@ -31,26 +25,9 @@ def test_skipped_learned_schema():
     assert "p_learned_gt_random" not in row
 
 
-class _StubSolver:
-    def __init__(self):
-        self.calls = 0
-
-    def sample(self, problem, k):
-        self.calls += 1
-        nv = len(problem.graph.variables)
-        # first call diverges (None candidate), the rest propose zeros
-        return [None if self.calls == 1 else [0.0] * nv for _ in range(k)]
-
-
 def test_ckpt_mode_uses_stub_solver(monkeypatch):
-    stub = _StubSolver()
-    seen = {}
-
-    def fake_load(name, **kw):
-        seen.update(kw, name=name)
-        return stub
-
-    monkeypatch.setattr(rpe, "load_solver", fake_load)
+    stub = StubSolver(diverge_then_zeros)
+    seen = patch_load_solver(monkeypatch, rpe, stub)
     payload = rpe.run([1], trials=3, K=2, ckpt="stub.pt")
     assert seen["name"] == "learned"
     assert seen["checkpoint"] == "stub.pt"

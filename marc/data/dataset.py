@@ -40,13 +40,6 @@ class MARCDataset(Dataset):
 
         data = build_heterodata(graph)
 
-        # Add edge_attr (coefficients) — build_heterodata doesn't include these yet
-        edge_attr = torch.tensor(
-            [[e.coefficient] for e in graph.edges],
-            dtype=torch.float,
-        )
-        data["variable", "connected_to", "factor"].edge_attr = edge_attr
-
         x_star = torch.tensor(
             [[solution[v.id]] for v in graph.variables],
             dtype=torch.float,

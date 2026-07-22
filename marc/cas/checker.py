@@ -115,28 +115,6 @@ class Checker:
 
         return CheckResult(True, [], max_res, stage="")
 
-    def explain_rejection(self, G, x: Sequence[float] | None = None) -> str:
-        """Per-factor breakdown for RL debug logs."""
-        symbols, factors, values = self._unpack(G, x)
-        result = self.check(symbols, factors, values)
-
-        assignment = ", ".join(f"{s}={v:.10g}" for s, v in zip(symbols, values))
-        if result.accepted:
-            header = f"ACCEPTED  max|r|={result.max_residual:.3e}"
-        else:
-            header = (
-                f"REJECTED [{result.stage}]  "
-                f"{len(result.failed_factors)}/{len(factors)} factors failed  "
-                f"max|r|={result.max_residual:.3e}"
-            )
-
-        lines = [header, f"  assignment: {assignment or '(none)'}"]
-        violations = dict(self._numeric_violations(symbols, factors, x=values))
-        for fid, expr in factors:
-            mark = "FAIL" if fid in result.failed_factors else "ok"
-            lines.append(f"  [{mark:>4}] {fid}: {expr}  ->  violation {violations[fid]:.3e}")
-        return "\n".join(lines)
-
     def _unpack(self, G, x):
         symbols = [sp.Symbol(v.id) for v in G.variables]
         factors = [(f.id, _parse(f.expression)) for f in G.factors]

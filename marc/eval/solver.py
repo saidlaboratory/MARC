@@ -4,9 +4,8 @@ The runner is solver-agnostic: it only needs an object exposing
 ``sample(problem, k) -> list[list[float]]`` (k candidate assignments). This module
 pins that contract (``Solver``), exposes the real energy-gradient refinement solver
 (``GradientRefinementSolver``), wraps the learned diffusion ``solve()`` into the
-contract (``LearnedSolver``), keeps a generic single-call adapter
-(``FunctionSolver``), and gives ``load_solver()`` one place to pick a solver with a
-graceful, *loud* fallback so a green P1 run is never produced by a placeholder.
+contract (``LearnedSolver``), and gives ``load_solver()`` one place to pick a solver
+with a graceful, *loud* fallback so a green P1 run is never produced by a placeholder.
 
 Plugging in the learned solver (P1, Day 3+): ``marc.diffusion.solve.solve`` already
 exists on ``main`` with signature
@@ -21,7 +20,7 @@ from __future__ import annotations
 import os
 import tempfile
 import warnings
-from typing import Any, Callable, List, Protocol, Sequence, Tuple, runtime_checkable
+from typing import Any, List, Protocol, Sequence, Tuple, runtime_checkable
 
 import numpy as np
 import sympy as sp
@@ -55,35 +54,6 @@ def _trace_info(trace: Any) -> dict:
         "converged": bool(trace.converged),
         "energies": _downsample([float(e) for e in trace.energies]),
     }
-
-
-class FunctionSolver:
-    """Adapt a plain ``solve()`` callable to the ``Solver`` contract.
-
-    ``solve_fn`` may accept either a ``Problem`` or a ``FactorGraph`` and return a
-    single assignment (list/sequence of floats). k candidates come from calling it
-    k times — meaningful when the underlying solver is stochastic (diffusion
-    sampling); deterministic solvers just repeat their answer, leaving pass@k equal
-    to pass@1, which is the honest result.
-    """
-
-    def __init__(
-        self,
-        solve_fn: Callable[[Any], Sequence[float]],
-        *,
-        pass_graph: bool = False,
-        name: str = "function",
-    ) -> None:
-        self._solve = solve_fn
-        self._pass_graph = pass_graph
-        self.name = name
-
-    def _solve_one(self, problem: Any) -> List[float]:
-        arg = problem.graph if self._pass_graph else problem
-        return [float(v) for v in self._solve(arg)]
-
-    def sample(self, problem: Any, k: int) -> List[List[float]]:
-        return [self._solve_one(problem) for _ in range(k)]
 
 
 class GradientRefinementSolver:
@@ -231,7 +201,7 @@ class ExactLinearSolver:
     ``numpy.linalg.lstsq`` solves — exact (to machine precision) on consistent
     linear systems, minimum-norm least-squares otherwise. Deterministic, so the k
     candidates are k copies of the one solution (pass@k == pass@1, the honest
-    result — same convention as FunctionSolver). On NONLINEAR input sympy raises
+    result). On NONLINEAR input sympy raises
     (``NonlinearError``, a ``ValueError`` subclass); per the Solver protocol this
     returns NO candidates (``[]``) rather than crashing, so nonlinear eval rows
     simply score 0 without special-casing. Inequality factors likewise yield no

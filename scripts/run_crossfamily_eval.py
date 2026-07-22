@@ -25,49 +25,17 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import torch
-import torch.nn as nn
 
 from marc.data.templates import HARD_TEMPLATES_EXT
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
-from marc.eval.metrics import wilson_interval, two_proportion_z
+from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.eval.solver import LearnedSolver
 from marc.refine.iterative import refine
-from marc.diffusion.schedule import cosine_beta_schedule
-from marc.diffusion.forward import corrupt
-from marc.model.denoiser import GraphDenoiser
+from marc.train.toy_x0 import gen, train_x0
 
 T = 1000
-_, ALPHA_BAR = cosine_beta_schedule(T)
 SCALE = 5.0
-
-
-def gen(template, count, seed0):
-    return [(g, [float(v) for v in sol.values()])
-            for i in range(count)
-            for g, sol in [template.generate(seed=seed0 + i)]]
-
-
-def train_x0(items, epochs, D=128, L=4):
-    torch.manual_seed(0)
-    net = GraphDenoiser(D=D, L=L)
-    opt = torch.optim.Adam(net.parameters(), lr=1e-3)
-    datas = [(build_heterodata(g), torch.tensor([[v] for v in sol], dtype=torch.float32) / SCALE)
-             for g, sol in items]
-    order = list(range(len(datas)))
-    for _ in range(epochs):
-        net.train()
-        torch.randperm(len(order))
-        for idx in order:
-            data, x0 = datas[idx]
-            t = torch.randint(1, T + 1, (1,))
-            eps = torch.randn_like(x0)
-            data["variable"].x = corrupt(x0, t, eps, ALPHA_BAR)
-            opt.zero_grad()
-            nn.functional.mse_loss(net(data, t), x0).backward()
-            opt.step()
-    net.eval()
-    return net
 
 
 def refine_count(items, noise, K):
@@ -118,15 +86,13 @@ def run(fams, K, ntest, epochs, ntrain, ckpt=None):
             train = []
             for tf in train_fams:
                 train += gen(tf, ntrain, seed0=0)
-            c_hyb = hybrid_count(test, train_x0(train, epochs), K)
+            c_hyb = hybrid_count(test, train_x0(train, epochs, shuffle=True), K)
         z, p = two_proportion_z(c_hyb[0], c_hyb[1], c_lang[0], c_lang[1])
         rows.append({
             "held_out": held.name,
             "trained_on": "all_families_ckpt" if solver else [f.name for f in train_fams],
-            "refine_langevin": {"k": c_lang[0], "n": c_lang[1], "rate": c_lang[0] / c_lang[1],
-                                "ci95": wilson_interval(*c_lang)},
-            "learned_cross": {"k": c_hyb[0], "n": c_hyb[1], "rate": c_hyb[0] / c_hyb[1],
-                              "ci95": wilson_interval(*c_hyb)},
+            "refine_langevin": rate_cell(*c_lang),
+            "learned_cross": rate_cell(*c_hyb),
             "p_hybrid_gt_langevin": p,
         })
         print(f"{held.name:18s} {c_lang[0]/c_lang[1]:>18.3f} {c_hyb[0]/c_hyb[1]:>18.3f} {p:>8.4f}",

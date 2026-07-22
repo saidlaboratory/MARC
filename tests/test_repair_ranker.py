@@ -1,10 +1,9 @@
 import random
-import importlib.util
-import sys
-from pathlib import Path
 
 import torch
 from torch_geometric.data import Batch
+
+from conftest import load_script
 
 from marc.graph.semantics import build_semantic_heterodata
 from marc.model.repair_ranker import (
@@ -39,11 +38,7 @@ def test_candidate_only_control_has_no_fixed_graph_features():
 
 
 def test_paired_mcnemar_uses_discordant_pairs():
-    path = Path(__file__).resolve().parents[1] / "scripts" / "run_repair_ranker.py"
-    spec = importlib.util.spec_from_file_location("run_repair_ranker", path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
+    module = load_script("run_repair_ranker")
     insts = make_dataset("aux_required", 3, 77, K=4)
     rows = [
         {"pack": type("P", (), {"inst": insts[0]})(),
@@ -57,3 +52,22 @@ def test_paired_mcnemar_uses_discordant_pairs():
     assert block["full_only_correct"] == 2
     assert block["baseline_only_correct"] == 1
     assert block["p_one_sided_exact"] == 0.5
+
+
+def test_seed_hygiene_is_computed_not_asserted():
+    # the provenance block must record the REAL per-source seed ranges (the
+    # +100000*sidx stride) and COUNT id overlaps, never hardcode 0
+    from types import SimpleNamespace
+
+    module = load_script("run_repair_ranker")
+    mk = lambda ids: [SimpleNamespace(inst=SimpleNamespace(id=i)) for i in ids]
+    splits = {"train": mk(["a", "b"]), "validation": mk(["c"]), "test": mk(["b", "d"])}
+    h = module.seed_hygiene(splits, ["aux_required", "nonlinear"], 100, 10, 5, 8)
+    assert h["overlap_instances"] == 1  # "b" appears in train and test
+    r = h["per_source_seed_ranges"]["nonlinear"]
+    assert r["train"] == [100100, 100110]
+    assert r["validation"] == [600100, 600105]
+    assert r["test"] == [1000100, 1000108]
+
+    disjoint = {"train": mk(["a"]), "validation": None, "test": mk(["b"])}
+    assert module.seed_hygiene(disjoint, ["aux_required"], 0, 1, 1, 1)["overlap_instances"] == 0

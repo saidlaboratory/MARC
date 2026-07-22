@@ -11,8 +11,7 @@ Marginal q(c_t | c_0) (absorbing):
     with probability 1-alpha_bar[t]   set to ABSENT
 
 ``alpha_bar[t]`` is the cumulative keep-probability, 1.0 at t=0 (identity) decaying to
-~0 at t=T-1 (everything absorbed). A ``"uniform"`` mode (flip to a random type) is also
-provided — the spec allows "simple flip noise".
+~0 at t=T-1 (everything absorbed).
 """
 
 from __future__ import annotations
@@ -22,24 +21,15 @@ from typing import Optional
 
 import torch
 
-from .schema import ABSENT, NUM_SLOT_TYPES, PaddedGraph
+from .schema import ABSENT, PaddedGraph
 
 
-def keep_schedule(T: int, kind: str = "cosine") -> torch.Tensor:
-    """Cumulative keep-probability alpha_bar over t = 0..T-1 (1.0 -> ~0.0).
-
-    Args:
-        T:    number of diffusion steps.
-        kind: "cosine" (default) or "linear".
-    """
+def keep_schedule(T: int) -> torch.Tensor:
+    """Cosine cumulative keep-probability alpha_bar over t = 0..T-1 (1.0 -> ~0.0)."""
     if T < 1:
         raise ValueError("T must be >= 1")
     t_norm = torch.arange(T, dtype=torch.float32) / max(T - 1, 1)
-    if kind == "cosine":
-        return torch.cos(t_norm * (math.pi / 2.0)) ** 2
-    if kind == "linear":
-        return 1.0 - t_norm
-    raise ValueError(f"unknown schedule kind: {kind!r}")
+    return torch.cos(t_norm * (math.pi / 2.0)) ** 2
 
 
 def corrupt_types(
@@ -47,7 +37,6 @@ def corrupt_types(
     t: int,
     T: int,
     *,
-    mode: str = "absorbing",
     schedule: Optional[torch.Tensor] = None,
     generator: Optional[torch.Generator] = None,
 ) -> torch.Tensor:
@@ -57,7 +46,6 @@ def corrupt_types(
         types:     LongTensor [n_slots] clean slot types (c_0).
         t:         diffusion step index in [0, T-1].
         T:         total steps.
-        mode:      "absorbing" (decay toward ABSENT) or "uniform" (flip to random type).
         schedule:  optional precomputed ``keep_schedule(T)`` (avoids recompute in loops).
         generator: optional torch RNG for reproducibility.
 
@@ -74,16 +62,7 @@ def corrupt_types(
     rand = torch.rand(types.shape, generator=generator)
     keep = rand < keep_p
 
-    if mode == "absorbing":
-        replacement = torch.full_like(types, ABSENT)
-    elif mode == "uniform":
-        replacement = torch.randint(
-            0, NUM_SLOT_TYPES, types.shape, generator=generator, dtype=torch.long
-        )
-    else:
-        raise ValueError(f"unknown mode: {mode!r}")
-
-    return torch.where(keep, types, replacement)
+    return torch.where(keep, types, torch.full_like(types, ABSENT))
 
 
 def corrupt(
@@ -91,7 +70,6 @@ def corrupt(
     t: int,
     T: int,
     *,
-    mode: str = "absorbing",
     schedule: Optional[torch.Tensor] = None,
     generator: Optional[torch.Generator] = None,
 ) -> PaddedGraph:
@@ -101,7 +79,7 @@ def corrupt(
     their value (an absent slot has no magnitude).
     """
     noised_types = corrupt_types(
-        graph.slot_types, t, T, mode=mode, schedule=schedule, generator=generator
+        graph.slot_types, t, T, schedule=schedule, generator=generator
     )
     active = noised_types != ABSENT
     noised_values = torch.where(active, graph.values, torch.zeros_like(graph.values))

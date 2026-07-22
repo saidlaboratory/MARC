@@ -25,6 +25,8 @@ from marc.structure.invention_data import (
 )
 from marc.structure.schema import ABSENT, NUM_SLOT_TYPES, PaddedGraph, SlotType
 
+from conftest import load_script
+
 
 def test_slot_type_vocab_extended():
     assert int(SlotType.FACTOR) == 2
@@ -158,12 +160,76 @@ def test_module_constants():
     from marc.data.aux_required import PATTERNS as AUX_PATTERNS
     assert FAMILIES_BY_SOURCE["aux_required"] == tuple(AUX_PATTERNS)
     assert FAMILIES_BY_SOURCE["nonlinear"] == ("vieta", "quad_link")
-    assert DATA_VERSION == 7
+    assert DATA_VERSION == 8
 
 
-def test_reference_solver_literal():
-    # must match run_invention_eval.py / train_structure_policy.py's solver config
-    assert REFERENCE_SOLVER == {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+def test_reference_solver_single_definition():
+    # one solver protocol: certification (this module), the eval arms, and the
+    # training reward must all grade with the SAME object, not hand-synced copies
+    assert REFERENCE_SOLVER == {"name": "lm", "k_refine": 4}
+    assert load_script("run_invention_eval").REFERENCE_SOLVER is REFERENCE_SOLVER
+    assert load_script("train_structure_policy").REFERENCE_SOLVER is REFERENCE_SOLVER
+
+
+def test_scalar_pin_prior_matches_aux_required():
+    # matched pin priors are the DATA_VERSION 7 anti-leak invariant; the tuple
+    # must stay derived from aux_required's gold prior, not a synced copy
+    from marc.data.aux_required import _AUX_PIN
+
+    from marc.structure.invention_data import SCALAR_PIN_PRIOR
+
+    assert SCALAR_PIN_PRIOR == tuple(float(v) for v in _AUX_PIN)
+
+
+def test_expression_menu_never_duplicates_gold(monkeypatch):
+    # a zero-shift distractor is "(gold) - (0.0)": string-distinct, mathematically
+    # the gold. Even with certification maximally permissive, it must never enter.
+    import random
+
+    import marc.structure.invention_data as inv
+
+    monkeypatch.setattr(
+        inv, "certify_unsolvable",
+        lambda g, *, rng_seed, probe=None: {"unsolvable": True, "method": "empirical_probe"},
+    )
+    monkeypatch.setattr(inv, "_solvable_at_eval_grade", lambda g, *, rng_seed: True)
+    support = [inv.nonlinear_expression("quad_link", a, d)
+               for a, d in inv.NONLINEAR_SUPPORTS["quad_link"]]
+    for seed in range(10):
+        fixed, gold, _ = inv._nonlinear_variant("quad_link", seed)
+        menu, gidx = inv.build_menu(fixed, gold, 4, random.Random(seed),
+                                    expression_support=support)
+        g_expr = sp.sympify(menu[gidx].defining_expression)
+        for j, cand in enumerate(menu):
+            if j == gidx:
+                continue
+            assert sp.simplify(sp.sympify(cand.defining_expression) - g_expr) != 0
+
+
+def test_filler_support_size_matches_gold_prior(monkeypatch):
+    # gold insertion support is size-uniform; menu fillers must draw from the
+    # same size marginal (Bernoulli(0.5) makes full support ~4x rarer on toy2)
+    import random
+
+    import marc.structure.invention_data as inv
+
+    monkeypatch.setattr(
+        inv, "certify_unsolvable",
+        lambda g, *, rng_seed, probe=None: {"unsolvable": True, "method": "empirical_probe"},
+    )
+    sizes = {}
+    total = 0
+    for seed in range(120):
+        fixed, gold, _ = inv._toy_variant("toy2", seed)  # 4 factors
+        menu, gidx = inv.build_menu(fixed, gold, 6, random.Random(seed))
+        for j, cand in enumerate(menu):
+            if j == gidx or cand.insert_coeffs == menu[gidx].insert_coeffs:
+                continue  # gold or the coeff-matched hard negative
+            k = len(cand.insert_coeffs)
+            sizes[k] = sizes.get(k, 0) + 1
+            total += 1
+    assert total > 300
+    assert sizes.get(4, 0) / total > 0.15  # uniform ~0.25; Bernoulli ~0.067
 
 
 def test_defining_expression_apply():
@@ -221,15 +287,49 @@ def test_linear_sources_exact_certificate():
     }
 
 
+def test_cas_real_root_certificates():
+    # sympy decides real-root existence exactly on these small polynomial
+    # systems: "unsolvable" becomes a theorem, not a probe verdict
+    from marc.graph.graph import FactorGraph
+    from marc.graph.schema import Edge, FactorNode, VariableNode
+
+    rootless = FactorGraph(
+        variables=[VariableNode("x")],
+        factors=[FactorNode("eq1", "x**2 + 1")],
+        edges=[Edge("x", "eq1", 1.0)],
+    )
+    assert certify_unsolvable(rootless, rng_seed=0) == {
+        "unsolvable": True,
+        "method": "cas_no_real_roots",
+    }
+    rooted = FactorGraph(
+        variables=[VariableNode("x")],
+        factors=[FactorNode("eq1", "x**2 - 4")],
+        edges=[Edge("x", "eq1", 1.0)],
+    )
+    assert certify_unsolvable(rooted, rng_seed=0) == {
+        "unsolvable": False,
+        "method": "cas_real_roots",
+    }
+
+
 def test_nonlinear_menu_end_to_end():
-    # THE expensive test (~30-60s): 2 instances, one per nonlinear family
+    # THE expensive test: 2 instances, one per nonlinear family
     ds = make_dataset("nonlinear", 2, 0, K=4)
     assert [i.family for i in ds] == ["vieta", "quad_link"]
     for inst in ds:
-        assert inst.certificate == "empirical"
+        # v8: every distractor carries a CAS no-real-roots proof, so the
+        # "exactly one solvable option" claim is exact for these menus
+        assert inst.certificate == "exact"
         cfg = inst.certificate_config
-        assert {k: cfg[k] for k in DEFAULT_PROBE} == DEFAULT_PROBE
-        assert "empirical claim" in cfg["claim"]
+        assert cfg["method"] == "cas_no_real_roots"
+        assert "no real solution" in cfg["claim"]
+        for j, cand in enumerate(inst.candidates):
+            if j != inst.gold_idx:
+                assert certify_unsolvable(cand.apply(inst.fixed_graph), rng_seed=0) == {
+                    "unsolvable": True,
+                    "method": "cas_no_real_roots",
+                }
 
         gold = inst.candidates[inst.gold_idx]
         assert gold.defining_expression is not None
@@ -239,28 +339,23 @@ def test_nonlinear_menu_end_to_end():
         assert Checker().accepts(aug, x)
         # gold-applied solves at eval grade (the reference solver + Checker)
         assert _solvable_at_eval_grade(aug, rng_seed=123)
-        # the fixed graph fails the probe (empirically unsolvable)
+        # the fixed graph provably has no real solution
         assert certify_unsolvable(inst.fixed_graph, rng_seed=7) == {
             "unsolvable": True,
-            "method": "empirical_probe",
+            "method": "cas_no_real_roots",
         }
-        # hard negative: shares gold coeffs + expression shape, perturbed constant
-        # (filter on the expression: a scalar-pin filler may coincidentally share
-        # the gold insert_coeffs, but only the hard negative carries an expression)
-        hard = [
-            c for j, c in enumerate(inst.candidates)
-            if j != inst.gold_idx
-            and c.insert_coeffs == gold.insert_coeffs
-            and c.defining_expression is not None
-        ]
-        assert len(hard) == len(inst.candidates) - 1
-        assert all(c.defining_expression != gold.defining_expression for c in hard)
-        assert all(sp.simplify(
-            sp.sympify(c.defining_expression)
-            - sp.sympify(gold.defining_expression)
-        ).is_number for c in hard)
-        # Every nonlinear option comes from the same expression/support prior;
-        # representation type cannot reveal the gold.
-        assert all(c.defining_expression is not None for c in inst.candidates)
+        # every distractor is coefficient-matched and drawn from the family's
+        # canonical template support — representation shape cannot reveal gold
+        from marc.structure.invention_data import (
+            NONLINEAR_SUPPORTS,
+            nonlinear_expression,
+        )
+
+        support = {nonlinear_expression(inst.family, a, d)
+                   for a, d in NONLINEAR_SUPPORTS[inst.family]}
+        assert all(c.defining_expression in support for c in inst.candidates)
+        assert all(c.insert_coeffs == gold.insert_coeffs for c in inst.candidates)
+        assert all(c.defining_expression != gold.defining_expression
+                   for j, c in enumerate(inst.candidates) if j != inst.gold_idx)
         assert all(set(c.insert_coeffs) == {f.id for f in inst.fixed_graph.factors}
                    for c in inst.candidates)

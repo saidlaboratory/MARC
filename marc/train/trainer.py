@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-import inspect
 import json
 import math
 import os
@@ -57,7 +56,6 @@ DEFAULTS = {
     },
     "data": {
         "n_train": 10000,  # TOTAL problems across all templates
-        "n_test": 2000,
         "templates": [
             "LinearSystem2x2",
             "LinearSystem3x3",
@@ -77,7 +75,6 @@ DEFAULTS = {
         "beta": 0.01,
         "eps_clip": 0.2,
         "steps": 40,
-        "guidance_weight": 1.0,
         "problems_subset": 256,
         "shaping_clip": 100.0,
     },
@@ -343,6 +340,10 @@ class EMA:
     Parameters follow shadow = decay*shadow + (1-decay)*param after every
     optimizer step; buffers (and non-float state) are copied verbatim.
     """
+    # ponytail: kept hand-rolled. torch's AveragedModel prefixes state keys with
+    # "module." and seeds the shadow differently, so swapping it breaks every
+    # saved ema_state_dict and changes EMA numerics; the compat glue would
+    # outweigh this class.
 
     def __init__(self, model, decay: float = 0.999):
         self.decay = float(decay)
@@ -485,14 +486,6 @@ def train_stage_a_scaled(model, loader, alpha_bar, cfg, device, out_dir, logger,
 # Stage B
 # ---------------------------------------------------------------------------
 
-def filter_kwargs(fn, offered: dict) -> dict:
-    """Cross-unit contract C2: pass only kwargs present in fn's signature, so
-    this works against today's train_stage_b and auto-gains knobs (steps,
-    grad_clip, ...) if the Stage-B rewrite lands."""
-    sig = inspect.signature(fn)
-    return {k: v for k, v in offered.items() if k in sig.parameters}
-
-
 def run_stage_b(model, train_pairs, alpha_bar, cfg, device, out_dir, model_kwargs):
     """GRPO fine-tune from the Stage-A weights; saves stage_b_final.pt."""
     from marc.cas.engine import CASEngine
@@ -522,13 +515,11 @@ def run_stage_b(model, train_pairs, alpha_bar, cfg, device, out_dir, model_kwarg
         "steps": g["steps"],
         "grad_clip": tr["grad_clip"],
         "seed": tr["seed"],
-        "entropy_coef": g.get("entropy_coef", 0.0),
         "eps_clip": g["eps_clip"],
         "shaping_clip": g["shaping_clip"],
     }
     start = time.time()
-    model = train_stage_b(model, ref_policy, problems, alpha_bar,
-                          **filter_kwargs(train_stage_b, offered))
+    model = train_stage_b(model, ref_policy, problems, alpha_bar, **offered)
     save_checkpoint(
         os.path.join(out_dir, "stage_b_final.pt"),
         epoch=tr["epochs_B"], global_step=0, stage="b", model=model,
@@ -550,7 +541,7 @@ def _apply_smoke(cfg: dict, out_dir: str) -> dict:
                      "device": "cpu", "num_workers": 0},
         # ponytail: smoke data goes under out_dir so it never pollutes (or
         # invalidates the manifest of) the real dataset cache.
-        "data": {"n_train": 12, "n_test": 4, "templates": ["LinearSystem2x2"],
+        "data": {"n_train": 12, "templates": ["LinearSystem2x2"],
                  "dir": os.path.join(out_dir, "smoke_data")},
         "grpo": {"N": 2, "steps": 3, "problems_subset": 2},
     })

@@ -6,7 +6,7 @@ unseen nonlinear relation. Right panel: the K=4 checkpoint evaluated zero-shot a
 larger menu sizes, where accuracy stays above random while the enumeration it
 avoids grows.
 
-Reads the Data Version 6 citable JSONs in results/p_repair/. Run from repo root:
+Reads the Data Version 8 citable JSONs in results/p_repair/. Run from repo root:
     python3 scripts/plot_repair.py
 """
 

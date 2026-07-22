@@ -1,5 +1,0 @@
-Hard-suite eval — best-of-8, 60 test/family, 95% Wilson CIs, learned arm: ckpt:best.pt
-family                    refine_cold        refine_langevin                 lm         learned_hybrid  sig?
-BilinearSystem     cold=0.000 [0.00,0.06]  lang=0.300 [0.20,0.43]  random=0.550 [0.42,0.67]  lm=1.000 [0.94,1.00]  learned=0.417 [0.30,0.54]
-BilinearProduct    cold=0.000 [0.00,0.06]  lang=0.100 [0.05,0.20]  random=0.683 [0.56,0.79]  lm=1.000 [0.94,1.00]  learned=0.683 [0.56,0.79]
-QuadraticSystem    cold=0.000 [0.00,0.06]  lang=0.300 [0.20,0.43]  random=0.683 [0.56,0.79]  lm=1.000 [0.94,1.00]  learned=0.683 [0.56,0.79]

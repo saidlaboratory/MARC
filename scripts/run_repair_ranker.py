@@ -14,7 +14,6 @@ import argparse
 import copy
 import json
 import math
-import os
 import random
 import sys
 import time
@@ -28,7 +27,7 @@ from torch_geometric.data import Batch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from marc.cas.checker import Checker
-from marc.eval.metrics import two_proportion_z, wilson_interval
+from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.eval.runner import Problem
 from marc.eval.solver import load_solver
 from marc.graph.semantics import build_semantic_heterodata
@@ -40,6 +39,7 @@ from marc.model.repair_ranker import (
 from marc.structure.invention_data import (
     DATA_VERSION,
     FAMILIES_BY_SOURCE,
+    REFERENCE_SOLVER,
     InventionInstance,
     make_dataset,
 )
@@ -59,6 +59,11 @@ def _families(source: str, excluded: set[str]) -> list[str]:
 
 def build_split(sources: list[str], n_per_source: int, seed: int, K: int,
                 excluded: set[str] | None = None) -> list[Packed]:
+    if len(sources) > 5:
+        raise ValueError(
+            "the 100000-per-source seed stride aliases into the +500000 "
+            "validation offset beyond 5 sources"
+        )
     excluded = excluded or set()
     out = []
     for sidx, source in enumerate(sources):
@@ -152,9 +157,25 @@ def train(full, control, train_set: list[Packed], val_set: list[Packed], *,
     return history, best_f, best_c
 
 
-def _rate(k: int, n: int) -> dict:
-    lo, hi = wilson_interval(k, n)
-    return {"k": k, "n": n, "rate": k / n, "ci95": [lo, hi]}
+def seed_hygiene(splits: dict, sources: list[str], seed: int,
+                 n_train: int, n_val: int, n_test: int) -> dict:
+    """Provenance block: the REAL per-source seed ranges build_split uses
+    (including the +100000*sidx stride) and a COUNTED instance-id overlap.
+    The overlap count is the authoritative disjointness check; a split passed
+    as None (e.g. --eval-only) is simply absent from it."""
+    offsets = {"train": (0, n_train), "validation": (500000, n_val),
+               "test": (900000, n_test)}
+    ranges = {}
+    for sidx, source in enumerate(sources):
+        base = seed + 100000 * sidx
+        ranges[source] = {name: [base + off, base + off + n]
+                          for name, (off, n) in offsets.items()}
+    ids = {name: {p.inst.id for p in split}
+           for name, split in splits.items() if split}
+    names = sorted(ids)
+    overlap = sum(len(ids[a] & ids[b])
+                  for i, a in enumerate(names) for b in names[i + 1:])
+    return {"per_source_seed_ranges": ranges, "overlap_instances": overlap}
 
 
 def _paired_mcnemar(rows: list[dict], arm: str, baseline: str) -> dict:
@@ -182,15 +203,17 @@ def _paired_mcnemar(rows: list[dict], arm: str, baseline: str) -> dict:
 
 def _solves(pack: Packed, pick: int, seed: int) -> bool:
     graph = pack.inst.candidates[pick].apply(pack.inst.fixed_graph)
-    solver_name = "refine" if pack.source == "nonlinear" else "exact"
-    k = 4 if solver_name == "refine" else 1
-    solver_kwargs = (
-        {"polish_steps": 4000, "seed": seed} if solver_name == "refine" else {}
-    )
-    solver = load_solver(solver_name, **solver_kwargs)
+    if pack.source == "nonlinear":
+        # the certificate-matched reference solver (invention_data owns the dict;
+        # the same protocol certified every distractor unsolvable)
+        solver = load_solver(REFERENCE_SOLVER["name"], seed=seed)
+        k = REFERENCE_SOLVER["k_refine"]
+    else:
+        solver = load_solver("exact")  # linear menus carry the exact rank certificate
+        k = 1
     problem = Problem(id=f"{pack.inst.id}_candidate{pick}", graph=graph,
                       solution=[0.0] * len(graph.variables))
-    candidates = solver.sample(problem, k)
+    candidates = [c for c in solver.sample(problem, k) if c is not None]
     return Checker().first_accepted(graph, candidates) is not None
 
 
@@ -227,7 +250,7 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
     }
     for arm in ("full", "control", "random"):
         k = sum(r[arm] == r["pack"].inst.gold_idx for r in rows)
-        result[arm] = {"invention": _rate(k, n)}
+        result[arm] = {"invention": rate_cell(k, n)}
     for arm in ("control", "random"):
         z, p = two_proportion_z(
             result["full"]["invention"]["k"], n,
@@ -244,7 +267,7 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
         rs = [r for r in rows
               if r["pack"].source == source and r["pack"].inst.family == family]
         per_family[f"{source}:{family}"] = {
-            arm: _rate(sum(r[arm] == r["pack"].inst.gold_idx for r in rs), len(rs))
+            arm: rate_cell(sum(r[arm] == r["pack"].inst.gold_idx for r in rs), len(rs))
             for arm in ("full", "control", "random")
         }
     result["per_family"] = per_family
@@ -277,7 +300,7 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
                     solved["enumeration"] += 1
                     break
                 arm_wall["enumeration"] += time.perf_counter() - ts
-        result["solve"] = {arm: _rate(k, n) for arm, k in solved.items()}
+        result["solve"] = {arm: rate_cell(k, n) for arm, k in solved.items()}
         result["solve"]["wall_s"] = {
             arm: {"total": wall, "per_instance": wall / n}
             for arm, wall in arm_wall.items()
@@ -372,12 +395,11 @@ def main(argv=None):
             for kind in sorted({p.inst.certificate for p in test_set})
         },
         "config": vars(args),
-        "seed_hygiene": {
-            "train": [args.seed, args.seed + args.n_train],
-            "validation": [args.seed + 500000, args.seed + 500000 + args.n_val],
-            "test": [args.seed + 900000, args.seed + 900000 + args.n_test],
-            "overlap_instances": 0,
-        },
+        "seed_hygiene": seed_hygiene(
+            {"train": train_set, "validation": val_set, "test": test_set},
+            list(dict.fromkeys(train_sources + eval_sources)),
+            args.seed, args.n_train, args.n_val, args.n_test,
+        ),
         "best_validation": {"full": best_f, "control": best_c},
         "history": history,
         "result": result,

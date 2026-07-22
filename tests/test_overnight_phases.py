@@ -3,15 +3,9 @@
 build_phases only touches manifest/state inside lazy lambdas, so passing
 manifest=None keeps this side-effect free (a real Manifest would rotate
 results/overnight/MANIFEST.json on construction)."""
-import importlib.util
-from pathlib import Path
+from conftest import load_script
 
-_spec = importlib.util.spec_from_file_location(
-    "run_overnight",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_overnight.py",
-)
-ov = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(ov)
+ov = load_script("run_overnight")
 
 CKPT_EVALS = ["eval_hard", "eval_coupled", "eval_dimension_scaling", "eval_crossfamily"]
 

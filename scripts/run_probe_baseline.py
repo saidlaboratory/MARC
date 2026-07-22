@@ -17,7 +17,7 @@ keep the best?  This script runs that control.  Per instance:
      enumeration.
 
 Everything structural is imported from ``run_repair_ranker`` (data building,
-``_solves``, the {k, n, rate, ci95} cell format) — that script is NOT modified.
+``_solves``, batching) — that script is NOT modified.
 The ranker arms are optional: pass ``--ckpt`` (a run_repair_ranker checkpoint) to
 score full/candidate-only on the same instances; without it those arms are
 skipped with a note (protocol still identical for the rest).
@@ -41,7 +41,6 @@ Full:         PYTHONPATH=. python3 scripts/run_probe_baseline.py \
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import random
 import sys
@@ -52,23 +51,17 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from marc.cas.checker import Checker
-from marc.eval.metrics import two_proportion_z
+from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.refine.iterative import refine
 from marc.structure.invention_data import DATA_VERSION, FAMILIES_BY_SOURCE
 
-# --- import the ranker experiment module (data building, _solves, cell format) ---
-_spec = importlib.util.spec_from_file_location(
-    "run_repair_ranker", Path(__file__).resolve().parent / "run_repair_ranker.py"
-)
-rrr = importlib.util.module_from_spec(_spec)
-sys.modules["run_repair_ranker"] = rrr  # dataclass resolution needs the module registered
-_spec.loader.exec_module(rrr)
+import run_repair_ranker as rrr
 
 build_split = rrr.build_split
 _solves = rrr._solves          # full reference-budget grading (per source)
-_rate = rrr._rate              # {k, n, rate, ci95} cell format
 _batch = rrr._batch
 
 
@@ -192,7 +185,7 @@ def evaluate_K(K: int, args, checker: Checker) -> dict:
     # invention accuracy (pick == gold) for every arm
     for arm, picks in arm_picks.items():
         k_inv = sum(p == pack.inst.gold_idx for p, pack in zip(picks, packs))
-        result["arms"][arm] = {"invention": _rate(k_inv, n)}
+        result["arms"][arm] = {"invention": rate_cell(k_inv, n)}
 
     # e2e solve at the full reference budget — identical _solves + common random
     # numbers across arms (solve_seed depends only on the instance index)
@@ -223,7 +216,7 @@ def evaluate_K(K: int, args, checker: Checker) -> dict:
 
     for arm in arm_picks:
         cell = result["arms"][arm]
-        cell["solve"] = _rate(solved[arm], n)
+        cell["solve"] = rate_cell(solved[arm], n)
         calls = probe_cost.get(arm, {}).get("calls", 0)
         wall = probe_cost.get(arm, {}).get("wall_s", 0.0)
         cell["cost"] = {
@@ -233,9 +226,9 @@ def evaluate_K(K: int, args, checker: Checker) -> dict:
             "wall_s_total": wall + grade_cost[arm]["wall_s"],
             "wall_s_per_instance": (wall + grade_cost[arm]["wall_s"]) / n,
         }
-    result["arms"]["oracle"] = {"solve": _rate(solved["oracle"], n)}
+    result["arms"]["oracle"] = {"solve": rate_cell(solved["oracle"], n)}
     result["arms"]["enumeration"] = {
-        "solve": _rate(solved["enumeration"], n),
+        "solve": rate_cell(solved["enumeration"], n),
         "cost": {
             "solver_calls_per_instance": enum_calls / n,
             "wall_s_total": enum_wall,
@@ -280,9 +273,11 @@ def main(argv=None):
     ap.add_argument("--out", default="results/p_repair/probe_baseline.json")
     ap.add_argument("--quick", action="store_true", help="pilot scale")
     args = ap.parse_args(argv)
-    if args.quick:
-        args.n_test = 48
-        args.Ks = "4,8"
+    if args.quick:  # pilot defaults; explicit flags win
+        if args.n_test == ap.get_default("n_test"):
+            args.n_test = 48
+        if args.Ks == ap.get_default("Ks"):
+            args.Ks = "4,8"
 
     bad = [s for s in args.eval_data.split(",") if s.strip() not in FAMILIES_BY_SOURCE]
     if bad:

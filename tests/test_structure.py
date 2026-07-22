@@ -84,15 +84,6 @@ def test_corrupt_graph_zeros_absent_values():
     assert noised.values[absent].abs().sum().item() == 0.0
 
 
-def test_uniform_mode_stays_in_vocab():
-    types = torch.zeros(100, dtype=torch.long)
-    out = corrupt_types(
-        types, t=40, T=50, mode="uniform", generator=torch.Generator().manual_seed(2)
-    )
-    assert out.min().item() >= 0
-    assert out.max().item() < NUM_SLOT_TYPES
-
-
 # --- integration with the reverse head -------------------------------------
 
 def test_structure_head_consumes_corrupted_graph():

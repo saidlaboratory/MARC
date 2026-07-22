@@ -1,17 +1,12 @@
 """Smoke tests for scripts/run_hard_eval.py: default self-train mode keeps the
 output schema, and --ckpt routes the learned arm through LearnedSolver instead
 of train_x0. Heavy training is stubbed; the full result comes from the script."""
-import importlib.util
 import json
 import sys
-from pathlib import Path
 
-_spec = importlib.util.spec_from_file_location(
-    "run_hard_eval",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_hard_eval.py",
-)
-rhe = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(rhe)
+from conftest import StubSolver, load_script, patch_load_solver
+
+rhe = load_script("run_hard_eval")
 
 
 def _run(monkeypatch, tmp_path, argv):
@@ -43,26 +38,14 @@ def test_selftrain_schema(monkeypatch, tmp_path):
 
 
 def test_ckpt_mode_uses_learned_solver(monkeypatch, tmp_path):
-    calls = {}
-
-    class StubSolver:
-        def sample(self, problem, k):
-            calls["sampled"] = calls.get("sampled", 0) + k
-            return [list(problem.solution)] * k
-
-    def fake_load_solver(name, **kwargs):
-        calls["name"] = name
-        calls["kwargs"] = kwargs
-        return StubSolver()
-
-    monkeypatch.setattr(rhe, "load_solver", fake_load_solver)
+    stub = StubSolver(lambda p, k, c: [list(p.solution)] * k)
+    seen = patch_load_solver(monkeypatch, rhe, stub)
     monkeypatch.setattr(rhe, "train_x0",
                         lambda *a, **kw: (_ for _ in ()).throw(AssertionError("train_x0 called in ckpt mode")))
     payload = _run(monkeypatch, tmp_path,
                    ["--quick", "--K", "1", "--test", "2", "--ckpt", "fake_stage_a.pt"])
-    assert calls["name"] == "learned"
-    assert calls["kwargs"] == {"checkpoint": "fake_stage_a.pt", "polish": False}
-    assert calls["sampled"] >= 1
+    assert seen == {"name": "learned", "checkpoint": "fake_stage_a.pt", "polish": False}
+    assert stub.calls >= 1
     assert payload["learned_mode"] == "ckpt:fake_stage_a.pt"
     # stub proposes the true solution -> the shared polish/accept path solves everything
     assert payload["rows"][0]["learned_hybrid"]["k"] == 2

@@ -17,7 +17,7 @@ engine.verify([2.0, 1.0])       # full CheckResult
 Factor expressions carry their constraint type: a bare expression `g` means
 `g == 0`; relationals (`"g <= 0"`, `"x >= 1"`, `"Eq(a, b)"`) are checked as
 written. `CheckResult` reports `accepted`, `failed_factors`, `max_residual`, and
-`stage`. `explain_rejection(G, x)` returns a per-factor breakdown for debug logs.
+`stage`.
 
     from marc.cas.checker import Checker
     Checker().verify(graph, [2.0, 1.0])

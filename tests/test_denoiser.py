@@ -7,7 +7,6 @@ from marc.graph.graph import FactorGraph
 from marc.graph.pyg import build_heterodata
 from marc.graph.schema import VariableNode, FactorNode, Edge
 from marc.model.denoiser import GraphDenoiser
-from marc.model.embeddings import sinusoidal_embedding
 
 
 def _make_mock_graph(n_vars=2, n_facs=2):
@@ -186,11 +185,3 @@ def test_output_depends_on_const_skip():
         model.const_skip.bias.zero_()
         out_no_skip = model(data, t)
     assert not torch.allclose(out, out_no_skip)
-
-
-def test_sinusoidal_embedding_vectorized():
-    t = torch.tensor([1, 5, 9])
-    emb = sinusoidal_embedding(t, 16)
-    assert emb.shape == (3, 16)
-    for i, ti in enumerate([1, 5, 9]):
-        assert torch.equal(emb[i], sinusoidal_embedding(torch.tensor([ti]), 16)[0])

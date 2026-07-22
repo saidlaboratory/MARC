@@ -92,9 +92,6 @@ class PaddedGraph:
     def num_active(self) -> int:
         return int(self.active_mask().sum().item())
 
-    def clone(self) -> "PaddedGraph":
-        return PaddedGraph(self.slot_types.clone(), self.values.clone())
-
     # --- features ----------------------------------------------------------
 
     def to_features(self) -> torch.Tensor:

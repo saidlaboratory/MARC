@@ -26,20 +26,16 @@ def test_2x2_template_generates_valid():
     assert "x" in solution and "y" in solution
 
 
-def test_2x2_cas_accepts_solution():
+def test_2x2_cas_accepts_solution(tmp_path):
     tmpl = LinearSystem2x2Template()
     graph, solution = tmpl.generate(seed=42)
 
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        tmp = f.name
-    try:
-        save_graph(graph, tmp)
-        sym = " ".join(v.id for v in graph.variables)
-        cas = CASEngine(tmp, sym)
-        x_vals = [solution[v.id] for v in graph.variables]
-        assert cas.accepts(x_vals, tol=1e-4), f"Energy={cas.energy(x_vals)}"
-    finally:
-        os.unlink(tmp)
+    tmp = str(tmp_path / "graph.json")
+    save_graph(graph, tmp)
+    sym = " ".join(v.id for v in graph.variables)
+    cas = CASEngine(tmp, sym)
+    x_vals = [solution[v.id] for v in graph.variables]
+    assert cas.accepts(x_vals, tol=1e-4), f"Energy={cas.energy(x_vals)}"
 
 
 # ---------------------------------------------------------------------------
@@ -55,20 +51,16 @@ def test_3x3_template_generates_valid():
     assert "x" in solution and "y" in solution and "z" in solution
 
 
-def test_3x3_cas_accepts_solution():
+def test_3x3_cas_accepts_solution(tmp_path):
     tmpl = LinearSystem3x3Template()
     graph, solution = tmpl.generate(seed=123)
 
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        tmp = f.name
-    try:
-        save_graph(graph, tmp)
-        sym = " ".join(v.id for v in graph.variables)
-        cas = CASEngine(tmp, sym)
-        x_vals = [solution[v.id] for v in graph.variables]
-        assert cas.accepts(x_vals, tol=1e-4), f"Energy={cas.energy(x_vals)}"
-    finally:
-        os.unlink(tmp)
+    tmp = str(tmp_path / "graph.json")
+    save_graph(graph, tmp)
+    sym = " ".join(v.id for v in graph.variables)
+    cas = CASEngine(tmp, sym)
+    x_vals = [solution[v.id] for v in graph.variables]
+    assert cas.accepts(x_vals, tol=1e-4), f"Energy={cas.energy(x_vals)}"
 
 
 # ---------------------------------------------------------------------------

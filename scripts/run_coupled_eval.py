@@ -29,45 +29,22 @@ import time
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 
 from marc.data.coupled import make_chain
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
-from marc.eval.metrics import wilson_interval, two_proportion_z
+from marc.eval.metrics import rate_cell, wilson_interval, two_proportion_z
 from marc.eval.runner import Problem
 from marc.eval.solver import ScipySolver, load_solver
 from marc.refine.iterative import refine
-from marc.diffusion.schedule import cosine_beta_schedule
-from marc.diffusion.forward import corrupt
-from marc.model.denoiser import GraphDenoiser
+from marc.train.toy_x0 import train_x0
 
 T = 1000
-_, ALPHA_BAR = cosine_beta_schedule(T)
 SCALE = 4.0
 
 
 def gen(n, count, seed0):
     return [make_chain(n, random.Random(seed0 + i)) for i in range(count)]
-
-
-def train_x0(items, epochs, D=128, L=4):
-    torch.manual_seed(0)
-    net = GraphDenoiser(D=D, L=L)
-    opt = torch.optim.Adam(net.parameters(), lr=1e-3)
-    datas = [(build_heterodata(g), torch.tensor([[v] for v in sol], dtype=torch.float32) / SCALE)
-             for g, sol in items]
-    for _ in range(epochs):
-        net.train()
-        for data, x0 in datas:
-            t = torch.randint(1, T + 1, (1,))
-            eps = torch.randn_like(x0)
-            data["variable"].x = corrupt(x0, t, eps, ALPHA_BAR)
-            opt.zero_grad()
-            nn.functional.mse_loss(net(data, t), x0).backward()
-            opt.step()
-    net.eval()
-    return net
 
 
 def _timed(count_fn, *args):
@@ -152,7 +129,7 @@ def run(ns, K, ntest, epochs, ntrain, ckpt=None):
         if solver:
             propose = ckpt_propose(solver)
         else:
-            propose = selftrain_propose(train_x0(gen(n, ntrain, seed0=0), epochs))
+            propose = selftrain_propose(train_x0(gen(n, ntrain, seed0=0), epochs, scale=SCALE))
         cl, ms_l = _timed(langevin_count, test, K)
         cr, ms_r = _timed(random_count, test, K)
         clm, ms_lm = _timed(lm_count, test, K)
@@ -164,10 +141,8 @@ def run(ns, K, ntest, epochs, ntrain, ckpt=None):
                                   "wall_ms_total": ms_l, "wall_ms_mean": ms_l / cl[1]},
                      "random": {"rate": cr[0] / cr[1], "ci95": wilson_interval(*cr),
                                 "wall_ms_total": ms_r, "wall_ms_mean": ms_r / cr[1]},
-                     "lm": {"k": clm[0], "n": clm[1], "rate": clm[0] / clm[1], "ci95": wilson_interval(*clm),
-                            "wall_ms_total": ms_lm, "wall_ms_mean": ms_lm / clm[1]},
-                     "learned": {"k": ch[0], "n": ch[1], "rate": ch[0] / ch[1], "ci95": wilson_interval(*ch),
-                                 "wall_ms_total": ms_h, "wall_ms_mean": ms_h / ch[1]},
+                     "lm": {**rate_cell(*clm), "wall_ms_total": ms_lm, "wall_ms_mean": ms_lm / clm[1]},
+                     "learned": {**rate_cell(*ch), "wall_ms_total": ms_h, "wall_ms_mean": ms_h / ch[1]},
                      "p_learned_gt_random": p,
                      "p_learned_gt_lm": p_lm})
         print(f"{n:>3} {cl[0]/cl[1]:>9.3f} {cr[0]/cr[1]:>9.3f} {clm[0]/clm[1]:>9.3f} "

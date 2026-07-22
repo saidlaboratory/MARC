@@ -5,9 +5,6 @@ generated instance with BOTH the numeric CASEngine (as the generator does) and t
 conservative exact Checker, at the stored integer solution x*.
 """
 
-import os
-import tempfile
-
 import pytest
 
 from marc.cas.checker import Checker
@@ -27,28 +24,24 @@ def _ordered_solution(graph, solution):
     return [solution[v.id] for v in graph.variables]
 
 
-def _cas_accepts(graph, solution) -> bool:
+def _cas_accepts(graph, solution, tmp_path) -> bool:
     """Replicate the generator's CAS invariant check without touching disk state."""
     symbol_names = " ".join(v.id for v in graph.variables)
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
-        path = fh.name
-    try:
-        save_graph(graph, path)
-        cas = CASEngine(path, symbol_names)
-        return cas.accepts(_ordered_solution(graph, solution), tol=1e-4)
-    finally:
-        os.unlink(path)
+    path = str(tmp_path / "graph.json")
+    save_graph(graph, path)
+    cas = CASEngine(path, symbol_names)
+    return cas.accepts(_ordered_solution(graph, solution), tol=1e-4)
 
 
 @pytest.mark.parametrize("template", GEOMETRY_TEMPLATES, ids=lambda t: t.name)
-def test_geometry_samples_pass_cas_check(template):
+def test_geometry_samples_pass_cas_check(template, tmp_path):
     """Spec: generate 20 samples; CAS accepts each at x*."""
     checker = Checker()
     for i in range(N_SAMPLES):
         graph, solution = template.generate(seed=i)
         x = _ordered_solution(graph, solution)
         # numeric CAS gate (matches ProblemGenerator's invariant)
-        assert _cas_accepts(graph, solution), f"{template.name} #{i}: CAS rejected x*"
+        assert _cas_accepts(graph, solution, tmp_path), f"{template.name} #{i}: CAS rejected x*"
         # conservative exact/symbolic gate
         assert checker.verify(graph, x).accepted, f"{template.name} #{i}: checker rejected x*"
 

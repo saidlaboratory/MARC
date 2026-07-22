@@ -9,7 +9,6 @@ Pure functions over sequences of bool/float — no model, no CAS dependency.
   entrapment_rate       — fraction of runs stalled at energy > tol (RQ2).
   entrapment_reduction  — entrapment without noise − with noise (RQ2 ablation).
   perturbation_robustness — solve-rate drop when constants are perturbed.
-  derivation_verifiability — fraction of accepted solutions that formally verify.
   wilson_interval        — 95% Wilson score CI for a binomial solve rate.
   restart_budget_curve   — solve rate vs. restart budget k (pass@1..k with CIs).
 """
@@ -17,7 +16,7 @@ Pure functions over sequences of bool/float — no model, no CAS dependency.
 from __future__ import annotations
 
 import math
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 
 def solve_rate(results: Sequence[bool]) -> float:
@@ -39,6 +38,14 @@ def wilson_interval(k: int, n: int, z: float = 1.96) -> Tuple[float, float]:
     center = (p + z * z / (2 * n)) / denom
     half = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / denom
     return max(0.0, center - half), min(1.0, center + half)
+
+
+def rate_cell(k: int, n: int) -> dict:
+    """The citable {k, n, rate, ci95} results-JSON cell; vacuous CI when n == 0."""
+    if n == 0:
+        return {"k": 0, "n": 0, "rate": 0.0, "ci95": [0.0, 1.0]}
+    lo, hi = wilson_interval(k, n)
+    return {"k": k, "n": n, "rate": k / n, "ci95": [lo, hi]}
 
 
 def two_proportion_z(k1: int, n1: int, k2: int, n2: int) -> Tuple[float, float]:
@@ -133,13 +140,3 @@ def perturbation_robustness(
     if len(baseline_results) != len(perturbed_results):
         raise ValueError("baseline and perturbed result lists must have equal length")
     return solve_rate(baseline_results) - solve_rate(perturbed_results)
-
-
-def derivation_verifiability(
-    accepted_solutions: Sequence,
-    verify_fn: Callable,
-) -> float:
-    """Fraction of checker-accepted solutions that pass a stronger formal verifier."""
-    if not accepted_solutions:
-        return 0.0
-    return sum(1 for s in accepted_solutions if verify_fn(s)) / len(accepted_solutions)

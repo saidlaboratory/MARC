@@ -1,7 +1,6 @@
 """Tests for scripts/train_structure_policy.py (W7: seed contract, reward-weighted
 CE, unsolvable filtering, ablate/reference-solver guards)."""
 
-import importlib.util
 import os
 import subprocess
 import sys
@@ -10,16 +9,15 @@ import types
 import pytest
 import torch
 
+from conftest import load_script
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(ROOT, "scripts", "train_structure_policy.py")
 
 
 @pytest.fixture(scope="module")
 def mod():
-    spec = importlib.util.spec_from_file_location("train_structure_policy", SCRIPT)
-    m = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return m
+    return load_script("train_structure_policy")
 
 
 def test_ckpt_records_seed_space(tmp_path):
@@ -103,7 +101,12 @@ def test_ablate_kwarg_written_only_when_set(mod, monkeypatch):
 
 
 def test_reference_solver_literal(mod):
-    assert mod.REFERENCE_SOLVER == {"name": "refine", "k_refine": 4, "polish_steps": 4000}
+    # owned by invention_data: training reward, eval arms, and certification
+    # grade with the same object by construction
+    from marc.structure.invention_data import REFERENCE_SOLVER
+
+    assert mod.REFERENCE_SOLVER is REFERENCE_SOLVER
+    assert mod.REFERENCE_SOLVER == {"name": "lm", "k_refine": 4}
 
 
 def test_rl_path_runs(mod, tmp_path, monkeypatch):
