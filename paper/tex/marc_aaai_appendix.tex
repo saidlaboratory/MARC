@@ -5,13 +5,13 @@
 \section{Per-Family Hybrid Battery and Cross-Family Transfer}
 \label{app:hybrid}
 
-The five implementation faults fixed before any comparison (Section~\ref{sec:entrapment}): the denoiser never
+The five implementation faults fixed before any comparison (the entrapment experiment): the denoiser never
 received $x_t$; constants were absent from the graph tensors; $t$ did not condition variable
 nodes; guidance magnitudes exploded; and a shape-handling fault in the one-variable case.
 After the fixes, the solve rate on convex linear systems went from 0 to 1.000 in-distribution
 and held out.
 
-Table~\ref{tab:hybrid} is the full mechanism ablation behind Section~\ref{sec:hybrid}: four non-convex
+Table~\ref{tab:hybrid} is the full mechanism ablation behind the hybrid-recipe study: four non-convex
 families where deterministic descent is fully trapped (best-of-8, 60 held-out instances per
 family, 95\% Wilson CIs). The random-init control uses identical polish and budget with no
 learning.
@@ -70,7 +70,7 @@ CircleLine      & Sys, Prod, Quad    & 0.033 [0.01, 0.11] & 0.000 & fails \\
 \section{Dimension Scaling: Full Battery}
 \label{app:scaling}
 
-Table~\ref{tab:scaling} is the full five-arm battery behind Section~\ref{sec:scaling}; the main text and
+Table~\ref{tab:scaling} is the full five-arm battery behind the dimension-scaling study; the main text and
 Figure~\ref{fig:law} carry the two arms that decide the claim (random restart and learned).
 
 % provenance: RESULTS.md R15 (methodology unified-v2, results/p_scaling/scaling.json)
@@ -93,12 +93,34 @@ $n$ & deterministic & Langevin & mean-prior & random restart & learned \\
 \end{tabular}
 \end{table}
 
-\section{The Factorization Dichotomy, Tabulated}
+\section{The Factorization Dichotomy: Regime Map and Table}
 \label{app:law}
 
-Table~\ref{tab:law} tabulates the measured dichotomy plotted in Figure~\ref{fig:law} (600 fresh instances
-per $n$, Wilson CIs, $K = 8$). Expected restarts $1/q(n)$ are listed over the tested
-dimensions in increasing order.
+Figure~\ref{fig:regime} places every measured family on the two axes of the law of
+the factorization-law section; Table~\ref{tab:law} tabulates the dichotomy plotted in
+Figure~\ref{fig:law} (600 fresh instances per $n$, Wilson CIs, $K = 8$). Expected restarts
+$1/q(n)$ are listed over the tested dimensions in increasing order.
+
+% provenance: paper/figures/fig_regime_map.pdf (scripts/plot_regime_map.py);
+% slopes from crossover_theory.json (R9), R27 slopes law-inverted from the LM arm of
+% crossover_families.json; outcomes from scaling.json (R15), crossover_families.json (R27),
+% coupled.json (R7), pointchain_learned.json (R25), real_systems.json (R26)
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.75\textwidth]{../figures/fig_regime_map.pdf}
+\caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
+(abscissa; the three core slopes are the fits of Table~\ref{tab:law}, the R27 slopes are
+inverted from the best-of-8 LM arm through Eq.~\eqref{eq:bestofk}) in its solution-structure
+band (ordinate, categorical), colored by the measured learned-vs-random outcome. The law
+reads off the cells: learning wins only where reachability collapses \emph{and} solutions
+are per-variable separable; the chained bilinear family fails collapse and ties; the
+geometry point chains collapse but are coupled and tie --- the falsifiable cell, and it
+held. The double-well tie inside the win cell is the capacity failure of
+the dimension-scaling study, not a regime failure. The real-systems suite has no learned arm
+and no measured slope (nominal abscissa); R28 (in flight) relocates learning to the
+structural decision on the same pruned chains.}
+\label{fig:regime}
+\end{figure}
 
 % provenance: RESULTS.md R9 + paper/notes/crossover_law.md §5
 \begin{table}[ht]

@@ -92,7 +92,7 @@ Rungs: menu selection → predicted value → compositional/multi-aux → free-f
 
 **Writable now (≈70% of the paper):** §§1, 2, 3, 4, 5, 7, 8 — everything except final result numbers. The negative-result section is fully numbered already.
 
-**Blocked on the overnight run (Sparsh, MacBook M5 — see `RUNBOOK_SPARSH.md`):** §6 tables; the abstract's headline sentence; the amortization figure. The harness produces every number the placeholders need in one command.
+**Blocked on the overnight run (Sparsh, MacBook M5 — see `RUNBOOK_OVERNIGHT.md`):** §6 tables; the abstract's headline sentence; the amortization figure. The harness produces every number the placeholders need in one command.
 
 **Decision gate after the run:** policy beats controls on nonlinear families with cross-pattern holdout intact → submit AAAI July 27. Signal is weaker → the same paper, honestly hedged, goes to the next cycle (ICLR ~6 weeks out) with rungs 3+ matured; do not force it.
 

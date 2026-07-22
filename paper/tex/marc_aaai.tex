@@ -5,14 +5,13 @@
 % Times, 9.5pt body approximated at 10pt). Before submission:
 %   1. drop aaai2026.sty and aaai2026.bst into this directory,
 %   2. replace the preamble block below with the author-kit preamble (\usepackage{aaai2026}),
-%   3. switch \bibliographystyle{plainnat} to aaai2026.
+%   3. switch \bibliographystyle{aaai2026} to aaai2026.
 % Content rule: port + cut of marc.tex — every number identical, all \citep keys kept.
 % The technical appendix (per-family tables, transfer, K-scaling) is marc_aaai_appendix.tex,
 % input after the bibliography; it is intended as supplementary material.
 
-\documentclass[10pt,letterpaper,twocolumn]{article}
-\usepackage[margin=0.75in]{geometry}
-\setlength{\columnsep}{0.25in}
+\documentclass[letterpaper]{article}
+\usepackage[submission]{aaai2026}
 \usepackage{times}
 \usepackage{helvet}
 \usepackage{courier}
@@ -21,7 +20,7 @@
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
 \usepackage{natbib}
-\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
 \frenchspacing
 
 \title{Learn the Structure, Not the Values:\\
@@ -84,26 +83,26 @@ classical battery: deterministic descent, annealed Langevin descent, a mean-prio
 random multi-start with identical polish and budget. The answer has three parts. On non-convex
 families where deterministic descent is fully trapped, any diverse proposal plus polish beats
 cold-start Langevin; the learned proposal ties or loses to random restart on all four
-families, so the hybrid recipe is the useful result there (Section~\ref{sec:hybrid}). On
+families, so the hybrid recipe is the useful result there (the hybrid-recipe study). On
 bundled trap families with wide, per-instance-varying roots, there is a clean crossover at
 $n = 3$: random restart wins at low dimension, collapses once it must hit all $n$ basins by
-chance, and the learned proposal holds where it fails (Section~\ref{sec:scaling}). On coupled
+chance, and the learned proposal holds where it fails (the dimension-scaling study). On coupled
 chained-bilinear systems, where the solution is a joint object rather than a product of
 per-variable marginals, the learned advantage vanishes: zero significant wins in five
-comparisons (Section~\ref{sec:coupled}).
+comparisons (the coupling experiment).
 
 We therefore claim a characterization, not a victory. Learned diffusion proposals amortize
 independent search: they help when solutions are per-variable separable and the dimension
-defeats random restart, and this advantage disappears under coupling. Section~\ref{sec:law}
+defeats random restart, and this advantage disappears under coupling. the factorization-law section
 states the characterization as a parameter-free law in the measured single-start reachability
-and validates it on synthetic families and a geometric domain; Section~\ref{sec:repair}
+and validates it on synthetic families and a geometric domain; the structural-repair section
 relocates the learned component to the discrete structural decision, where a
 candidate-conditioned repair ranker clears matched controls on certificate-grade menus.
 Alongside these we contribute the substrate itself (factor graphs with an exact CAS and an
 exact accept checker in the loop), a pre-registered entrapment result, a partial cross-family
 transfer result, and a scope measurement on the MATH benchmark showing that autoformalization,
 not solving, is the binding constraint. We make no claim against combinatorial-optimization
-solvers such as DIFUSCO; the problem class is different (Section~\ref{sec:related}). Every
+solvers such as DIFUSCO; the problem class is different (Related Work). Every
 rate we report carries $N$ and a 95\% Wilson interval or a $z$-test, and the negative results
 are reported in full because they are the boundary of the claim.
 
@@ -116,7 +115,7 @@ with probability $1-(1-q)^K$ in the single-start reachability $q$, and basin str
 the cost of stochastic global search \citep{rinnooykan1987clustering,
 rinnooykan1987multilevel}; that annealed noise escapes minima where descent stalls is likewise
 textbook \citep{welling2011sgld, bras2021langevin, regularized2025langevin}, and our
-entrapment experiment (Section~\ref{sec:entrapment}) is confirmation on this substrate, not
+entrapment experiment (the entrapment experiment) is confirmation on this substrate, not
 novelty. What we add is the diagnostic, not the $v^n$ basin count: the measured $\log q(n)$
 slope, one constant that reproduces the best-of-8 restart curve parameter-free (MAE 0.012),
 and the two-condition dissection --- collapse \emph{and} separability --- deciding when a
@@ -147,21 +146,21 @@ search tree. We do not compete on their benchmarks; neither branch reports the
 budget-matched multistart control this study is built around.
 
 \paragraph{Per-instance algorithm selection.}
-The repair ranker of Section~\ref{sec:repair} is, at bottom, per-instance selection: given an
+The repair ranker of the structural-repair section is, at bottom, per-instance selection: given an
 instance and $K$ discrete options, pick the one under which a downstream solver succeeds. The
 problem statement is fifty years old \citep{rice1976algorithm}, SATzilla made per-instance
 portfolio selection standard practice \citep{xu2008satzilla}, and \citet{kerschke2019survey}
 survey the field; AlphaGeometry \citep{trinh2024alphageometry} is the precedent for learning
 the structural decision itself, and discrete diffusion \citep{austin2021d3pm,
 vignac2023digress} supplied the formalism for our withdrawn predecessor policy. Three things
-in Section~\ref{sec:repair} are not in this line: certificate-grade menu semantics (``exactly
+in the structural-repair section are not in this line: certificate-grade menu semantics (``exactly
 one solvable option'' is a CAS theorem, not a budget-relative claim), candidate conditioning
 (the ranker encodes each candidate-augmented graph, not instance features alone), and
 controls that price the classical recourse --- budget-matched restarts and a per-candidate
 solver probe --- rather than a single default algorithm.
 
 \paragraph{Distance geometry.}
-The geometric family of Section~\ref{sec:law} --- chains of points pinned by squared-distance
+The geometric family of the factorization-law section --- chains of points pinned by squared-distance
 constraints --- is a distance geometry problem with known discrete structure: each new point
 lies on an intersection of circles, the per-point reflection ambiguity is the discrete branch
 that branch-and-prune enumerates, and the solution set carries a group of partial reflections
@@ -219,7 +218,7 @@ on a decreasing schedule and is the classical stochastic solver. The mean-prior 
 polish from the training-distribution mean and tests whether the learned model does more than
 reproduce an average solution. The decisive control is random multi-start: $K$ initializations
 drawn uniformly from a family-matched box covering the root range ($[-5,5]^n$ on the
-Section~\ref{sec:hybrid} families, $[-8,8]^n$ on the dimension-scaling traps, $[-4,4]^n$ on
+the hybrid-recipe study families, $[-8,8]^n$ on the dimension-scaling traps, $[-4,4]^n$ on
 the coupled chains), polished identically, same budget, no learning. Throughout the paper
 \emph{refine}, \emph{random}, and their variants are labeled classical baselines; the learned
 hybrid is the system.
@@ -283,9 +282,9 @@ There is a clean crossover by $n = 3$. At $n = 1$ random restart wins (1.000 aga
 the solution space is small enough to brute-force and learning buys nothing. From $n = 3$
 random restart collapses (0.075, then 0.000), because a random initialization must land in all
 $n$ basins simultaneously: the probability of that event decays like $v^n$ in the per-variable
-reachability $v$, so the restart cost grows like $v^{-n}$ (Section~\ref{sec:law}). The learned
+reachability $v$, so the restart cost grows like $v^{-n}$ (the factorization-law section). The learned
 proposal holds essentially flat where random fails: 0.950 at $n = 2$, 0.975 at $n = 3$, 0.925
-at $n = 4$ --- the flat learned ceiling the law of Section~\ref{sec:law} takes as its input.
+at $n = 4$ --- the flat learned ceiling the law of the factorization-law section takes as its input.
 Langevin and the mean-prior are at or near zero from $n = 3$. This is the amortized-inference
 result: a per-instance learned proposal replaces a search whose cost is exponential in
 dimension. Two caveats bound it. The learned model degrades at $n = 6$ (0.250), and random
@@ -330,7 +329,7 @@ P_{\text{random}}(n;K) \;=\; 1 - \big(1 - q(n)\big)^{K} .
 \end{equation}
 The identity is exact for a fixed instance; across a family we use the instance-averaged
 version, with per-instance heterogeneity a second-order correction
-(Section~\ref{sec:limitations}). It already says that a hybrid beating cold-start Langevin has
+(the Limitations section). It already says that a hybrid beating cold-start Langevin has
 proven nothing about the value of learning: it must beat Eq.~\eqref{eq:bestofk} at the same
 $K$.
 
@@ -417,7 +416,9 @@ per-variable separable. The separable traps have both and learning wins; the cou
 family fails the first, random survives, and learning ties; geometry satisfies the first but
 fails the second, and learning ties random and collapses with it. The slope diagnoses random's
 behavior, but only separability lets a learned proposal exploit the collapse, so geometry pins
-down that collapse is necessary but not sufficient.
+down that collapse is necessary but not sufficient. Appendix Figure~\ref{fig:regime} places
+every measured family on the two axes of the law; the win cell contains exactly the families
+where learning beats both classical arms.
 
 \subsection{Coupling removes the advantage}
 \label{sec:coupled}
@@ -453,7 +454,7 @@ $n$ & Langevin & random restart & learned & learned $>$ random? \\
 
 The outcome is decisive. The learned proposal ties or loses to random restart at every
 dimension, 0 significant wins out of 5. The high-dimensional advantage of
-Section~\ref{sec:scaling} was an independence artifact: it required per-variable-separable
+the dimension-scaling study was an independence artifact: it required per-variable-separable
 solutions the model can memorize as marginals, and it required random restart to collapse
 because it must hit all $n$ basins by chance. Under coupling neither condition holds, and the
 learned diffusion proposal provides no advantage over random search plus refinement. We regard
@@ -578,7 +579,7 @@ remainder carrying a disclosed budget-relative probe certificate.
 % TODO(R28): fill in numbers from results/p_geo_repair/geo_repair.json + PROVENANCE R28 when
 % the run lands; until then this stub carries the design only — cite NO pilot numbers.
 The relocation thesis has a real-domain test in flight, on the pruned point chains of
-Section~\ref{sec:law} --- exactly where a trained value denoiser tied restart-matched random
+the factorization-law section --- exactly where a trained value denoiser tied restart-matched random
 search. Each instance the reference pipeline fails on two independent restart streams
 receives a menu of candidate auxiliary constructions (branch pins, mirror gauges, cosine
 lifts: the discrete branches of the distance-geometry literature); a candidate-conditioned
@@ -651,7 +652,7 @@ control it faces, on menus where ``exactly one solvable option'' is a theorem ra
 budget-relative claim.
 % TODO(R28): close with the geometry construction-repair sentence when the numbers land.
 
-\bibliographystyle{plainnat}
+\bibliographystyle{aaai2026}
 \bibliography{refs}
 
 % ---- Technical appendix (supplementary material under AAAI rules) ----

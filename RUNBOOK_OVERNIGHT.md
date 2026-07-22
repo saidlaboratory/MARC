@@ -1,4 +1,4 @@
-# Overnight run — runbook for Sparsh
+# Overnight run — runbook
 
 Everything below assumes a **MacBook (Apple Silicon M5, 16 GB unified memory,
 ~100 GB free storage)** running macOS, with the repo cloned and you in the repo

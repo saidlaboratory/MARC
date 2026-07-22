@@ -533,7 +533,29 @@ per-variable separable. The separable traps have both and learning wins; the cou
 family fails the first, random survives, and learning ties; geometry satisfies the first but
 fails the second, and learning ties random and collapses with it. The slope diagnoses random's
 behavior, but only separability lets a learned proposal exploit the collapse, so geometry
-pins down that collapse is necessary but not sufficient.
+pins down that collapse is necessary but not sufficient. Figure~\ref{fig:regime} places every
+measured family on the two axes of the law; the win cell contains exactly the families where
+learning beats both classical arms.
+
+% provenance: paper/figures/fig_regime_map.pdf (scripts/plot_regime_map.py);
+% slopes from crossover_theory.json (R9), R27 slopes law-inverted from the LM arm of
+% crossover_families.json; outcomes from scaling.json (R15), crossover_families.json (R27),
+% coupled.json (R7), pointchain_learned.json (R25), real_systems.json (R26)
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/fig_regime_map.pdf}
+\caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
+(abscissa; the three core slopes are the fits of Table~\ref{tab:law}, the R27 slopes are
+inverted from the best-of-8 LM arm through Eq.~\eqref{eq:bestofk}) in its solution-structure
+band (ordinate, categorical), colored by the measured learned-vs-random outcome. The law
+reads off the cells: learning wins only where reachability collapses \emph{and} solutions are
+separable; the chained bilinear family fails collapse and ties; the geometry point chains
+collapse but are coupled and tie --- the falsifiable cell, and it held. The double-well tie
+inside the win cell is the capacity failure of Section~\ref{sec:scaling}, not a regime
+failure. The real-systems suite has no learned arm and no measured slope (nominal abscissa);
+R28 (in flight) relocates learning to the structural decision on the same pruned chains.}
+\label{fig:regime}
+\end{figure}
 
 \subsection{Coupling removes the advantage}
 \label{sec:coupled}
