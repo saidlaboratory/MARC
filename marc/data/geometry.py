@@ -86,6 +86,55 @@ def make_point_chain(k: int, rng):
     return g, sol
 
 
+def make_pruned_chain(k: int, rng, n_extra: int | None = None):
+    """DMDGP-style instance: a k-point chain plus ``n_extra`` long-range squared
+    distances between non-adjacent points (default ceil(k/2)).
+
+    The plain chain has ~2^(k-1) branch-variant real solutions (every consecutive
+    circle-circle intersection is a free reflection), so "solve the system" is
+    easy and the exact checker's preferred solution is just one sheet among many.
+    The long-range distances prune that tree — most reflection strings become
+    infeasible, wrong branches turn into nonzero-residual local minima, and
+    multistart search genuinely fails. This is the discretizable distance
+    geometry setting (sparse exact distances -> conformation), built the way
+    DMDGP benchmarks are: from a known configuration.
+
+    Returns (graph, solution, givens) where ``givens`` holds exactly the data a
+    solver is allowed to see: {"c", "origin_sq", "anchor_sqs", "link_sqs",
+    "extra": [(i, j, d_sq), ...]}. Construction vocabularies must derive from
+    givens only — never from the solution.
+    """
+    if n_extra is None:
+        n_extra = (k + 1) // 2
+    c = rng.randint(3, 5)
+    pts = [(rng.choice([v for v in range(-4, 5) if v != 0]),
+            rng.choice([v for v in range(-4, 5) if v != 0])) for _ in range(k)]
+    origin_sq = pts[0][0] ** 2 + pts[0][1] ** 2
+    anchor_sqs = [(x - c) ** 2 + y ** 2 for (x, y) in pts]
+    link_sqs = [(pts[i][0] - pts[i - 1][0]) ** 2 + (pts[i][1] - pts[i - 1][1]) ** 2
+                for i in range(1, k)]
+    g = build_point_chain_graph(link_sqs, anchor_sqs, origin_sq, c)
+    pairs = [(i, j) for i in range(k) for j in range(i + 2, k)]
+    rng.shuffle(pairs)
+    extra = []
+    vs = list(g.variables)
+    fs = list(g.factors)
+    es = list(g.edges)
+    for (i, j) in pairs[:n_extra]:
+        d_sq = (pts[i][0] - pts[j][0]) ** 2 + (pts[i][1] - pts[j][1]) ** 2
+        fid = f"eq_long{i}_{j}"
+        fs.append(FactorNode(fid, f"(x{i} - x{j})**2 + (y{i} - y{j})**2 - ({d_sq})"))
+        es += [Edge(f"x{i}", fid, 1), Edge(f"y{i}", fid, 1),
+               Edge(f"x{j}", fid, -1), Edge(f"y{j}", fid, -1)]
+        extra.append((i, j, d_sq))
+    graph = FactorGraph(variables=vs, factors=fs, edges=es)
+    sol = [float(v) for p in pts for v in p]
+    givens = {"c": float(c), "origin_sq": float(origin_sq),
+              "anchor_sqs": [float(v) for v in anchor_sqs],
+              "link_sqs": [float(v) for v in link_sqs], "extra": extra}
+    return graph, sol, givens
+
+
 @dataclass
 class PointChainTemplate:
     """Point-chain geometry as a generator template: k points, 2k variables.
