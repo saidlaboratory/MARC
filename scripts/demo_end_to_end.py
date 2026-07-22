@@ -37,15 +37,10 @@ DEFAULT_TEXT = (
     "and squared distance 10 from (4, 0)."
 )
 
-# Tuned for the geometry domain's nonconvex quartic energy (see
-# marc/eval/problems.py and results/p4_scale/roadmap.md): noise off, smaller
-# learning rate, and a much longer polish than the linear-system suites need to
-# clear the checker's exact-rational tolerance. --solver refine uses these; a
-# --solver learned run ignores them (the diffusion solve() has its own schedule).
-GEOMETRY_REFINE_KWARGS = dict(
-    steps=1200, lr=0.008, sigma0=0.0, noise=False,
-    polish_steps=6000, polish_lr=0.02, init_scale=3.0,
-)
+# Shared tuned recipe (issue #104; single source: marc/refine/presets.py).
+# --solver refine uses these; a --solver learned run ignores them (the diffusion
+# solve() has its own schedule).
+from marc.refine.presets import GEOMETRY_REFINE_KWARGS
 
 
 class _DemoProblem:

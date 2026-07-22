@@ -36,12 +36,13 @@ from marc.eval.metrics import two_proportion_z, wilson_interval
 from marc.eval.solver import load_solver
 from marc.refine.iterative import refine
 
-# Geometry-tuned polish, identical across arms (scripts/run_crossover_theory.py).
-GEOMETRY_REFINE = dict(steps=1200, lr=0.008, sigma0=0.0, noise=False,
-                       polish_steps=6000, polish_lr=0.02)
+# Geometry-tuned polish, identical across arms; single source of truth in
+# marc/refine/presets.py (issue #104) so scripts cannot diverge in budget.
+from marc.refine.presets import GEOMETRY_INIT_SD as INIT_SD
+from marc.refine.presets import GEOMETRY_POLISH_KWARGS as GEOMETRY_REFINE
+
 # The langevin arm turns exploration noise back on; everything else is shared.
 LANGEVIN_REFINE = dict(GEOMETRY_REFINE, noise=True, sigma0=0.5)
-INIT_SD = 3.0        # Gaussian init, matched to the geometry eval's init_scale
 DECIMALS = 6         # snap-to-grid before the checker's exact gate
 KS = [1, 2, 3, 4]    # points per chain; n = 2k variables
 
