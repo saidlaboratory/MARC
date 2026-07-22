@@ -1,0 +1,941 @@
+{
+  "status": "ok",
+  "method": "R28 multiseed aggregation, Holm-corrected primary-seed exact McNemar (six-comparison family per pool), label-vs-e2e agreement proxy",
+  "geo_repair_version": 2,
+  "reference_solver": {
+    "name": "lm",
+    "k_refine": 4
+  },
+  "inputs": [
+    {
+      "path": "results/p_geo_repair/geo_repair_s29.json",
+      "opt_seed": 29,
+      "data_seed": 20260722,
+      "geo_repair_version": 2,
+      "n_test_rows": 123
+    },
+    {
+      "path": "results/p_geo_repair/geo_repair_s47.json",
+      "opt_seed": 47,
+      "data_seed": 20260722,
+      "geo_repair_version": 2,
+      "n_test_rows": 123
+    }
+  ],
+  "n_seeds": 2,
+  "primary": {
+    "path": "results/p_geo_repair/geo_repair_s29.json",
+    "opt_seed": 29,
+    "reason": "no run with opt_seed=11; fell back to first input"
+  },
+  "warnings": [
+    "input not landed yet, skipped: results/p_geo_repair/geo_repair_s11.json",
+    "no run with opt_seed=11; fell back to first input"
+  ],
+  "pools": {
+    "trained": {
+      "n_failures": 63,
+      "n_failures_per_seed": [
+        63,
+        63
+      ],
+      "arms": {
+        "ranker": {
+          "mean": 0.23809523809523808,
+          "population_sd": 0.0,
+          "min": 0.23809523809523808,
+          "max": 0.23809523809523808,
+          "values": [
+            0.23809523809523808,
+            0.23809523809523808
+          ],
+          "primary_cell": {
+            "k": 15,
+            "n": 63,
+            "rate": 0.23809523809523808,
+            "ci95": [
+              0.14993653261946965,
+              0.35635894803928175
+            ]
+          }
+        },
+        "recipe_only": {
+          "mean": 0.1984126984126984,
+          "population_sd": 0.007936507936507936,
+          "min": 0.19047619047619047,
+          "max": 0.20634920634920634,
+          "values": [
+            0.20634920634920634,
+            0.19047619047619047
+          ],
+          "primary_cell": {
+            "k": 13,
+            "n": 63,
+            "rate": 0.20634920634920634,
+            "ci95": [
+              0.1247520251562291,
+              0.32170048346115887
+            ]
+          }
+        },
+        "random": {
+          "mean": 0.20634920634920634,
+          "population_sd": 0.015873015873015872,
+          "min": 0.19047619047619047,
+          "max": 0.2222222222222222,
+          "values": [
+            0.2222222222222222,
+            0.19047619047619047
+          ],
+          "primary_cell": {
+            "k": 14,
+            "n": 63,
+            "rate": 0.2222222222222222,
+            "ci95": [
+              0.1372488386182315,
+              0.33912515601983817
+            ]
+          }
+        },
+        "best_fixed": {
+          "mean": 0.15873015873015872,
+          "population_sd": 0.0,
+          "min": 0.15873015873015872,
+          "max": 0.15873015873015872,
+          "values": [
+            0.15873015873015872,
+            0.15873015873015872
+          ],
+          "primary_cell": {
+            "k": 10,
+            "n": 63,
+            "rate": 0.15873015873015872,
+            "ci95": [
+              0.0885699743235259,
+              0.2681180762318168
+            ]
+          }
+        },
+        "all_cos": {
+          "mean": 0.20634920634920634,
+          "population_sd": 0.0,
+          "min": 0.20634920634920634,
+          "max": 0.20634920634920634,
+          "values": [
+            0.20634920634920634,
+            0.20634920634920634
+          ],
+          "primary_cell": {
+            "k": 13,
+            "n": 63,
+            "rate": 0.20634920634920634,
+            "ci95": [
+              0.1247520251562291,
+              0.32170048346115887
+            ]
+          }
+        },
+        "restart_control": {
+          "mean": 0.23809523809523808,
+          "population_sd": 0.0,
+          "min": 0.23809523809523808,
+          "max": 0.23809523809523808,
+          "values": [
+            0.23809523809523808,
+            0.23809523809523808
+          ],
+          "primary_cell": {
+            "k": 15,
+            "n": 63,
+            "rate": 0.23809523809523808,
+            "ci95": [
+              0.14993653261946965,
+              0.35635894803928175
+            ]
+          }
+        },
+        "restart_plus16": {
+          "mean": 0.5396825396825397,
+          "population_sd": 0.0,
+          "min": 0.5396825396825397,
+          "max": 0.5396825396825397,
+          "values": [
+            0.5396825396825397,
+            0.5396825396825397
+          ],
+          "primary_cell": {
+            "k": 34,
+            "n": 63,
+            "rate": 0.5396825396825397,
+            "ci95": [
+              0.41789036921596123,
+              0.656913345835743
+            ]
+          }
+        },
+        "restart_plus32": {
+          "mean": 0.7301587301587301,
+          "population_sd": 0.0,
+          "min": 0.7301587301587301,
+          "max": 0.7301587301587301,
+          "values": [
+            0.7301587301587301,
+            0.7301587301587301
+          ],
+          "primary_cell": {
+            "k": 46,
+            "n": 63,
+            "rate": 0.7301587301587301,
+            "ci95": [
+              0.6096985641796893,
+              0.8241629831201958
+            ]
+          }
+        },
+        "probe": {
+          "mean": 0.6666666666666666,
+          "population_sd": 0.0,
+          "min": 0.6666666666666666,
+          "max": 0.6666666666666666,
+          "values": [
+            0.6666666666666666,
+            0.6666666666666666
+          ],
+          "primary_cell": {
+            "k": 42,
+            "n": 63,
+            "rate": 0.6666666666666666,
+            "ci95": [
+              0.5436701013442413,
+              0.7705055018729168
+            ]
+          }
+        },
+        "enumeration": {
+          "mean": 0.6031746031746031,
+          "population_sd": 0.0,
+          "min": 0.6031746031746031,
+          "max": 0.6031746031746031,
+          "values": [
+            0.6031746031746031,
+            0.6031746031746031
+          ],
+          "primary_cell": {
+            "k": 38,
+            "n": 63,
+            "rate": 0.6031746031746031,
+            "ci95": [
+              0.47980694060752427,
+              0.7146827185269069
+            ]
+          }
+        }
+      },
+      "comparisons_holm": {
+        "method": "holm",
+        "alpha": 0.05,
+        "m": 6,
+        "primary_opt_seed": 29,
+        "family": [
+          "ranker_gt_restart_control",
+          "ranker_gt_random",
+          "ranker_gt_recipe_only",
+          "ranker_gt_best_fixed",
+          "ranker_gt_all_cos",
+          "ranker_gt_probe"
+        ],
+        "tests": {
+          "ranker_gt_restart_control": {
+            "primary": {
+              "ranker_only": 6,
+              "baseline_only": 6,
+              "p_one_sided_exact": 0.61279296875,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 3,
+                "baseline_only": 3,
+                "p_one_sided_exact": 0.65625
+              }
+            ]
+          },
+          "ranker_gt_random": {
+            "primary": {
+              "ranker_only": 7,
+              "baseline_only": 6,
+              "p_one_sided_exact": 0.5,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 8,
+                "baseline_only": 5,
+                "p_one_sided_exact": 0.29052734375
+              }
+            ]
+          },
+          "ranker_gt_recipe_only": {
+            "primary": {
+              "ranker_only": 6,
+              "baseline_only": 4,
+              "p_one_sided_exact": 0.376953125,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 5,
+                "baseline_only": 2,
+                "p_one_sided_exact": 0.2265625
+              }
+            ]
+          },
+          "ranker_gt_best_fixed": {
+            "primary": {
+              "ranker_only": 9,
+              "baseline_only": 4,
+              "p_one_sided_exact": 0.1334228515625,
+              "p_holm": 0.800537109375
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 8,
+                "baseline_only": 3,
+                "p_one_sided_exact": 0.11328125
+              }
+            ]
+          },
+          "ranker_gt_all_cos": {
+            "primary": {
+              "ranker_only": 7,
+              "baseline_only": 5,
+              "p_one_sided_exact": 0.38720703125,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 6,
+                "baseline_only": 4,
+                "p_one_sided_exact": 0.376953125
+              }
+            ]
+          },
+          "ranker_gt_probe": {
+            "primary": {
+              "ranker_only": 2,
+              "baseline_only": 29,
+              "p_one_sided_exact": 0.9999999850988388,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 2,
+                "baseline_only": 29,
+                "p_one_sided_exact": 0.9999999850988388
+              }
+            ]
+          }
+        }
+      }
+    },
+    "transfer": {
+      "n_failures": 60,
+      "n_failures_per_seed": [
+        60,
+        60
+      ],
+      "arms": {
+        "ranker": {
+          "mean": 0.13333333333333333,
+          "population_sd": 0.016666666666666663,
+          "min": 0.11666666666666667,
+          "max": 0.15,
+          "values": [
+            0.15,
+            0.11666666666666667
+          ],
+          "primary_cell": {
+            "k": 9,
+            "n": 60,
+            "rate": 0.15,
+            "ci95": [
+              0.08097349242295689,
+              0.26114825891159615
+            ]
+          }
+        },
+        "recipe_only": {
+          "mean": 0.16666666666666666,
+          "population_sd": 0.016666666666666663,
+          "min": 0.15,
+          "max": 0.18333333333333332,
+          "values": [
+            0.15,
+            0.18333333333333332
+          ],
+          "primary_cell": {
+            "k": 9,
+            "n": 60,
+            "rate": 0.15,
+            "ci95": [
+              0.08097349242295689,
+              0.26114825891159615
+            ]
+          }
+        },
+        "random": {
+          "mean": 0.125,
+          "population_sd": 0.008333333333333331,
+          "min": 0.11666666666666667,
+          "max": 0.13333333333333333,
+          "values": [
+            0.13333333333333333,
+            0.11666666666666667
+          ],
+          "primary_cell": {
+            "k": 8,
+            "n": 60,
+            "rate": 0.13333333333333333,
+            "ci95": [
+              0.06914026978309641,
+              0.24165394590072103
+            ]
+          }
+        },
+        "best_fixed": {
+          "mean": 0.08333333333333333,
+          "population_sd": 0.0,
+          "min": 0.08333333333333333,
+          "max": 0.08333333333333333,
+          "values": [
+            0.08333333333333333,
+            0.08333333333333333
+          ],
+          "primary_cell": {
+            "k": 5,
+            "n": 60,
+            "rate": 0.08333333333333333,
+            "ci95": [
+              0.03611992405048589,
+              0.18069168468112481
+            ]
+          }
+        },
+        "all_cos": {
+          "mean": 0.11666666666666667,
+          "population_sd": 0.0,
+          "min": 0.11666666666666667,
+          "max": 0.11666666666666667,
+          "values": [
+            0.11666666666666667,
+            0.11666666666666667
+          ],
+          "primary_cell": {
+            "k": 7,
+            "n": 60,
+            "rate": 0.11666666666666667,
+            "ci95": [
+              0.05767647403450049,
+              0.2217902059985814
+            ]
+          }
+        },
+        "restart_control": {
+          "mean": 0.18333333333333332,
+          "population_sd": 0.0,
+          "min": 0.18333333333333332,
+          "max": 0.18333333333333332,
+          "values": [
+            0.18333333333333332,
+            0.18333333333333332
+          ],
+          "primary_cell": {
+            "k": 11,
+            "n": 60,
+            "rate": 0.18333333333333332,
+            "ci95": [
+              0.1055768903713613,
+              0.29919993226466285
+            ]
+          }
+        },
+        "restart_plus16": {
+          "mean": 0.48333333333333334,
+          "population_sd": 0.0,
+          "min": 0.48333333333333334,
+          "max": 0.48333333333333334,
+          "values": [
+            0.48333333333333334,
+            0.48333333333333334
+          ],
+          "primary_cell": {
+            "k": 29,
+            "n": 60,
+            "rate": 0.48333333333333334,
+            "ci95": [
+              0.3617484128577001,
+              0.6069240514915643
+            ]
+          }
+        },
+        "restart_plus32": {
+          "mean": 0.75,
+          "population_sd": 0.0,
+          "min": 0.75,
+          "max": 0.75,
+          "values": [
+            0.75,
+            0.75
+          ],
+          "primary_cell": {
+            "k": 45,
+            "n": 60,
+            "rate": 0.75,
+            "ci95": [
+              0.6276768905451521,
+              0.8422361442158816
+            ]
+          }
+        },
+        "probe": {
+          "mean": 0.7666666666666667,
+          "population_sd": 0.0,
+          "min": 0.7666666666666667,
+          "max": 0.7666666666666667,
+          "values": [
+            0.7666666666666667,
+            0.7666666666666667
+          ],
+          "primary_cell": {
+            "k": 46,
+            "n": 60,
+            "rate": 0.7666666666666667,
+            "ci95": [
+              0.6456348865960799,
+              0.8556056838156894
+            ]
+          }
+        },
+        "enumeration": {
+          "mean": 0.6,
+          "population_sd": 0.0,
+          "min": 0.6,
+          "max": 0.6,
+          "values": [
+            0.6,
+            0.6
+          ],
+          "primary_cell": {
+            "k": 36,
+            "n": 60,
+            "rate": 0.6,
+            "ci95": [
+              0.47365824394206846,
+              0.714306969962345
+            ]
+          }
+        }
+      },
+      "comparisons_holm": {
+        "method": "holm",
+        "alpha": 0.05,
+        "m": 6,
+        "primary_opt_seed": 29,
+        "family": [
+          "ranker_gt_restart_control",
+          "ranker_gt_random",
+          "ranker_gt_recipe_only",
+          "ranker_gt_best_fixed",
+          "ranker_gt_all_cos",
+          "ranker_gt_probe"
+        ],
+        "tests": {
+          "ranker_gt_restart_control": {
+            "primary": {
+              "ranker_only": 0,
+              "baseline_only": 2,
+              "p_one_sided_exact": 1.0,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 1,
+                "baseline_only": 5,
+                "p_one_sided_exact": 0.984375
+              }
+            ]
+          },
+          "ranker_gt_random": {
+            "primary": {
+              "ranker_only": 3,
+              "baseline_only": 2,
+              "p_one_sided_exact": 0.5,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 4,
+                "baseline_only": 4,
+                "p_one_sided_exact": 0.63671875
+              }
+            ]
+          },
+          "ranker_gt_recipe_only": {
+            "primary": {
+              "ranker_only": 1,
+              "baseline_only": 1,
+              "p_one_sided_exact": 0.75,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 2,
+                "baseline_only": 6,
+                "p_one_sided_exact": 0.96484375
+              }
+            ]
+          },
+          "ranker_gt_best_fixed": {
+            "primary": {
+              "ranker_only": 6,
+              "baseline_only": 2,
+              "p_one_sided_exact": 0.14453125,
+              "p_holm": 0.8671875
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 4,
+                "baseline_only": 2,
+                "p_one_sided_exact": 0.34375
+              }
+            ]
+          },
+          "ranker_gt_all_cos": {
+            "primary": {
+              "ranker_only": 3,
+              "baseline_only": 1,
+              "p_one_sided_exact": 0.3125,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 3,
+                "baseline_only": 3,
+                "p_one_sided_exact": 0.65625
+              }
+            ]
+          },
+          "ranker_gt_probe": {
+            "primary": {
+              "ranker_only": 1,
+              "baseline_only": 38,
+              "p_one_sided_exact": 0.999999999998181,
+              "p_holm": 1.0
+            },
+            "robustness": [
+              {
+                "opt_seed": 47,
+                "path": "results/p_geo_repair/geo_repair_s47.json",
+                "ranker_only": 1,
+                "baseline_only": 40,
+                "p_one_sided_exact": 0.9999999999995453
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "cost": {
+    "ranker": {
+      "restarts_per_instance": {
+        "mean": 4.0,
+        "population_sd": 0.0,
+        "min": 4.0,
+        "max": 4.0,
+        "values": [
+          4.0,
+          4.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.2372869540545881,
+        "population_sd": 0.00022790364365517235,
+        "min": 0.23705905041093295,
+        "max": 0.2375148576982433,
+        "values": [
+          0.23705905041093295,
+          0.2375148576982433
+        ]
+      }
+    },
+    "recipe_only": {
+      "restarts_per_instance": {
+        "mean": 4.0,
+        "population_sd": 0.0,
+        "min": 4.0,
+        "max": 4.0,
+        "values": [
+          4.0,
+          4.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.2068637364051339,
+        "population_sd": 0.0015790183179939937,
+        "min": 0.20528471808713988,
+        "max": 0.20844275472312787,
+        "values": [
+          0.20844275472312787,
+          0.20528471808713988
+        ]
+      }
+    },
+    "random": {
+      "restarts_per_instance": {
+        "mean": 4.0,
+        "population_sd": 0.0,
+        "min": 4.0,
+        "max": 4.0,
+        "values": [
+          4.0,
+          4.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.20835499680857553,
+        "population_sd": 0.0015434890200395346,
+        "min": 0.206811507788536,
+        "max": 0.20989848582861506,
+        "values": [
+          0.20989848582861506,
+          0.206811507788536
+        ]
+      }
+    },
+    "best_fixed": {
+      "restarts_per_instance": {
+        "mean": 4.0,
+        "population_sd": 0.0,
+        "min": 4.0,
+        "max": 4.0,
+        "values": [
+          4.0,
+          4.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.2109586543302294,
+        "population_sd": 0.0007831278731251501,
+        "min": 0.21017552645710424,
+        "max": 0.21174178220335454,
+        "values": [
+          0.21017552645710424,
+          0.21174178220335454
+        ]
+      }
+    },
+    "all_cos": {
+      "restarts_per_instance": {
+        "mean": 4.0,
+        "population_sd": 0.0,
+        "min": 4.0,
+        "max": 4.0,
+        "values": [
+          4.0,
+          4.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.266154731534624,
+        "population_sd": 0.0020899503641833572,
+        "min": 0.26406478117044063,
+        "max": 0.26824468189880735,
+        "values": [
+          0.26824468189880735,
+          0.26406478117044063
+        ]
+      }
+    },
+    "restart_control": {
+      "restarts_per_instance": {
+        "mean": 4.0,
+        "population_sd": 0.0,
+        "min": 4.0,
+        "max": 4.0,
+        "values": [
+          4.0,
+          4.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.20353300637391403,
+        "population_sd": 0.002398176442422878,
+        "min": 0.20113482993149115,
+        "max": 0.2059311828163369,
+        "values": [
+          0.2059311828163369,
+          0.20113482993149115
+        ]
+      }
+    },
+    "restart_plus16": {
+      "restarts_per_instance": {
+        "mean": 16.0,
+        "population_sd": 0.0,
+        "min": 16.0,
+        "max": 16.0,
+        "values": [
+          16.0,
+          16.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.5416411453211109,
+        "population_sd": 0.0025564997040049553,
+        "min": 0.5390846456171059,
+        "max": 0.5441976450251158,
+        "values": [
+          0.5390846456171059,
+          0.5441976450251158
+        ]
+      }
+    },
+    "restart_plus32": {
+      "restarts_per_instance": {
+        "mean": 32.0,
+        "population_sd": 0.0,
+        "min": 32.0,
+        "max": 32.0,
+        "values": [
+          32.0,
+          32.0
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 0.8382451986873662,
+        "population_sd": 0.007210731573310092,
+        "min": 0.8310344671140562,
+        "max": 0.8454559302606763,
+        "values": [
+          0.8310344671140562,
+          0.8454559302606763
+        ]
+      }
+    },
+    "probe": {
+      "restarts_per_instance": {
+        "mean": 19.723577235772357,
+        "population_sd": 0.0,
+        "min": 19.723577235772357,
+        "max": 19.723577235772357,
+        "values": [
+          19.723577235772357,
+          19.723577235772357
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 1.6698521939316873,
+        "population_sd": 0.002618954060514045,
+        "min": 1.6672332398711733,
+        "max": 1.6724711479922014,
+        "values": [
+          1.6672332398711733,
+          1.6724711479922014
+        ]
+      }
+    },
+    "enumeration": {
+      "restarts_per_instance": {
+        "mean": 80.1951219512195,
+        "population_sd": 0.0,
+        "min": 80.1951219512195,
+        "max": 80.1951219512195,
+        "values": [
+          80.1951219512195,
+          80.1951219512195
+        ]
+      },
+      "wall_s_per_instance": {
+        "mean": 4.469226833113954,
+        "population_sd": 0.006422221368628911,
+        "min": 4.462804611745325,
+        "max": 4.475649054482583,
+        "values": [
+          4.475649054482583,
+          4.462804611745325
+        ]
+      }
+    }
+  },
+  "workable_fraction": {
+    "mean": 0.14808953199186073,
+    "population_sd": 0.0,
+    "min": 0.14808953199186073,
+    "max": 0.14808953199186073,
+    "values": [
+      0.14808953199186073,
+      0.14808953199186073
+    ]
+  },
+  "label_agreement": {
+    "statistic": "existence-level agreement, primary seed: (n_working > 0) [label stream] vs the enumeration flip [e2e stream: some construction solved at full grade]",
+    "why_not_top1": "rows store the label count and per-arm e2e flips only; which candidates were measured working is not stored, so the ranker's top1-hit under labels is not derivable.  To get it, rerun run_geo_repair.py with the per-candidate label vector (Packed.labels, keyed by construction name) added to each row.",
+    "n_rows": 123,
+    "sample_below_50": false,
+    "agreement": {
+      "k": 81,
+      "n": 123,
+      "rate": 0.6585365853658537,
+      "ci95": [
+        0.5710701596160183,
+        0.736399944829211
+      ]
+    },
+    "table": {
+      "label+_e2e+": 55,
+      "label+_e2e-": 23,
+      "label-_e2e+": 19,
+      "label-_e2e-": 26
+    },
+    "random_arm_calibration": {
+      "random_flip_cell": {
+        "k": 22,
+        "n": 123,
+        "rate": 0.17886178861788618,
+        "ci95": [
+          0.12118768785846241,
+          0.25598825441914996
+        ]
+      },
+      "expected_flip_rate_from_labels": 0.15308716625071744,
+      "note": "if the label stream transfers to the e2e stream, the random arm's flip rate should track mean(n_working/n_candidates)"
+    }
+  },
+  "skeletons": {
+    "results_md": "## R28 \u00b7 Geometry auxiliary-construction repair \u2014 [SLOT: verdict headline \u2014 write it from the numbers below]\n\nPopulation: 2D pruned distance-geometry chains the reference pipeline (scipy LM, k_refine=4) fails as posed under two independent restart streams; each arm's chosen construction gets one more reference solve on a fresh common stream (`run_geo_repair.py`).  Data seed 20260722 is shared across optimization seeds 29/47, so the failure pools coincide; flip rates are mean \u00b1 population SD over the 2 seeds.  Labels and flips are budget-relative measurements at the reference budget \u2014 NOT CAS certificates; do not reuse R10's certificate language here.\n\n| arm | trained-k (N=63) | transfer-k (N=60) |\n|---|---:|---:|\n| ranker | 0.238 \u00b1 0.000 | 0.133 \u00b1 0.017 |\n| recipe_only | 0.198 \u00b1 0.008 | 0.167 \u00b1 0.017 |\n| random | 0.206 \u00b1 0.016 | 0.125 \u00b1 0.008 |\n| best_fixed | 0.159 \u00b1 0.000 | 0.083 \u00b1 0.000 |\n| all_cos | 0.206 \u00b1 0.000 | 0.117 \u00b1 0.000 |\n| restart_control | 0.238 \u00b1 0.000 | 0.183 \u00b1 0.000 |\n| restart_plus16 | 0.540 \u00b1 0.000 | 0.483 \u00b1 0.000 |\n| restart_plus32 | 0.730 \u00b1 0.000 | 0.750 \u00b1 0.000 |\n| probe | 0.667 \u00b1 0.000 | 0.767 \u00b1 0.000 |\n| enumeration | 0.603 \u00b1 0.000 | 0.600 \u00b1 0.000 |\n\nPaired comparisons \u2014 exact McNemar on the common e2e stream, primary seed 29, Holm-corrected within each pool over the declared 6-comparison family; the other seeds are raw-p robustness columns:\n\n| ranker vs | trained W/L | trained p (Holm) | transfer W/L | transfer p (Holm) | raw p, other seeds (trained) |\n|---|---:|---:|---:|---:|---|\n| restart_control | 6/6 | 1.000 | 0/2 | 1.000 | 0.656 (s47) |\n| random | 7/6 | 1.000 | 3/2 | 1.000 | 0.291 (s47) |\n| recipe_only | 6/4 | 1.000 | 1/1 | 1.000 | 0.227 (s47) |\n| best_fixed | 9/4 | 0.801 | 6/2 | 0.867 | 0.113 (s47) |\n| all_cos | 7/5 | 1.000 | 3/1 | 1.000 | 0.377 (s47) |\n| probe | 2/29 | 1.000 | 1/38 | 1.000 | 1.000 (s47) |\n\nCost (restarts per instance, mean over seeds): ranker 4.0, probe 19.7, restart_plus32 32.0, enumeration 80.2.\n\nLabel-vs-e2e agreement proxy (seed 29, all 123 test rows): \"label stream found \u22651 working construction\" vs \"enumeration flipped on the e2e stream\" agree on 81/123 = 0.659 [0.571,0.736] (label+/e2e\u2212 23, label\u2212/e2e+ 19).  Random-arm calibration: flip 0.179 vs 0.153 expected from mean(n_working/n_candidates).  Per-candidate top1-hit agreement is not derivable from the stored rows; rerun with the per-candidate label vector stored per row to get it.\n\nEvidence: results/p_geo_repair/geo_repair_s{11,29,47}.json, results/p_geo_repair/analysis.json.\n[SLOT: PROVENANCE row \u2014 command, seeds, commit]",
+    "marc_tex": "% --- R28 geometry construction repair (generated by analyze_geo_repair.py; verify before pasting) ---\nOn pruned distance-geometry chains the reference pipeline fails as posed (two independent restart streams; $N=63$ trained-$k$, $N=60$ held-out-$k$ failures), the construction ranker flips $0.238 \\pm 0.000$ of the trained-$k$ pool at one augmented reference solve, against $0.238 \\pm 0.000$ for the matched-budget restart control and $0.540 \\pm 0.000$/$0.730 \\pm 0.000$ at $+16$/$+32$ restarts; the no-learning construction arms reach $0.159 \\pm 0.000$ (best fixed), $0.206 \\pm 0.000$ (all cosine lifts) and $0.198 \\pm 0.008$ (recipe-only ranker).\nExact paired McNemar tests on the common stream, Holm-corrected over the six-comparison family, give p=1.000 (raw p other seeds: 0.656) against the restart control, p=0.801 (raw p other seeds: 0.113) against best-fixed and p=1.000 (raw p other seeds: 0.377) against all-cos on the primary seed (seeds 29/47, mean $\\pm$ population SD).\nThe probe control reaches $0.667 \\pm 0.000$ at 19.7 restarts per instance versus the ranker's 4.0, and enumeration bounds the ceiling at $0.603 \\pm 0.000$ at 80.2.\nOn the held-out-$k$ pool the ranker flips $0.133 \\pm 0.017$ versus $0.183 \\pm 0.000$ for the restart control (p=1.000 (raw p other seeds: 0.984)) and $0.083 \\pm 0.000$ for best-fixed (p=0.867 (raw p other seeds: 0.344)).\nLabels and flips are budget-relative measurements at the reference-solver budget, not certificates.\n[SLOT: claim sentence \u2014 write only after checking the ranker-vs-best\\_fixed/all\\_cos direction; if a fixed construction is competitive, report it as the honest ceiling.]"
+  }
+}
