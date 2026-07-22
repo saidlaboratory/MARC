@@ -317,6 +317,29 @@ synthetic factor graphs; the "exactly one solvable option" claim is now a CAS th
 for 99% of nonlinear test menus and an exact rank theorem for all linear menus, with
 the remaining 1% carrying the disclosed budget-relative probe certificate.
 
+## R26 · External validity — named real systems (answers the synthetic-only critique)
+Eight recognized test problems (geometry circle/conic intersection, GPS-style trilateration,
+Rosenbrock & Himmelblau stationary points, 2R and 3R inverse kinematics, the cyclic-4 algebra
+benchmark), encoded once as factor graphs; same solver battery, numeric residual acceptance
+(`max|r|<1e-6`, since real roots are irrational). `scripts/run_real_systems.py --K 8 --trials 200`.
+
+| arm (best-of-8) | solved / 8 |
+|---|---|
+| deterministic | 0 |
+| Langevin | 1 |
+| random restart + gradient polish | 4 |
+| **Levenberg–Marquardt** | **8** |
+
+**Honest reading (external validity, not a new positive):** (1) classical LM solves **8/8** — the
+paper's central thesis, now on real problems from robotics/positioning/optimization/algebra, not a
+constructed family. (2) Where MARC's gradient polish fails (Rosenbrock valley, Himmelblau saddles,
+overdetermined trilateration, 6-var 3R chain; single-start q=0), the bottleneck is the **polish**
+(LM fixes each), not the proposal — a learned proposal inherits the same weak polish. (3) **No
+learning-favorable regime appears**: these systems are low-dim + coupled, so classical search
+suffices, exactly as the factorization law (R9) predicts for real coupled systems. Converts
+"synthetic-only" into "tested the characterization on eight standard real systems, and it held."
+Full writeup: `paper/notes/real_systems.md` (PROVENANCE R26).
+
 ## R27 · The amortization crossover replicates, and beats LM too (strengthens R5)
 Two attacks on R5 ("learned beats random restart at high-dim separable") are: it was one designed
 family, and you never compared to a strong classical solver. R27 answers both. Same experiment

@@ -1,0 +1,177 @@
+{
+  "K": 8,
+  "trials": 200,
+  "tol": 1e-06,
+  "acceptance": "numeric max|residual|<tol (real roots are irrational; exact-rational checker used by synthetic families does not apply)",
+  "n_systems": 8,
+  "solved_counts": {
+    "deterministic": 0,
+    "langevin": 1,
+    "random_restart": 4,
+    "lm": 8
+  },
+  "finding": "LM solves all; where gradient-polish random restart fails the bottleneck is polish conditioning (LM fixes it), not a basin-hitting collapse. No learning-favorable regime appears: real systems are low-dim + coupled, so classical search suffices, consistent with the factorization law.",
+  "learned_arm": "not run (distinct structure per system; the law's prediction \u2014 coupled/low-dim => classical suffices \u2014 is tested via reachability q)",
+  "rows": [
+    {
+      "name": "circle_intersection",
+      "domain": "geometry",
+      "n_vars": 2,
+      "n_factors": 2,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": true,
+      "lm": true,
+      "q_single_start": {
+        "k": 200,
+        "n": 200,
+        "rate": 1.0,
+        "ci95": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "note": "unit-radius circles centered at (0,0) and (3,0); two real intersections"
+    },
+    {
+      "name": "conic_line",
+      "domain": "geometry",
+      "n_vars": 2,
+      "n_factors": 2,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": true,
+      "lm": true,
+      "q_single_start": {
+        "k": 200,
+        "n": 200,
+        "rate": 1.0,
+        "ci95": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "note": "ellipse x^2+2y^2=3 intersect line x=y; roots (1,1),(-1,-1)"
+    },
+    {
+      "name": "trilateration",
+      "domain": "positioning",
+      "n_vars": 2,
+      "n_factors": 3,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": false,
+      "lm": true,
+      "q_single_start": {
+        "k": 0,
+        "n": 200,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.018846005918320894
+        ]
+      },
+      "note": "anchors (0,0),(4,0),(0,3); measured ranges consistent at (1,1)"
+    },
+    {
+      "name": "rosenbrock_grad",
+      "domain": "optimization",
+      "n_vars": 2,
+      "n_factors": 2,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": false,
+      "lm": true,
+      "q_single_start": {
+        "k": 0,
+        "n": 200,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.018846005918320894
+        ]
+      },
+      "note": "grad of (1-x)^2+100(y-x^2)^2 = 0; unique real root (1,1)"
+    },
+    {
+      "name": "himmelblau_grad",
+      "domain": "optimization",
+      "n_vars": 2,
+      "n_factors": 2,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": false,
+      "lm": true,
+      "q_single_start": {
+        "k": 0,
+        "n": 200,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.018846005918320894
+        ]
+      },
+      "note": "grad of Himmelblau = 0; nine real critical points incl. (3,2)"
+    },
+    {
+      "name": "inverse_kinematics_2r",
+      "domain": "robotics",
+      "n_vars": 4,
+      "n_factors": 4,
+      "deterministic": false,
+      "langevin": true,
+      "random_restart": true,
+      "lm": true,
+      "q_single_start": {
+        "k": 197,
+        "n": 200,
+        "rate": 0.985,
+        "ci95": [
+          0.9568335194437211,
+          0.9948858548155076
+        ]
+      },
+      "note": "2R arm, unit links, target (1,1) within reach (dist sqrt2 < 2)"
+    },
+    {
+      "name": "inverse_kinematics_3r",
+      "domain": "robotics",
+      "n_vars": 6,
+      "n_factors": 6,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": false,
+      "lm": true,
+      "q_single_start": {
+        "k": 0,
+        "n": 200,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.018846005918320894
+        ]
+      },
+      "note": "3R arm, unit links, target position (2,1), end orientation 0"
+    },
+    {
+      "name": "cyclic4",
+      "domain": "algebra_benchmark",
+      "n_vars": 4,
+      "n_factors": 4,
+      "deterministic": false,
+      "langevin": false,
+      "random_restart": true,
+      "lm": true,
+      "q_single_start": {
+        "k": 76,
+        "n": 200,
+        "rate": 0.38,
+        "ci95": [
+          0.3155889366123922,
+          0.4489341048080049
+        ]
+      },
+      "note": "cyclic-4 roots system; has real solutions (standard benchmark)"
+    }
+  ]
+}

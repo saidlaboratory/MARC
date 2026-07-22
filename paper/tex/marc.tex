@@ -32,10 +32,12 @@ method shares one polish operator and one checker, best-of-$K$ random restart is
 $1-(1-q(n))^K$ in the single-start reachability $q(n)$, and the measured slope of $\log q(n)$
 decides the regime: learning wins precisely when acceptance basins factorize across variables
 and dimension is high. One measured constant reproduces the entire random-restart curve with no
-free parameters (mean absolute error 0.012). A real geometric domain confirms both conditions
-are needed: its reachability collapses, yet a trained proposal there ties random search,
-lacking a per-variable marginal to amortize. The decision classical solvers cannot make is
-discrete: which structural augmentation turns an
+free parameters (mean absolute error 0.012). Both conditions are necessary and the boundary
+holds outside the synthetic families: a real geometric domain collapses in reachability yet a
+trained proposal ties random there, and across eight standard real systems (robotics,
+positioning, optimization, and algebra) classical multi-start solves all eight, none in the
+learning-favorable regime. The decision classical solvers cannot make is discrete: which
+structural augmentation turns an
 unsolvable system solvable. Moving learning there, an operator-aware repair ranker clears its
 controls decisively ($0.997$ versus $0.236$ on balanced nonlinear menus, $p<10^{-70}$;
 $0.982\pm0.006$ across optimization seeds) and beats a cheap per-candidate solver probe on
@@ -628,6 +630,28 @@ negatives are kept in the record. The scope is menu-based repair on synthetic fa
 ``exactly one solvable option'' is an exact certificate for all linear menus (rank) and $99\%$
 of nonlinear test menus (CAS real-root nonexistence), with the remainder carrying a disclosed
 budget-relative probe certificate.
+
+\subsection{External validity: standard real systems}
+\label{sec:real}
+
+Every family above is procedurally generated, so we also ran the solver battery on eight
+recognized test problems encoded once as factor graphs: two-circle and conic--line
+intersections, GPS-style trilateration, the Rosenbrock and Himmelblau stationary-point systems,
+two- and three-link inverse kinematics, and the cyclic-4 computer-algebra benchmark. Their real
+roots are irrational, so acceptance is a numeric residual tolerance ($\max_j |r_j(x)| < 10^{-6}$),
+the fair criterion for comparing numerical solvers.
+% provenance: RESULTS.md R26 + real_systems.md (results/p_real/real_systems.json)
+The result reinforces the paper's boundary on problems we did not construct. Multi-start
+Levenberg--Marquardt solves all eight; annealed Langevin solves one and random restart with the
+gradient polish solves four. Where the gradient polish fails --- the Rosenbrock valley, the
+Himmelblau saddles, the overdetermined trilateration basin, the six-variable 3R chain, all with
+single-start reachability $0.00$ --- a stronger \emph{classical} polish (LM) fixes every case,
+so the bottleneck there is the finisher, not the proposal, and a learned proposal would inherit
+the same weak polish. No system in the suite falls in the amortization regime the law identifies:
+these problems are low-dimensional and coupled, so classical search suffices, exactly as the
+factorization law predicts for real coupled systems. This is external validity for the
+characterization, not a new positive: the learned component is not run per system, because a
+suite with one instance per structure offers nothing to amortize.
 
 \subsection{Scope: what these problems are, and are not}
 \label{sec:scope}

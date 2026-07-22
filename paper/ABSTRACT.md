@@ -3,17 +3,18 @@
 **Title:** When Do Learned Diffusion Proposals Help Constraint Solving?
 A Controlled Study on Continuous Algebraic Systems
 
-> Submission abstract. Numbers verified against `paper/RESULTS.md` + `paper/PROVENANCE.md`
-> (Data Version 8). Two acts: (1) the value-diffusion characterization + factorization
-> law (boundary of the claim); (2) structural repair, where relocating learning to the
-> decision with no classical baseline yields a decisive positive. Keep both.
+> Submission abstract (canonical copy lives in `paper/tex/marc.tex`). Numbers verified
+> against `paper/RESULTS.md` + `paper/PROVENANCE.md` (Data Version 8). Two acts:
+> (1) the value-diffusion characterization + factorization law (boundary of the claim);
+> (2) structural repair, where relocating learning to the decision with no classical
+> baseline yields a decisive positive. Keep both.
 >
-> **Length:** the version below is ~255 words (paper-length; matches `paper/tex/marc.tex`).
-> The geometry sentence ("A real geometric domain confirms both conditions...") is the one
-> to drop first if the submission form caps at ~250 words / ~1920 chars — it is a third
-> validation, not load-bearing for the two-act arc.
+> **Length / trimming:** ~265 words. The validation sentence covers both the geometry
+> test and the eight real systems; if the form caps tighter, cut the geometry clause
+> first (a law nuance) and keep the real-systems clause (the strongest main-track
+> signal, answering synthetic-only).
 
-## Primary (v3 — repair co-headlined + geometry validation, em-dash-free)
+## Primary (v5 — repair co-headlined + geometry & real-systems validation, em-dash-free) — ~265 words
 
 Diffusion models are increasingly used to propose solutions for constraint and
 optimization problems, but evaluations usually omit the control that matters most:
@@ -29,10 +30,11 @@ variables couple. Because every method shares one polish operator and one checke
 best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
 $q(n)$, and the measured slope of $\log q(n)$ decides the regime; one measured constant
 reproduces the whole random-restart curve with no free parameters (mean absolute error
-0.012). A real geometric domain confirms that both conditions are needed: its
-reachability collapses, yet a trained proposal there does not beat random restart,
-because the coupled solution offers no per-variable marginal to amortize. The decision
-classical solvers cannot make is discrete: which structural
+0.012). Both conditions are necessary and the boundary holds outside the synthetic
+families: a real geometric domain collapses in reachability yet a trained proposal ties
+random there, and across eight standard real systems (robotics, positioning,
+optimization, and algebra) classical multi-start solves all eight, none in the
+learning-favorable regime. The decision classical solvers cannot make is discrete: which structural
 augmentation turns an unsolvable system solvable. Moving learning there, an
 operator-aware repair ranker clears its controls decisively (0.997 versus 0.236 on
 balanced nonlinear menus, $p<10^{-70}$; $0.982\pm0.006$ across optimization seeds) and

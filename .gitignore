@@ -63,3 +63,4 @@ paper/tex/*.pdf
 !results/p_geometry/pointchain_learned.json
 !results/p_scaling/crossover_families.json
 !results/p_geometry/pointchain_learned_3seed.json
+!results/p_real/real_systems.json
