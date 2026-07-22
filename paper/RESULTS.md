@@ -171,6 +171,11 @@ and fixed. So MARC's structure-selection policy is a real in-distribution win ov
 that degrades to chance-vs-random on an unseen pattern — reported openly, and now with clean,
 citable numbers (`overlap_instances: 0`, positive control passing).
 
+*Data-version note:* R8 was generated under the pre-v8 linear menu protocol (Bernoulli filler
+support). Its arms compare against each other on one internally consistent dataset, and its
+role here is motivational (v0.2's holdout null is what prompted v0.3); it is not numerically
+comparable to the R10 v8 tables.
+
 Reproduce:
 `python3 scripts/train_structure_policy.py --data aux_required --epochs 200 --exclude-family shared --out checkpoints/structure_policy.pt`
 then `run_invention_eval.py … --data aux_required [--families shared]` (RUNBOOK §7; PROVENANCE R16/R16h).
@@ -210,7 +215,7 @@ limitations (instance heterogeneity, learned ceiling measured not derived) in
 `PYTHONPATH=. python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721`
 (PROVENANCE R17–R19).
 
-## R10 · Candidate-conditioned structural repair (v0.3) — **new primary result**
+## R10 · Candidate-conditioned structural repair (v0.3) — **new primary result (Data Version 8)**
 
 The v0.2 slot policy encoded the fixed graph once and classified candidate slots; it
 could not see nonlinear operator identity and fell to chance on the held-out `shared`
@@ -218,46 +223,71 @@ pattern (R8).  v0.3 instead applies every candidate augmentation, encodes the re
 polynomial graph with operator-aware factor/edge features, and ranks repairs listwise.
 The candidate-only control receives the same augmentation recipe but no problem graph.
 
-Data Version 6 removes four discovered shortcuts: randomized linear insertion support;
-no target aux value for expression-defined candidates; coefficient/support-matched
-nonlinear menus; and family-balanced gold/distractor offset priors.  Earlier development
-files are non-citable and listed in `results/p_repair/README.md`.
+**Earlier R10 numbers (Data Versions 6/7) are withdrawn — do not cite 0.565 or 0.889.**
+v6 drew gold pins from a narrower prior than distractor pins (candidate-only control
+0.343 ≫ 0.25 chance = a measured leak), and a CAS audit showed most v6/v7 nonlinear
+"certified unsolvable" distractors actually have real roots: the weak refine probe just
+could not find them, and the vieta defining relation (u = x−y+δ) *cannot* produce
+rootless corruptions at all (eliminating u leaves a line meeting a hyperbola).  Data
+Version 8 (issue #100) fixes generation, certification, and grading together:
 
-| Evaluation | full ranker | candidate-only | random |
+- one `REFERENCE_SOLVER` (scipy LM, k=4), owned by `invention_data` and imported by
+  certification, the eval arms, the training reward, and e2e grading — identity is
+  test-enforced;
+- nonlinear distractor unsolvability is an **exact CAS no-real-roots proof** for
+  356/360 balanced-test instances (the rest keep the disclosed empirical probe);
+  a proven-rootless distractor is unsolvable at *any* budget and seed, closing the
+  seed-variance loophole entirely (0/72 certified distractors solvable at grading
+  budget in the audit);
+- both nonlinear families use one-sided defining templates over per-family (a, δ)
+  supports (`u = a·x²+δ`, `u = a·(x²+y²)+δ`, a = ±1) that golds and distractors share;
+  anything sympy-equal to the gold is excluded (no zero-shift duplicate golds);
+- golds must solve at eval grade under two independent seeds (stable oracle ceiling);
+- linear menu fillers use the gold's size-uniform support sampler and the single
+  shared pin prior (no support-size or pin-frequency shortcut).
+
+| Evaluation (v8) | full ranker | candidate-only | random |
 |---|---:|---:|---:|
-| Linear `shared` held out (N=400) | **0.565 [0.516,0.613]** | 0.343 | 0.283 |
-| Linear all patterns (N=1,200) | **0.552 [0.523,0.580]** | 0.351 | 0.253 |
-| Balanced nonlinear (N=360) | **0.889 [0.852,0.917]** | 0.422 | 0.253 |
-| Nonlinear `quad_link` (N=180) | **0.928 [0.880,0.957]** | 0.222 | 0.228 |
-| Nonlinear `vieta` (N=180) | **0.850 [0.791,0.895]** | 0.622 | 0.278 |
-| Vieta→unseen `quad_link` (N=150) | **0.367 [0.294,0.446]** | 0.240 | 0.213 |
+| Balanced nonlinear (N=360) | **0.997 [0.984,1.000]** | 0.333 | 0.236 |
+| Nonlinear `vieta` (N=180) | **1.000** | 0.311 | 0.211 |
+| Nonlinear `quad_link` (N=180) | **0.994** | 0.356 | 0.261 |
+| Vieta→unseen `quad_link` (N=150) | **0.420 [0.344,0.500]** | 0.120 | 0.253 |
+| Linear `shared` held out (N=400) | **0.380 [0.334,0.428]** | 0.195 | 0.287 |
+| Linear all patterns (N=1,200) | **0.339 [0.313,0.366]** | 0.207 | 0.249 |
 
-The paired comparisons are decisive on the shared test sets: linear full-only correct
-392 vs control-only 151 (exact McNemar p=5.4e-26); nonlinear 172 vs 4
-(p=4.1e-46).  The Vieta candidate-only prior is visibly stronger and is reported
-per-family rather than hidden in the average.  Relation-level transfer is positive but
-partial, not invariance.
+Paired comparisons: nonlinear full-only correct 239 vs control-only 0 (exact McNemar
+p=1.1e-72); linear full>random 304 vs 196 (p=7.8e-07) and full>control 326 vs 167
+(p=3.5e-13).  Checkpoint-only replays reproduce both headline evals exactly.
 
-Optimization-seed repeats on fixed certified tests:
+**Honest movement of the numbers:** each closed shortcut lowered the linear headline
+(0.565 v6 → 0.445 v7 → 0.380 v8 held-out) while pushing the candidate-only control to
+chance — under v8 the *entire* linear signal comes from reading the problem graph, and
+it is modest.  The nonlinear results moved the other way (0.889 → 0.997) because v8
+menus finally carry theorem-grade "exactly one solvable option" semantics and the
+operator-aware encoder is built precisely to read operator/parameter identity from the
+augmented graph.  Learning is decisive exactly where operator identity matters; that is
+the claim, and the controls now support it cleanly.
 
-- linear: 0.430/0.458/0.471, mean 0.453, population SD 0.017 (controls 0.303/0.249);
-- nonlinear: 0.889/0.875/0.881, mean 0.881, population SD 0.006
-  (controls 0.417/0.253).
+End-to-end, after actually applying the repair and invoking the matched solver
+(common restart seeds across arms): nonlinear K=4 solves **0.933 = oracle =
+enumeration ceiling** with one solver call vs enumeration's 2.62 (N=60); control 0.200,
+random 0.250.  Linear K=4 solves 0.300 vs 0.217/0.227, oracle and enumeration 1.000
+(N=300), one call vs 2.54.
 
-End-to-end, after actually applying the repair and invoking the matched solver, linear
-K=4 solves 0.540 vs 0.333/0.253 (oracle and enumeration 1.000, N=300).  Nonlinear
-solves 0.883 vs 0.433/0.250, near the 0.950 oracle/enumeration ceiling (N=60).
-Common restart seeds are used across arms.  The policy spends one solver call; enumeration
-uses 2.53 linear and 2.62 nonlinear calls on average.
+Cross-budget K scaling (K=4 linear checkpoint, zero-shot, N=300/150/150): full
+0.300/0.187/0.113 vs random 0.227/0.120/0.107 — the accuracy advantage shrinks with K
+and is gone at K=16, reported as a limitation.  Enumeration calls grow 2.54/4.40/9.05
+and measured policy+solve wall-clock stays 3.8–4.9 ms while enumeration grows
+4.8→22.5 ms (1.26×→4.65×); at K=16 that is a cost win only, not an accuracy win.
+Direct K=16 training performs at chance (val ≈ 0.04–0.06 throughout), so the
+cross-budget checkpoint is selected and the direct-training negative remains reported.
 
-The K=4 linear checkpoint transfers without retraining: at K=4/8/16 its rates are
-0.540/0.347/0.247 versus random 0.253/0.140/0.020.  Enumeration calls grow
-2.53/4.56/8.56 and measured policy+solve speedup grows 1.21x/2.35x/3.91x.  Direct
-K=16 training reaches only 0.192, so the cross-budget checkpoint is selected and the
-direct-training negative remains reported.
+Optimization-seed repeats: **pending regeneration under v8** (issue #103; the prior
+multiseed files also reused one random-arm draw across seeds, `population_sd: 0.0`).
 
 **Conclusion:** the failed value-denoising project now has a positive, controlled learned
-component in the correct division of labor: learn which structural repair deserves a solver
-call, delegate values, and verify exactly.  Scope remains menu-based repair on synthetic
-factor graphs; nonlinear distractor certificates are empirical at a stated refinement budget,
-not mathematical nonexistence theorems.
+component in the correct division of labor: learn which structural repair deserves a
+solver call, delegate values, and verify exactly.  Scope remains menu-based repair on
+synthetic factor graphs; the "exactly one solvable option" claim is now a CAS theorem
+for 99% of nonlinear test menus and an exact rank theorem for all linear menus, with
+the remaining 1% carrying the disclosed budget-relative probe certificate.

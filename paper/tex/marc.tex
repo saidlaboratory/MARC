@@ -526,32 +526,40 @@ single fixed graph encoding, could not see nonlinear operator identity, and fell
 unseen pattern; the operator-aware encoding is what distinguishes $x + y - 3$ from
 $x \cdot y - 3$.
 
-% provenance: RESULTS.md R10 + PROVENANCE R20--R24; results/p_repair
+% provenance: RESULTS.md R10 + PROVENANCE R20--R24; results/p_repair (Data Version 8)
 \begin{table}[t]
 \centering
 \caption{Candidate-conditioned repair ranker against a candidate-only control and random
-selection, on three generalization tests (Data Version 6, Wilson 95\% CIs). The ranker clears
-both controls on every row; transfer to an unseen relation is positive but partial.}
+selection, on three generalization tests (Data Version 8, Wilson 95\% CIs). Nonlinear menus
+carry exact CAS no-real-roots certificates for their distractors; every arm is graded by the
+same reference solver that certified the data. The ranker clears both controls on every row;
+transfer to an unseen relation is positive but partial.}
 \label{tab:repair}
 \begin{tabular}{lccc}
 \toprule
 Test & ranker & candidate-only & random \\
 \midrule
-Linear, unseen pattern ($N{=}400$)      & \textbf{0.565} & 0.343 & 0.283 \\
-Balanced nonlinear ($N{=}360$)          & \textbf{0.889} & 0.422 & 0.253 \\
-Vieta $\to$ unseen relation ($N{=}150$) & \textbf{0.367} & 0.240 & 0.213 \\
+Balanced nonlinear ($N{=}360$)          & \textbf{0.997} & 0.333 & 0.236 \\
+Vieta $\to$ unseen relation ($N{=}150$) & \textbf{0.420} & 0.120 & 0.253 \\
+Linear, unseen pattern ($N{=}400$)      & \textbf{0.380} & 0.195 & 0.287 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:repair} reports the three tests that probe generalization, each under the Data
-Version 6 protocol that randomizes insertion support and withholds the gold auxiliary value from
-expression-defined candidates. On an unseen linear pattern the ranker reaches $0.565$ against
-$0.283$ for random; on balanced nonlinear menus $0.889$ against $0.253$, with an exact paired
-McNemar test on the shared test set giving $p = 4.1\times10^{-46}$ (172 full-only correct versus
-4 control-only). Transfer to an unseen nonlinear relation is positive but partial ($0.367$), not
-relation-level invariance. Three initialization seeds give a nonlinear mean of $0.881$ with
-population SD $0.006$.
+Table~\ref{tab:repair} reports the three tests that probe generalization. The protocol
+(Data Version 8) is deliberately strict: one reference solver certifies the data, grades every
+arm, and runs the end-to-end solves; nonlinear ``exactly one solvable option'' is an exact CAS
+theorem (a distractor proven to have no real solution is unsolvable at any budget); gold and
+distractor parameters share one support and one prior, so nothing about a candidate's surface
+form reveals the label. On balanced nonlinear menus the ranker reaches $0.997$ against $0.236$
+for random, with an exact paired McNemar test giving $p = 1.1\times10^{-72}$ (239 full-only
+correct versus 0 control-only). Transfer to an unseen nonlinear relation is positive but partial
+($0.420$ against $0.253$), not relation-level invariance. On an unseen linear pattern the ranker
+reaches $0.380$ against $0.287$ ($p = 7.8\times10^{-7}$ over all $1{,}200$ linear test
+instances). The linear signal is deliberately reported at its post-audit size: closing each
+discovered shortcut lowered it ($0.565 \to 0.445 \to 0.380$ across data versions) while pushing
+the candidate-only control to chance, so what remains is entirely problem-graph reading — modest
+where every operator is linear, decisive where operator identity matters.
 
 % provenance: paper/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
 \begin{figure}[t]
@@ -559,23 +567,26 @@ population SD $0.006$.
 \includegraphics[width=\linewidth]{../figures/fig_repair.pdf}
 \caption{Structural repair, measured. Left: the operator-aware ranker against its candidate-only
 and random controls on the three generalization tests of Table~\ref{tab:repair}; the dotted line
-is $K{=}4$ chance. Right: the $K{=}4$ checkpoint evaluated zero-shot at larger menus stays above
-random while the blind enumeration it displaces grows from $2.5$ to $8.6$ solver calls per
-instance.}
+is $K{=}4$ chance. Right: the $K{=}4$ checkpoint evaluated zero-shot at larger menus retains an
+accuracy edge at $K{=}8$ that closes by $K{=}16$, while the blind enumeration it displaces grows
+from $2.5$ to $9.1$ solver calls per instance.}
 \label{fig:repair}
 \end{figure}
 
 The learned component is also cheap where value diffusion was not: one forward pass per
 candidate rather than a reverse-diffusion rollout. End to end, applying the selected repair and
-invoking the matched solver, it spends a single solver call where blind enumeration averages
-$2.53$ (linear) to $2.62$ (nonlinear). The $K = 4$ checkpoint transfers to larger menus without
-retraining: at $K = 4/8/16$ its accuracy is $0.540/0.347/0.247$ against random
-$0.253/0.140/0.020$, while the enumeration it displaces grows to $8.56$ solver calls per instance
-(Figure~\ref{fig:repair}, right). Directly training at $K = 16$ reaches only $0.192$, so the
-transferred checkpoint is selected and the direct-training negative is kept in the record. The
-scope is menu-based repair on synthetic factor graphs, and the nonlinear ``unsolvable
-distractor'' label is an empirical multi-restart certificate at a stated budget, not a
-nonexistence theorem.
+invoking the reference solver, the nonlinear ranker's single call solves $0.933$ --- exactly the
+oracle and enumeration ceiling --- where blind enumeration averages $2.62$ calls ($N{=}60$);
+linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling. The $K = 4$
+checkpoint transfers to larger linear menus without retraining, but the accuracy advantage
+shrinks with $K$ and is gone by $K = 16$ ($0.300/0.187/0.113$ against random
+$0.227/0.120/0.107$); what survives at large $K$ is only the cost gap, as the enumeration it
+displaces grows to $9.05$ solver calls per instance (Figure~\ref{fig:repair}, right). Directly
+training at $K = 16$ performs at chance, so the transferred checkpoint is selected and both
+negatives are kept in the record. The scope is menu-based repair on synthetic factor graphs;
+``exactly one solvable option'' is an exact certificate for all linear menus (rank) and $99\%$
+of nonlinear test menus (CAS real-root nonexistence), with the remainder carrying a disclosed
+budget-relative probe certificate.
 
 \subsection{Scope: what these problems are, and are not}
 \label{sec:scope}
@@ -592,7 +603,8 @@ than implied.\footnote{The learned structural component is the candidate-conditi
 ranker of Section~\ref{sec:repair}. Its predecessor, a discrete-diffusion slot policy, produced
 preliminary numbers that were withdrawn (evaluation seeds overlapped the validation seeds used
 for checkpoint selection), and those are not cited here; the ranker is evaluated under the
-disjoint-seed Data Version 6 protocol.}
+disjoint-seed Data Version 8 protocol, which also withdrew the earlier v6/v7 ranker numbers
+after a pin-prior leak and probe-artifact distractor certificates were found and fixed.}
 % provenance: RESULTS.md R6 (prose); footnote provenance: RESULTS.md R8/R10
 
 \section{Limitations}
