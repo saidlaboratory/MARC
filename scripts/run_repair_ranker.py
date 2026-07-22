@@ -27,7 +27,7 @@ from torch_geometric.data import Batch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from marc.cas.checker import Checker
-from marc.eval.metrics import two_proportion_z, wilson_interval
+from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.eval.runner import Problem
 from marc.eval.solver import load_solver
 from marc.graph.semantics import build_semantic_heterodata
@@ -178,11 +178,6 @@ def seed_hygiene(splits: dict, sources: list[str], seed: int,
     return {"per_source_seed_ranges": ranges, "overlap_instances": overlap}
 
 
-def _rate(k: int, n: int) -> dict:
-    lo, hi = wilson_interval(k, n)
-    return {"k": k, "n": n, "rate": k / n, "ci95": [lo, hi]}
-
-
 def _paired_mcnemar(rows: list[dict], arm: str, baseline: str) -> dict:
     """Exact one-sided McNemar/binomial test on paired instance outcomes."""
     win = loss = 0
@@ -255,7 +250,7 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
     }
     for arm in ("full", "control", "random"):
         k = sum(r[arm] == r["pack"].inst.gold_idx for r in rows)
-        result[arm] = {"invention": _rate(k, n)}
+        result[arm] = {"invention": rate_cell(k, n)}
     for arm in ("control", "random"):
         z, p = two_proportion_z(
             result["full"]["invention"]["k"], n,
@@ -272,7 +267,7 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
         rs = [r for r in rows
               if r["pack"].source == source and r["pack"].inst.family == family]
         per_family[f"{source}:{family}"] = {
-            arm: _rate(sum(r[arm] == r["pack"].inst.gold_idx for r in rs), len(rs))
+            arm: rate_cell(sum(r[arm] == r["pack"].inst.gold_idx for r in rs), len(rs))
             for arm in ("full", "control", "random")
         }
     result["per_family"] = per_family
@@ -305,7 +300,7 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
                     solved["enumeration"] += 1
                     break
                 arm_wall["enumeration"] += time.perf_counter() - ts
-        result["solve"] = {arm: _rate(k, n) for arm, k in solved.items()}
+        result["solve"] = {arm: rate_cell(k, n) for arm, k in solved.items()}
         result["solve"]["wall_s"] = {
             arm: {"total": wall, "per_instance": wall / n}
             for arm, wall in arm_wall.items()

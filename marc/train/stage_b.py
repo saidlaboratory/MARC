@@ -32,7 +32,6 @@ and the gradient w.r.t. theta flows through eps_hat.
 """
 
 import os
-import warnings
 from typing import Dict, Optional
 
 import torch
@@ -61,7 +60,6 @@ def grpo_step(
     device: str = "cpu",
     purist: bool = False,
     grad_clip: float = 1.0,
-    entropy_coef: float = 0.0,
     shaping_clip: float = SHAPING_CLIP,
     generator: Optional[torch.Generator] = None,
 ) -> Dict[str, float]:
@@ -84,23 +82,12 @@ def grpo_step(
         steps:       denoising steps per rollout (episode horizon K).
         purist:      terminal reward only — no energy shaping, no energy evals.
         grad_clip:   max gradient norm.
-        entropy_coef: accepted for API completeness; adds NO term (see below).
         shaping_clip: symmetric bound on the shaping reward (see compute_reward).
         generator:   optional torch.Generator for reproducible rollouts.
 
     Returns:
         {"loss", "pg_loss", "kl", "mean_reward", "accept_rate", "grad_norm"}
     """
-    if entropy_coef < 0:
-        raise ValueError(f"entropy_coef must be >= 0, got {entropy_coef}")
-    if entropy_coef:
-        # ponytail: entropy const under fixed variance; becomes real only if sigma becomes learnable
-        warnings.warn(
-            "entropy_coef has no effect: the policy is N(eps_hat, I) with fixed "
-            "variance, so its entropy does not depend on theta.",
-            stacklevel=2,
-        )
-
     # --- 1. Sampling pass, ONCE (no grad; behavioral policy) ---
     trajectories = [
         run_rollout(
@@ -188,7 +175,6 @@ def train_stage_b(
     steps: int = 20,
     grad_clip: float = 1.0,
     seed: Optional[int] = None,
-    entropy_coef: float = 0.0,
     eps_clip: float = 0.2,
     shaping_clip: float = SHAPING_CLIP,
     checker=None,
@@ -214,7 +200,6 @@ def train_stage_b(
         steps: denoising steps per rollout (20 preserves the historical default)
         grad_clip: max gradient norm per update
         seed: if set, seeds torch globally and each rollout group deterministically
-        entropy_coef: forwarded to grpo_step (no-op; see grpo_step)
         eps_clip: PPO clip range
         shaping_clip: symmetric bound on the shaping reward (see compute_reward)
         checker: authoritative terminal gate; defaults to ``Checker()``
@@ -244,7 +229,7 @@ def train_stage_b(
                 policy, ref_policy, graph, cas_engine, alpha_bar, optimizer,
                 checker=checker, N=N, B=B, beta=beta, eps_clip=eps_clip,
                 steps=steps, device=device, purist=purist, grad_clip=grad_clip,
-                entropy_coef=entropy_coef, shaping_clip=shaping_clip,
+                shaping_clip=shaping_clip,
                 generator=generator,
             )
             epoch_stats.append(stats)

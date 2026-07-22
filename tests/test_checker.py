@@ -154,13 +154,6 @@ def test_unknown_variable_raises_clear_error():
         Checker().verify(g, [1.0])
 
 
-def test_explain_rejection_is_readable():
-    text = Checker().explain_rejection(two_equations_graph(), [2.5, 1.0])
-    assert "REJECTED" in text
-    assert "eq1" in text and "eq2" in text
-    assert "x=2.5" in text
-
-
 def test_cas_engine_accepts_delegates_to_checker():
     engine = CASEngine("marc/data/examples/two_equations.json", "x y")
     assert engine.accepts([2.0, 1.0]) is True

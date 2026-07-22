@@ -17,7 +17,6 @@ from marc.train.trainer import (
     CSV_HEADER,
     DEFAULTS,
     RunLogger,
-    filter_kwargs,
     load_config,
     main,
     resolve_device,
@@ -330,44 +329,6 @@ def test_ema_disabled_omits_checkpoint_key(tmp_path):
     run_tiny_training(tmp_path, epochs_a=1, ema=False)
     for name in ("latest.pt", "best.pt"):
         assert "ema_state_dict" not in torch.load(tmp_path / name, weights_only=False)
-
-
-# ---------------------------------------------------------------------------
-# Stage-B kwarg filtering (cross-unit contract C2)
-# ---------------------------------------------------------------------------
-
-OFFERED = {
-    "epochs": 1, "N": 2, "B": 10.0, "beta": 0.01, "lr": 1e-4,
-    "checkpoint_dir": "ckpts", "device": "cpu", "purist": False, "steps": 3,
-    "grad_clip": 1.0, "seed": 0, "entropy_coef": 0.0, "eps_clip": 0.2,
-}
-
-
-def test_filter_kwargs_current_signature():
-    # exact current signature of marc.train.stage_b.train_stage_b on main
-    def fake_train_stage_b(policy, ref_policy, problems, alpha_bar, epochs=5,
-                           N=8, B=10.0, beta=0.01, lr=1e-4,
-                           checkpoint_dir="checkpoints/stage_b", device="cpu",
-                           purist=False):
-        return (policy, epochs, N)
-
-    kwargs = filter_kwargs(fake_train_stage_b, OFFERED)
-    for dropped in ("steps", "grad_clip", "seed", "entropy_coef", "eps_clip"):
-        assert dropped not in kwargs
-    fake_train_stage_b("p", "r", [], None, **kwargs)  # must not TypeError
-
-
-def test_filter_kwargs_extended_signature():
-    def fake_train_stage_b(policy, ref_policy, problems, alpha_bar, epochs=5,
-                           N=8, B=10.0, beta=0.01, lr=1e-4,
-                           checkpoint_dir="checkpoints/stage_b", device="cpu",
-                           purist=False, steps=40, grad_clip=None):
-        return steps
-
-    kwargs = filter_kwargs(fake_train_stage_b, OFFERED)
-    assert kwargs["steps"] == 3
-    assert kwargs["grad_clip"] == 1.0
-    assert fake_train_stage_b("p", "r", [], None, **kwargs) == 3
 
 
 # ---------------------------------------------------------------------------

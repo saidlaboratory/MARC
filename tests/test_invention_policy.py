@@ -1,7 +1,6 @@
-"""Tests for marc.structure.policy (U5 trained invention policy) and the eval
-JSON block builder in scripts/run_invention_eval.py."""
+"""Tests for marc.structure.policy (U5 trained invention policy) and the
+skip path of scripts/run_invention_eval.py."""
 
-import importlib.util
 import json
 import os
 import subprocess
@@ -265,48 +264,7 @@ def test_predicted_pin_from_reverse_sample_stub():
     assert all(predicted_pin(final, j) is None for j in range(K) if j != g)
 
 
-# --- eval JSON block builder --------------------------------------------------
-
-
-def _load_eval_module():
-    path = os.path.join(ROOT, "scripts", "run_invention_eval.py")
-    spec = importlib.util.spec_from_file_location("run_invention_eval", path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def test_eval_block_schema():
-    mod = _load_eval_module()
-    torch.manual_seed(0)
-    K = 3
-    instances = make_dataset("toys", 4, 100, K=K)
-    policy = StructurePolicy(D=16, L=1, K=K)
-    policy.eval()
-    res = mod.evaluate(policy, instances, k_refine=1, T=6, seed=0)
-    assert set(res) == {"positive_control_ok", "samplers"}
-    assert isinstance(res["positive_control_ok"], bool)
-    for sampler in ("reverse", "single_shot"):
-        block = res["samplers"][sampler]
-        assert set(block) == {
-            "invention_rate", "none_rate", "hard_negative_confusion",
-            "solve", "comparisons", "per_family",
-        }
-        assert set(block["solve"]) == {
-            "fixed", "policy", "random_slot", "always_none", "gold_oracle",
-        }
-        for r in [block["invention_rate"], block["none_rate"],
-                  block["hard_negative_confusion"], *block["solve"].values()]:
-            assert set(r) == {"k", "n", "rate", "ci95"}
-        assert set(block["comparisons"]) == {"policy_vs_random", "policy_vs_fixed"}
-        for cmp in block["comparisons"].values():
-            assert set(cmp) == {"z", "p"}
-        for fam_block in block["per_family"].values():
-            assert set(fam_block) == {"invention_rate", "solve_policy"}
-    # the fixed graph is inconsistent, so fixed/always_none can never solve
-    assert res["samplers"]["reverse"]["solve"]["fixed"]["k"] == 0
-    # the gold graph is consistent + easy: positive control should hold
-    assert res["samplers"]["reverse"]["solve"]["gold_oracle"]["rate"] >= 0.95
+# --- eval script skip path ----------------------------------------------------
 
 
 def test_eval_skipped_path(tmp_path):

@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch_geometric.data import HeteroData
 from torch_geometric.utils import scatter
 
-from .embeddings import sinusoidal_embedding, VariableEncoder, FactorEncoder, _mlp
+from .embeddings import VariableEncoder, FactorEncoder, _mlp
 from .layers import BipartiteLayer
 
 

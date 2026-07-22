@@ -1,5 +1,4 @@
 import json
-import tempfile
 
 import pytest
 import torch
@@ -12,18 +11,14 @@ EXAMPLE_GRAPH = "marc/data/examples/two_equations.json"
 EXAMPLE_SOLUTION = {"x": 2.0, "y": 1.0}
 
 
-def make_solution_file():
-    """Write solution dict to a temp file and return its path."""
-    f = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False
-    )
-    json.dump(EXAMPLE_SOLUTION, f)
-    f.close()
-    return f.name
+@pytest.fixture
+def sol_path(tmp_path):
+    p = tmp_path / "solution.json"
+    p.write_text(json.dumps(EXAMPLE_SOLUTION))
+    return str(p)
 
 
-def test_dataset_loads_item():
-    sol_path = make_solution_file()
+def test_dataset_loads_item(sol_path):
     dataset = MARCDataset([(EXAMPLE_GRAPH, sol_path)])
     assert len(dataset) == 1
     data, x_star = dataset[0]
@@ -35,8 +30,7 @@ def test_dataset_loads_item():
     assert x_star.shape == (2, 1)
 
 
-def test_dataset_solution_values():
-    sol_path = make_solution_file()
+def test_dataset_solution_values(sol_path):
     dataset = MARCDataset([(EXAMPLE_GRAPH, sol_path)])
     data, x_star = dataset[0]
     # Solution should be x=2, y=1 in some order
@@ -44,8 +38,7 @@ def test_dataset_solution_values():
     assert vals == pytest.approx([1.0, 2.0])
 
 
-def test_dataloader_batches():
-    sol_path = make_solution_file()
+def test_dataloader_batches(sol_path):
     dataset = MARCDataset(
         [(EXAMPLE_GRAPH, sol_path), (EXAMPLE_GRAPH, sol_path)]
     )
@@ -56,8 +49,7 @@ def test_dataloader_batches():
     assert len(solutions) == 2
 
 
-def test_edge_attr_coefficients():
-    sol_path = make_solution_file()
+def test_edge_attr_coefficients(sol_path):
     dataset = MARCDataset([(EXAMPLE_GRAPH, sol_path)])
     data, _ = dataset[0]
     coeffs = data["variable", "connected_to", "factor"].edge_attr.squeeze().tolist()

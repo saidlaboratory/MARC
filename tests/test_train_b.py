@@ -146,31 +146,6 @@ def test_grad_clip_respected(problem):
     assert post <= clip + 1e-4
 
 
-def test_entropy_coef_warns_and_is_noop(problem):
-    G, cas = problem
-    _, alpha_bar = cosine_beta_schedule(50)
-
-    def one_step(entropy_coef):
-        torch.manual_seed(5)
-        policy = TinyPolicy()
-        opt = torch.optim.Adam(policy.parameters(), lr=1e-3)
-        grpo_step(
-            policy, None, G, cas, alpha_bar, opt, N=2, steps=3,
-            entropy_coef=entropy_coef,
-            generator=torch.Generator().manual_seed(6),
-        )
-        return [p.detach().clone() for p in policy.parameters()]
-
-    with pytest.warns(UserWarning, match="entropy_coef"):
-        with_entropy = one_step(0.5)
-    base = one_step(0.0)
-    for a, b in zip(base, with_entropy):
-        assert torch.allclose(a, b)
-
-    with pytest.raises(ValueError):
-        one_step(-0.1)
-
-
 # ---------------------------------------------------------------------------
 # train_stage_b
 # ---------------------------------------------------------------------------

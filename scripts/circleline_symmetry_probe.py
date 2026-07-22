@@ -21,8 +21,8 @@ Writes results/p_hard/circleline_probe.json; the headline numbers go in the
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
+import sys
 from pathlib import Path
 from statistics import mean, median
 
@@ -33,10 +33,9 @@ from marc.diffusion.forward import corrupt
 from marc.graph.pyg import build_heterodata
 from marc.model.denoiser import GraphDenoiser
 
-_spec = importlib.util.spec_from_file_location(
-    "diagnose_circleline", Path(__file__).resolve().parent / "diagnose_circleline.py")
-dc = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(dc)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import diagnose_circleline as dc
 
 INDEX_TAG = torch.tensor([[-1.0], [1.0]])
 

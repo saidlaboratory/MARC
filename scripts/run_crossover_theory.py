@@ -59,6 +59,7 @@ import argparse
 import json
 import math
 import random
+import statistics
 from pathlib import Path
 
 from marc.cas.checker import Checker
@@ -172,16 +173,11 @@ def _loglin_fit(ns, qs):
     pts = [(n, math.log(q)) for n, q in zip(ns, qs) if q > 0]
     if len(pts) < 2:
         return None
-    xm = sum(p[0] for p in pts) / len(pts)
-    ym = sum(p[1] for p in pts) / len(pts)
-    sxx = sum((p[0] - xm) ** 2 for p in pts)
-    sxy = sum((p[0] - xm) * (p[1] - ym) for p in pts)
-    b = sxy / sxx
-    a = ym - b * xm
-    ss_tot = sum((p[1] - ym) ** 2 for p in pts)
-    ss_res = sum((p[1] - (a + b * p[0])) ** 2 for p in pts)
-    r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 1.0
-    return a, b, r2, [p[0] for p in pts]
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    b, a = statistics.linear_regression(xs, ys)
+    r2 = statistics.correlation(xs, ys) ** 2 if len(set(ys)) > 1 else 1.0
+    return a, b, r2, xs
 
 
 def best_of_k(q: float, K: int) -> float:

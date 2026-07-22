@@ -4,17 +4,11 @@ Fast: no training. Verifies the root helper returns checker-accepted points for
 both roots (the x<->y swap is exact) and that the chord midpoint carries positive
 energy — i.e. the conditional mean of the two roots is off the solution manifold.
 The full measurement is produced by ``scripts/diagnose_circleline.py``."""
-import importlib.util
-from pathlib import Path
-
 from marc.cas.checker import Checker
 
-_spec = importlib.util.spec_from_file_location(
-    "diagnose_circleline",
-    Path(__file__).resolve().parent.parent / "scripts" / "diagnose_circleline.py",
-)
-dc = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(dc)
+from conftest import load_script
+
+dc = load_script("diagnose_circleline")
 
 
 def test_both_roots_satisfy_both_constraints():

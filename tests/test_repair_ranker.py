@@ -1,9 +1,8 @@
 import random
-import importlib.util
-import sys
-from pathlib import Path
 
 import torch
+
+from conftest import load_script
 
 from marc.graph.semantics import build_semantic_heterodata
 from marc.model.repair_ranker import (
@@ -35,11 +34,7 @@ def test_candidate_only_control_has_no_fixed_graph_features():
 
 
 def test_paired_mcnemar_uses_discordant_pairs():
-    path = Path(__file__).resolve().parents[1] / "scripts" / "run_repair_ranker.py"
-    spec = importlib.util.spec_from_file_location("run_repair_ranker", path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
+    module = load_script("run_repair_ranker")
     insts = make_dataset("aux_required", 3, 77, K=4)
     rows = [
         {"pack": type("P", (), {"inst": insts[0]})(),
@@ -60,12 +55,7 @@ def test_seed_hygiene_is_computed_not_asserted():
     # +100000*sidx stride) and COUNT id overlaps, never hardcode 0
     from types import SimpleNamespace
 
-    path = Path(__file__).resolve().parents[1] / "scripts" / "run_repair_ranker.py"
-    spec = importlib.util.spec_from_file_location("run_repair_ranker_hyg", path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-
+    module = load_script("run_repair_ranker")
     mk = lambda ids: [SimpleNamespace(inst=SimpleNamespace(id=i)) for i in ids]
     splits = {"train": mk(["a", "b"]), "validation": mk(["c"]), "test": mk(["b", "d"])}
     h = module.seed_hygiene(splits, ["aux_required", "nonlinear"], 100, 10, 5, 8)

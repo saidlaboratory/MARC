@@ -44,21 +44,17 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import torch
-import torch.nn as nn
 
 from marc.graph.schema import VariableNode, FactorNode, Edge
 from marc.graph.graph import FactorGraph
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
-from marc.eval.metrics import wilson_interval, two_proportion_z
+from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.eval.solver import load_solver
 from marc.refine.iterative import refine
-from marc.diffusion.schedule import cosine_beta_schedule
-from marc.diffusion.forward import corrupt
-from marc.model.denoiser import GraphDenoiser
+from marc.train.toy_x0 import train_x0
 
 T = 1000
-_, ALPHA_BAR = cosine_beta_schedule(T)
 SCALE = 8.0     # normalize solutions (~[-8,8]) toward unit variance
 C = 15.0        # residual scaling: gentle energy so the polisher converges
 DECIMALS = 6    # every family constant is generated on this decimal grid
@@ -96,25 +92,6 @@ def accepted(chk: Checker, g, x) -> bool:
     snap recovers exactly from the polished float; this family's roots are 6-decimal
     by construction, so the same idea needs the explicit grid snap first."""
     return chk.verify(g, [round(v, DECIMALS) for v in x]).accepted
-
-
-def train_x0(items, epochs: int, D: int = 128, L: int = 4, seed: int = 0):
-    torch.manual_seed(seed)
-    net = GraphDenoiser(D=D, L=L)
-    opt = torch.optim.Adam(net.parameters(), lr=1e-3)
-    datas = [(build_heterodata(g), torch.tensor([[v] for v in sol], dtype=torch.float32) / SCALE)
-             for g, sol, _ in items]
-    for _ in range(epochs):
-        net.train()
-        for data, x0 in datas:
-            t = torch.randint(1, T + 1, (1,))
-            eps = torch.randn_like(x0)
-            data["variable"].x = corrupt(x0, t, eps, ALPHA_BAR)
-            opt.zero_grad()
-            nn.functional.mse_loss(net(data, t), x0).backward()   # x0 target
-            opt.step()
-    net.eval()
-    return net
 
 
 def count_methods(test, net, tmean: float, K: int, rep: int, solver=None):
@@ -174,7 +151,8 @@ def run(ns, K: int, ntest: int, epochs: int, ntrain: int, seeds: int,
         for n in ns:
             train = suite(n, ntrain, seed=100 + n + off)
             test = suite(n, ntest, seed=90000 + n + off)
-            net = None if solver else train_x0(train, epochs, seed=rep)
+            net = None if solver else train_x0(
+                [(g, sol) for g, sol, _ in train], epochs, seed=rep, scale=SCALE)
             tmean = sum(v for _, sol, _ in train for v in sol) / sum(len(sol) for _, sol, _ in train)
             by_n[n] = count_methods(test, net, tmean, K, rep, solver=solver)
             print(f"  seed {rep} n={n}: " + "  ".join(
@@ -188,7 +166,7 @@ def run(ns, K: int, ntest: int, epochs: int, ntrain: int, seeds: int,
             ks = [per_rep[rep][n][m][0] for rep in range(seeds)]
             ts = [per_rep[rep][n][m][1] for rep in range(seeds)]
             k, t = sum(ks), sum(ts)
-            cell = {"k": k, "n": t, "rate": k / t, "ci95": wilson_interval(k, t)}
+            cell = rate_cell(k, t)
             if seeds > 1:
                 seed_rates = [ki / ti for ki, ti in zip(ks, ts)]
                 cell["seed_rates"] = seed_rates

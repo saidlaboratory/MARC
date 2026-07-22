@@ -1,15 +1,10 @@
-import importlib.util
 import sys
-from pathlib import Path
 
 import pytest
 
-# scripts/ isn't a package, so load the module directly from its file path.
-_SPEC = importlib.util.spec_from_file_location(
-    "demo_end_to_end", Path(__file__).resolve().parent.parent / "scripts" / "demo_end_to_end.py"
-)
-demo = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(demo)
+from conftest import load_script
+
+demo = load_script("demo_end_to_end")
 
 
 def _run(monkeypatch, argv, capsys):

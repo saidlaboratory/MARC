@@ -20,16 +20,14 @@ from pathlib import Path
 from statistics import mean
 
 import torch
-import torch.nn as nn
 
 from marc.cas.checker import Checker
 from marc.data.templates import CircleLineTemplate
-from marc.diffusion.forward import corrupt
 from marc.diffusion.schedule import cosine_beta_schedule
-from marc.eval.metrics import wilson_interval
+from marc.eval.metrics import rate_cell
 from marc.graph.pyg import build_heterodata
-from marc.model.denoiser import GraphDenoiser
 from marc.refine.iterative import build_energy_fns, refine
+from marc.train.toy_x0 import gen, train_x0
 
 T = 1000
 _, ALPHA_BAR = cosine_beta_schedule(T)
@@ -37,34 +35,6 @@ SCALE = 5.0
 TEMPLATE = CircleLineTemplate()
 K = 8
 NTRAIN = 300
-
-
-def gen(template, count, seed0):
-    out = []
-    for i in range(count):
-        g, sol = template.generate(seed=seed0 + i)
-        out.append((g, [float(v) for v in sol.values()]))
-    return out
-
-
-# copied from scripts/run_hard_eval.py so the diagnostic trains the exact model it indicts
-def train_x0(items, epochs, D=128, L=4):
-    torch.manual_seed(0)
-    net = GraphDenoiser(D=D, L=L)
-    opt = torch.optim.Adam(net.parameters(), lr=1e-3)
-    datas = [(build_heterodata(g), torch.tensor([[v] for v in sol], dtype=torch.float32) / SCALE)
-             for g, sol in items]
-    for _ in range(epochs):
-        net.train()
-        for data, x0 in datas:
-            t = torch.randint(1, T + 1, (1,))
-            eps = torch.randn_like(x0)
-            data["variable"].x = corrupt(x0, t, eps, ALPHA_BAR)
-            opt.zero_grad()
-            nn.functional.mse_loss(net(data, t), x0).backward()
-            opt.step()
-    net.eval()
-    return net
 
 
 def true_roots(sol):
@@ -106,8 +76,7 @@ def geometry(items):
     n = len(items)
     return {"mean_root_gap": mean(gaps), "min_root_gap": min(gaps),
             "mean_midpoint_energy": mean(mid_es), "min_midpoint_energy": min(mid_es),
-            "midpoint_polish": {"k": mid_ok, "n": n, "rate": mid_ok / n,
-                                "ci95": wilson_interval(mid_ok, n)}}
+            "midpoint_polish": rate_cell(mid_ok, n)}
 
 
 def propose(net, items):
@@ -164,10 +133,6 @@ def random_rate(items, lo=-5.0, hi=5.0):
                 break
         ok += int(solved)
     return ok, len(items)
-
-
-def rate_cell(k, n):
-    return {"k": k, "n": n, "rate": k / n, "ci95": wilson_interval(k, n)}
 
 
 def write_note(path, p):

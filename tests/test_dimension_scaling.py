@@ -6,21 +6,16 @@ basin), that shapes scale with n, and that a --quick-equivalent run produces the
 house-rules schema (k/n/rate/ci95 per method row, p-values, methodology tag). The
 full learned-vs-classical result is produced by ``scripts/run_dimension_scaling.py``
 (too heavy for the unit suite)."""
-import importlib.util
 import random
-from pathlib import Path
 
 import pytest
 
 from marc.cas.checker import Checker
 from marc.refine.iterative import refine
 
-_spec = importlib.util.spec_from_file_location(
-    "run_dimension_scaling",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_dimension_scaling.py",
-)
-rds = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(rds)
+from conftest import StubSolver, diverge_then_zeros, load_script, patch_load_solver
+
+rds = load_script("run_dimension_scaling")
 
 
 def test_true_root_is_accepted():
@@ -80,26 +75,9 @@ def test_quick_run_schema():
         assert 0.0 <= row[p_key] <= 1.0
 
 
-class _StubSolver:
-    def __init__(self):
-        self.calls = 0
-
-    def sample(self, problem, k):
-        self.calls += 1
-        nv = len(problem.graph.variables)
-        # first call diverges (None candidate), the rest propose zeros
-        return [None if self.calls == 1 else [0.0] * nv for _ in range(k)]
-
-
 def test_ckpt_mode_uses_stub_solver(monkeypatch):
-    stub = _StubSolver()
-    seen = {}
-
-    def fake_load(name, **kw):
-        seen.update(kw, name=name)
-        return stub
-
-    monkeypatch.setattr(rds, "load_solver", fake_load)
+    stub = StubSolver(diverge_then_zeros)
+    seen = patch_load_solver(monkeypatch, rds, stub)
     monkeypatch.setattr(rds, "train_x0",
                         lambda *a, **k: pytest.fail("ckpt mode must not self-train"))
     payload = rds.run(ns=[1], K=2, ntest=4, epochs=1, ntrain=4, seeds=1, ckpt="stub.pt")

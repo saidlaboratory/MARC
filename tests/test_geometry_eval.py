@@ -2,15 +2,9 @@
 
 Fast: stubbed solvers and a stubbed refine(), so no real descent runs. The real
 numbers come from ``scripts/run_geometry_eval.py`` (too heavy for the unit suite)."""
-import importlib.util
-from pathlib import Path
+from conftest import load_script
 
-_spec = importlib.util.spec_from_file_location(
-    "run_geometry_eval",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_geometry_eval.py",
-)
-geo = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(geo)
+geo = load_script("run_geometry_eval")
 
 
 class _OracleSolver:

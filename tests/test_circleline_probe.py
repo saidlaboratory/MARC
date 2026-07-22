@@ -4,19 +4,13 @@ Fast: no training. Covers the canonicalization helper (target ordering follows
 the tag, both orderings stay checker-feasible) and the index-feature
 construction (the tag makes the otherwise-tied x/y outputs distinct). The full
 measurement is produced by ``scripts/circleline_symmetry_probe.py``."""
-import importlib.util
-from pathlib import Path
-
 import torch
 
 from marc.cas.checker import Checker
 
-_spec = importlib.util.spec_from_file_location(
-    "circleline_symmetry_probe",
-    Path(__file__).resolve().parent.parent / "scripts" / "circleline_symmetry_probe.py",
-)
-sp = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(sp)
+from conftest import load_script
+
+sp = load_script("circleline_symmetry_probe")
 
 
 def test_canon_target_orders_by_tag():

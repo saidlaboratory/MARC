@@ -5,9 +5,6 @@ Covers: build_residual_jac vs finite differences, ScipySolver on a hard
 load_solver registration, and the new eval-row schema fragment.
 """
 
-import importlib.util
-from pathlib import Path
-
 import numpy as np
 
 from marc.cas.checker import Checker
@@ -17,7 +14,7 @@ from marc.eval.runner import Problem
 from marc.eval.solver import ExactLinearSolver, ScipySolver, Solver, load_solver
 from marc.refine.iterative import build_residual_jac
 
-ROOT = Path(__file__).resolve().parents[1]
+from conftest import load_script
 
 
 def _problem(template, seed=0):
@@ -95,15 +92,8 @@ def test_load_solver_roundtrip():
     assert isinstance(load_solver("exact"), ExactLinearSolver)
 
 
-def _load_script(name):
-    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
 def test_hard_eval_lm_row_schema():
-    mod = _load_script("run_hard_eval")
+    mod = load_script("run_hard_eval")
     items = mod.gen(BilinearSystemTemplate(), 3, seed0=0)
     k, n = mod.lm_count(items, 4)
     assert n == 3 and 0 <= k <= n

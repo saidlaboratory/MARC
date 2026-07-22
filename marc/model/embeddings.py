@@ -1,5 +1,3 @@
-import math
-
 import torch
 import torch.nn as nn
 
@@ -11,21 +9,6 @@ def _mlp(in_dim: int, out_dim: int) -> nn.Sequential:
         nn.ReLU(),
         nn.Linear(out_dim, out_dim),
     )
-
-
-def sinusoidal_embedding(t: torch.Tensor, dim: int) -> torch.Tensor:
-    """Map integer timesteps [B] to sinusoidal embeddings [B, dim].
-
-    Uses the transformer convention: freq_i = 1 / 10000^(2i / dim),
-    with half the dimensions as sine and half as cosine.
-    """
-    assert dim % 2 == 0, "dim must be even for sinusoidal embedding"
-    half = dim // 2
-    freqs = torch.exp(
-        -math.log(10000.0) * torch.arange(half, dtype=torch.float32, device=t.device) / half
-    )
-    args = t.float().unsqueeze(-1) * freqs.unsqueeze(0)
-    return torch.cat([torch.sin(args), torch.cos(args)], dim=-1)
 
 
 class VariableEncoder(nn.Module):

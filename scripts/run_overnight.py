@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Overnight run orchestrator — sequential phases, crash-safe manifest, never dies.
 
-Runs every training + eval phase as a subprocess, tolerating missing scripts
-(sibling PRs may not have merged) and failed phases: each phase records
-ok/skipped/failed into results/overnight/MANIFEST.json (rewritten after EVERY
-phase) and the run moves on. stdout/stderr of each phase is tee'd to
+Runs every training + eval phase as a subprocess, tolerating failed phases:
+each phase records ok/skipped/failed into results/overnight/MANIFEST.json
+(rewritten after EVERY phase) and the run moves on. stdout/stderr of each phase is tee'd to
 results/overnight/logs/<phase>.log and echoed live (so `tail -f overnight.out`
 works under nohup).
 
@@ -21,7 +20,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import shlex
 import subprocess
 import sys
@@ -62,8 +60,6 @@ PHASE_ORDER = [
     "figures", "summarize",
 ]
 
-SKIP_NOT_MERGED = "script not present — sibling PR not merged"
-
 # Dirs scanned after each phase to attribute freshly written outputs.
 OUTPUT_DIRS = ["results", "checkpoints", "paper/figures"]
 
@@ -71,45 +67,6 @@ OUTPUT_DIRS = ["results", "checkpoints", "paper/figures"]
 # ------------------------------------------------------------------- utilities
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-_HELP_CACHE: dict[str, str] = {}
-
-
-def script_help(script: str) -> str:
-    """`--help` text of a repo script ('' on any failure). Cached per run.
-
-    Sibling PRs change CLI flags mid-flight; composing args from the script's
-    actual --help (instead of assuming) keeps an unknown flag from failing a
-    phase — unsupported flags are simply dropped.
-    """
-    if script not in _HELP_CACHE:
-        text = ""
-        try:
-            env = {**os.environ, "PYTHONPATH": str(ROOT) + (
-                os.pathsep + os.environ["PYTHONPATH"]
-                if os.environ.get("PYTHONPATH") else "")}
-            r = subprocess.run(
-                ["python3", script, "--help"], cwd=ROOT, env=env,
-                capture_output=True, text=True, timeout=120,
-            )
-            if r.returncode == 0:
-                text = r.stdout + r.stderr
-        except Exception:
-            pass
-        _HELP_CACHE[script] = text
-    return _HELP_CACHE[script]
-
-
-def supported_flags(script: str, *flag_groups: list[str]) -> list[str]:
-    """Concatenate each [--flag, value...] group whose flag appears in --help."""
-    help_text = script_help(script)
-    out: list[str] = []
-    for group in flag_groups:
-        # word-boundary match so "--n" doesn't false-positive on "--no-…"
-        if group and re.search(re.escape(group[0]) + r"(?![\w-])", help_text):
-            out += group
-    return out
 
 
 def git_commit() -> str:
@@ -409,46 +366,41 @@ def build_phases(smoke: bool, manifest: Manifest, state: dict) -> list[dict]:
         cmd = ["python3", INV_EVAL,
                "--ckpt", "checkpoints/structure_policy.pt", "--out", out,
                "--data", data]
-        cmd += supported_flags(
-            INV_EVAL,
-            ["--families"] + families if families else [],
-            ["--eval-seeds", "2" if S else "5"],
-            ["--n", "6"] if S else [],
-            ["--k-refine", "2"] if S else [],
-        )
+        if families:
+            cmd += ["--families"] + families
+        cmd += ["--eval-seeds", "2" if S else "5"]
+        if S:
+            cmd += ["--n", "6", "--k-refine", "2"]
         return cmd
 
     def heldout_skip() -> str | None:
         if state.get("invention_data") != "aux_required":
             return ("policy trained on fallback 'toys' data — no held-out "
                     "'shared' pattern to eval")
-        if not supported_flags(INV_EVAL, ["--families"]):
-            return "run_invention_eval.py does not support --families yet"
         return None
 
     return [
         {"name": "env_check", "inline": phase_env_check},
         {"name": "tests", "cmd": ["python3", "-m", "pytest", "-q"]},
-        {"name": "train_stage_a", "script": "scripts/train_scale.py",
+        {"name": "train_stage_a",
          "cmd": ["python3", "scripts/train_scale.py", "--config",
                  "marc/configs/train/scale.yaml", "--stage", "a",
                  "--out-dir", "checkpoints/scale_D512_L8"]
                 + (["--smoke"] if S else [])},
-        {"name": "train_stage_b", "script": "scripts/train_scale.py",
+        {"name": "train_stage_b",
          "requires_ok": "train_stage_a",
          "cmd": ["python3", "scripts/train_scale.py", "--config",
                  "marc/configs/train/scale.yaml", "--stage", "b",
                  "--resume", "latest", "--out-dir", "checkpoints/scale_D512_L8"]
                 + (["--smoke"] if S else [])},
-        {"name": "train_structure_policy", "script": TRAIN_SP,
+        {"name": "train_structure_policy",
          # --exclude-family shared = the held-out-pattern protocol by default
-         # (eval_invention_heldout evals the excluded pattern); guarded so an
-         # older script without the flag still trains.
+         # (eval_invention_heldout evals the excluded pattern).
          "cmd": lambda: ["python3", TRAIN_SP,
                          "--data", "aux_required", "--epochs", "2" if S else "200",
-                         "--device", "auto", "--out", "checkpoints/structure_policy.pt"]
-                        + supported_flags(TRAIN_SP, ["--exclude-family", "shared"]),
-         # aux_required data may not have merged; retried with --data toys on failure
+                         "--device", "auto", "--out", "checkpoints/structure_policy.pt",
+                         "--exclude-family", "shared"],
+         # retried with --data toys if the aux_required run fails
          "retry_cmd": ["python3", TRAIN_SP,
                        "--data", "toys", "--epochs", "2" if S else "200",
                        "--device", "auto", "--out", "checkpoints/structure_policy.pt"]},
@@ -486,13 +438,13 @@ def build_phases(smoke: bool, manifest: Manifest, state: dict) -> list[dict]:
         {"name": "eval_structure_toys",
          "cmd": ["python3", "scripts/run_structure_toys.py"]},
         # both invention evals: --data matches what training actually used
-        # (see build_phases docstring), extra flags composed from --help.
-        {"name": "eval_invention", "script": INV_EVAL,
+        # (see build_phases docstring).
+        {"name": "eval_invention",
          "requires_ok": "train_structure_policy",
          "cmd": lambda: invention_cmd("results/p5_invention/invention.json")},
         # cross-pattern generalization: eval ONLY the pattern excluded from
         # training ('shared') — the held-out-pattern number.
-        {"name": "eval_invention_heldout", "script": INV_EVAL,
+        {"name": "eval_invention_heldout",
          "requires_ok": "train_structure_policy", "skip_if": heldout_skip,
          "cmd": lambda: invention_cmd(
              "results/p5_invention/invention_heldout.json", families=["shared"])},
@@ -560,9 +512,6 @@ def main() -> int:
         # "aborted, tests red" beats an empty directory at 7am.
         if tests_red and name != "summarize":
             done("skipped", "tests red")
-            continue
-        if spec.get("script") and not (ROOT / spec["script"]).exists():
-            done("skipped", SKIP_NOT_MERGED)
             continue
         req = spec.get("requires_ok")
         if req and manifest.status(req) != "ok":

@@ -5,17 +5,11 @@ Tiny sizes only; the real numbers come from the full script run. What matters he
 (b) --ckpt routes the learned arm through load_solver("learned", ...) and never
     touches train_x0.
 """
-import importlib.util
-from pathlib import Path
-
 import pytest
 
-_spec = importlib.util.spec_from_file_location(
-    "run_coupled_eval",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_coupled_eval.py",
-)
-rce = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(rce)
+from conftest import StubSolver, load_script, patch_load_solver
+
+rce = load_script("run_coupled_eval")
 
 
 def test_quick_schema_selftrain():
@@ -37,26 +31,14 @@ def test_quick_schema_selftrain():
         assert 0.0 <= row[p_key] <= 1.0
 
 
-class _StubSolver:
-    def __init__(self):
-        self.calls = 0
-
-    def sample(self, problem, k):
-        self.calls += 1
-        assert hasattr(problem, "graph") and len(problem.solution) == 2
-        return [[0.0] * len(problem.solution) for _ in range(k)]
+def _zeros(problem, k, call):
+    assert hasattr(problem, "graph") and len(problem.solution) == 2
+    return [[0.0] * len(problem.solution) for _ in range(k)]
 
 
 def test_ckpt_mode_routes_through_learned_solver(monkeypatch):
-    stub = _StubSolver()
-    seen = {}
-
-    def fake_load(name, **kw):
-        seen["name"] = name
-        seen.update(kw)
-        return stub
-
-    monkeypatch.setattr(rce, "load_solver", fake_load)
+    stub = StubSolver(_zeros)
+    seen = patch_load_solver(monkeypatch, rce, stub)
     monkeypatch.setattr(rce, "train_x0", lambda *a, **kw: pytest.fail("train_x0 called in ckpt mode"))
 
     payload = rce.run(ns=[2], K=2, ntest=3, epochs=1, ntrain=4, ckpt="/fake/stage_a.pt")

@@ -15,13 +15,8 @@ Protocol (W1 overhaul):
     not capability.
   * Holm step-down correction over the declared comparison family
     (``comparisons_holm``).
-  * Guarded arms (``no_context``, ``policy_value``) probe for sibling-unit
-    capabilities and record ``{"status": "skipped", ...}`` when absent.
 
-``evaluate()`` is the frozen legacy single-seed block builder (schema-locked by
-tests/test_invention_policy.py::test_eval_block_schema); all new behavior lives
-in ``evaluate_full()``. Missing/unloadable checkpoint -> {"status": "skipped"},
-exit 0.
+Missing/unloadable checkpoint -> {"status": "skipped"}, exit 0.
 
 Usage:
     python3 scripts/run_invention_eval.py --ckpt checkpoints/structure_policy.pt \
@@ -34,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import inspect
 import json
 import os
 import random
@@ -46,13 +40,17 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import marc.structure.invention_data as invention_data
-import marc.structure.policy as _policy_mod
 from marc.cas.checker import Checker
-from marc.eval.metrics import two_proportion_z, wilson_interval
+from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.eval.runner import Problem
 from marc.eval.solver import load_solver
 from marc.structure.invention_data import FAMILIES, InventionInstance, make_dataset
-from marc.structure.policy import StructurePolicy, chosen_candidate, reverse_sample
+from marc.structure.policy import (
+    StructurePolicy,
+    chosen_candidate,
+    predicted_pin,
+    reverse_sample,
+)
 
 TEST_SEED_BASE = 900000   # seed-space contract v1 — must match scripts/train_structure_policy.py
 SEED_STRIDE = 1000        # seed-space contract v1 — must match scripts/train_structure_policy.py
@@ -73,14 +71,6 @@ REFERENCE_SOLVER = invention_data.REFERENCE_SOLVER
 SOURCES = tuple(getattr(invention_data, "SOURCES", ("toys", "aux_required")))
 
 
-def _rate(k: int, n: int) -> dict:
-    """{k, n, rate, ci95} block; degenerate n=0 (e.g. zero misses) -> vacuous CI."""
-    if n == 0:
-        return {"k": 0, "n": 0, "rate": 0.0, "ci95": [0.0, 1.0]}
-    lo, hi = wilson_interval(k, n)
-    return {"k": k, "n": n, "rate": k / n, "ci95": [lo, hi]}
-
-
 def _hard_negative_idxs(inst: InventionInstance) -> set[int]:
     """Indices of gold-structure/wrong-value distractors. Scalar-pin menus have
     one; exchangeable expression menus coefficient-match EVERY distractor, so
@@ -90,109 +80,6 @@ def _hard_negative_idxs(inst: InventionInstance) -> set[int]:
         j for j, c in enumerate(inst.candidates)
         if j != inst.gold_idx and c.insert_coeffs == gold.insert_coeffs
     }
-
-
-def evaluate(policy, instances, *, k_refine: int = 4, T: int = 20, seed: int = 0) -> dict:
-    """Run all arms over ``instances``; returns {"positive_control_ok", "samplers"}."""
-    # scipy Levenberg–Marquardt reference solver (see REFERENCE_SOLVER): solves the
-    # certified-solvable augmented systems where gradient-descent refine plateaus.
-    solver = load_solver(REFERENCE_SOLVER["name"], seed=seed)
-    checker = Checker()
-    rng = random.Random(seed)
-    gen = torch.Generator().manual_seed(seed)
-
-    rows = []
-    for inst in instances:
-        K = len(inst.candidates)
-        cache: dict = {}
-
-        def solved(choice, _inst=inst, _cache=cache):
-            """Best-of-k_refine refine + Checker.verify against the chosen graph."""
-            if choice not in _cache:
-                graph = (
-                    _inst.fixed_graph if choice is None
-                    else _inst.candidates[choice].apply(_inst.fixed_graph)
-                )
-                prob = Problem(
-                    id=f"{_inst.id}_arm{choice}",
-                    graph=graph,
-                    solution=[0.0] * len(graph.variables),  # unused by refine
-                )
-                cands = [c for c in solver.sample(prob, k_refine) if c is not None]
-                _cache[choice] = checker.first_accepted(graph, cands) is not None
-            return _cache[choice]
-
-        r = rng.randrange(K + 1)
-        row = {
-            "family": inst.family,
-            "gold_idx": inst.gold_idx,
-            "hard_idxs": sorted(_hard_negative_idxs(inst)),
-            "fixed_ok": solved(None),
-            "gold_ok": solved(inst.gold_idx),
-            "random_ok": solved(None if r == K else r),
-        }
-        for sampler, single in (("reverse", False), ("single_shot", True)):
-            final, logits = reverse_sample(
-                policy, inst, T=T, generator=gen, single_shot=single
-            )
-            pick = chosen_candidate(final, logits, K)
-            row[sampler] = {"pick": pick, "ok": solved(pick)}
-        rows.append(row)
-
-    n = len(rows)
-    gold_k = sum(r["gold_ok"] for r in rows)
-    positive_ok = n > 0 and gold_k / n >= 0.95
-    if not positive_ok:
-        print(
-            f"WARNING: POSITIVE CONTROL FAILED — gold_oracle solve rate "
-            f"{gold_k}/{n} < 0.95. Solve-rate comparisons are not meaningful.",
-            file=sys.stderr,
-        )
-
-    fix_k = sum(r["fixed_ok"] for r in rows)
-    rnd_k = sum(r["random_ok"] for r in rows)
-    samplers = {}
-    for sampler in ("reverse", "single_shot"):
-        inv_k = sum(r[sampler]["pick"] == r["gold_idx"] for r in rows)
-        none_k = sum(r[sampler]["pick"] is None for r in rows)
-        misses = [r for r in rows if r[sampler]["pick"] != r["gold_idx"]]
-        hn_k = sum(
-            1 for r in misses
-            if r[sampler]["pick"] in r["hard_idxs"]
-        )
-        pol_k = sum(r[sampler]["ok"] for r in rows)
-        z_r, p_r = two_proportion_z(pol_k, n, rnd_k, n)
-        z_f, p_f = two_proportion_z(pol_k, n, fix_k, n)
-        per_family = {}
-        for fam in sorted({r["family"] for r in rows}):
-            fr = [r for r in rows if r["family"] == fam]
-            per_family[fam] = {
-                "invention_rate": _rate(
-                    sum(r[sampler]["pick"] == r["gold_idx"] for r in fr), len(fr)
-                ),
-                "solve_policy": _rate(sum(r[sampler]["ok"] for r in fr), len(fr)),
-            }
-        samplers[sampler] = {
-            "invention_rate": _rate(inv_k, n),
-            "none_rate": _rate(none_k, n),
-            "hard_negative_confusion": _rate(hn_k, len(misses)),
-            "solve": {
-                "fixed": _rate(fix_k, n),
-                "policy": _rate(pol_k, n),
-                "random_slot": _rate(rnd_k, n),
-                "always_none": _rate(fix_k, n),  # identical arm to fixed by definition
-                "gold_oracle": _rate(gold_k, n),
-            },
-            "comparisons": {
-                "policy_vs_random": {"z": z_r, "p": p_r},
-                "policy_vs_fixed": {"z": z_f, "p": p_f},
-            },
-            "per_family": per_family,
-        }
-    return {"positive_control_ok": positive_ok, "samplers": samplers}
-
-
-# --- W1 protocol: multi-seed eval, enumeration baseline, Holm, guarded arms ----
 
 
 def _holm(pvals: list) -> list:
@@ -261,28 +148,19 @@ def _check_seed_hygiene(train_config: dict, data: str, eval_seeds: list,
 def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
                   eval_seeds: list, families=None, ckpt: dict | None = None) -> dict:
     """W1 protocol: pooled multi-seed eval with enumeration baseline, timing,
-    Holm-corrected comparisons, and capability-guarded arms.
+    Holm-corrected comparisons, and no_context/policy_value arms.
 
     ``eval_seeds`` is the list of actual dataset seeds (already strided).
     ``ckpt`` (the loaded checkpoint dict) is needed only for the no_context arm.
     """
     checker = Checker()
 
-    # P1 probe: context-ablated twin of the SAME weights (zero-param-change).
+    # P1 arm: context-ablated twin of the SAME weights (zero-param-change).
     nc_policy = None
-    nc_skip_reason = None
-    if ckpt is None:
-        nc_skip_reason = "no checkpoint provided (stub/test run)"
-    elif "ablate_context" not in inspect.signature(StructurePolicy.__init__).parameters:
-        nc_skip_reason = "StructurePolicy lacks ablate_context (W3 not merged)"
-    else:
+    if ckpt is not None:
         nc_policy = StructurePolicy(**{**ckpt["model_kwargs"], "ablate_context": True})
         nc_policy.load_state_dict(ckpt["model_state_dict"])
         nc_policy.eval()
-
-    # P2 probe: scalar-pin readout from the final denoised state.
-    predicted_pin = getattr(_policy_mod, "predicted_pin", None)
-    pv_active = callable(predicted_pin)
 
     rows = []
     per_seed = []
@@ -345,7 +223,7 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
             }
 
             # 3) policy arms, timed per forward.
-            rev_final, rev_logits = None, None
+            rev_final = None
             for sampler, single in (("reverse", False), ("single_shot", True)):
                 t0 = time.perf_counter()
                 final, logits = reverse_sample(
@@ -355,7 +233,7 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
                 pick = chosen_candidate(final, logits, Ki)
                 row[sampler] = {"pick": pick, "ok": solved(pick), "forward_s": dt}
                 if sampler == "reverse":
-                    rev_final, rev_logits = final, logits
+                    rev_final = final
 
             # 4) no_context arm (P1), same seeds via a twin generator.
             if nc_policy is not None:
@@ -369,31 +247,30 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
                 row["no_context"] = nc
 
             # 5) policy_value arm (P2/P3): does the predicted pin VALUE solve?
-            if pv_active:
-                pick = row["reverse"]["pick"]
-                pv = {"solved_raw": False, "solved_snapped": False,
-                      "fallback": False, "abs_err": None}
-                if pick is not None:
-                    cand = inst.candidates[pick]
-                    pin = predicted_pin(rev_final, pick)
-                    if pin is None or getattr(cand, "defining_expression", None):
-                        # P3: a scalar pin can't override a symbolic definition —
-                        # silent fallback to the candidate's own pin semantics.
-                        ok = solved(pick)
-                        pv = {"solved_raw": ok, "solved_snapped": ok,
-                              "fallback": True, "abs_err": None}
-                    else:
-                        pin = float(pin)
-                        snapped = float(round(pin))
-                        g_raw = dataclasses.replace(cand, pin_value=pin).apply(inst.fixed_graph)
-                        g_snap = dataclasses.replace(cand, pin_value=snapped).apply(inst.fixed_graph)
-                        pv = {
-                            "solved_raw": solved(None, key=("pv", pick, round(pin, 6)), graph=g_raw),
-                            "solved_snapped": solved(None, key=("pv", pick, round(snapped, 6)), graph=g_snap),
-                            "fallback": False,
-                            "abs_err": abs(pin - cand.pin_value),
-                        }
-                row["pv"] = pv
+            pick = row["reverse"]["pick"]
+            pv = {"solved_raw": False, "solved_snapped": False,
+                  "fallback": False, "abs_err": None}
+            if pick is not None:
+                cand = inst.candidates[pick]
+                pin = predicted_pin(rev_final, pick)
+                if pin is None or getattr(cand, "defining_expression", None):
+                    # P3: a scalar pin can't override a symbolic definition —
+                    # silent fallback to the candidate's own pin semantics.
+                    ok = solved(pick)
+                    pv = {"solved_raw": ok, "solved_snapped": ok,
+                          "fallback": True, "abs_err": None}
+                else:
+                    pin = float(pin)
+                    snapped = float(round(pin))
+                    g_raw = dataclasses.replace(cand, pin_value=pin).apply(inst.fixed_graph)
+                    g_snap = dataclasses.replace(cand, pin_value=snapped).apply(inst.fixed_graph)
+                    pv = {
+                        "solved_raw": solved(None, key=("pv", pick, round(pin, 6)), graph=g_raw),
+                        "solved_snapped": solved(None, key=("pv", pick, round(snapped, 6)), graph=g_snap),
+                        "fallback": False,
+                        "abs_err": abs(pin - cand.pin_value),
+                    }
+            row["pv"] = pv
 
             seed_rows.append(row)
         rows.extend(seed_rows)
@@ -445,20 +322,20 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
         for fam in sorted({r["family"] for r in rows}):
             fr = [r for r in rows if r["family"] == fam]
             per_family[fam] = {
-                "invention_rate": _rate(
+                "invention_rate": rate_cell(
                     sum(r[sampler]["pick"] == r["gold_idx"] for r in fr), len(fr)),
-                "solve_policy": _rate(sum(r[sampler]["ok"] for r in fr), len(fr)),
+                "solve_policy": rate_cell(sum(r[sampler]["ok"] for r in fr), len(fr)),
             }
         samplers[sampler] = {
-            "invention_rate": _rate(inv_k, N),
-            "none_rate": _rate(none_k, N),
-            "hard_negative_confusion": _rate(hn_k, len(misses)),
+            "invention_rate": rate_cell(inv_k, N),
+            "none_rate": rate_cell(none_k, N),
+            "hard_negative_confusion": rate_cell(hn_k, len(misses)),
             "solve": {
-                "fixed": _rate(fix_k, N),
-                "policy": _rate(pol_k, N),
-                "random_slot": _rate(rnd_k, N),
-                "always_none": _rate(fix_k, N),
-                "gold_oracle": _rate(gold_k, N),
+                "fixed": rate_cell(fix_k, N),
+                "policy": rate_cell(pol_k, N),
+                "random_slot": rate_cell(rnd_k, N),
+                "always_none": rate_cell(fix_k, N),
+                "gold_oracle": rate_cell(gold_k, N),
             },
             "comparisons": {
                 "policy_vs_random": {"z": z_r, "p": p_r},
@@ -475,8 +352,8 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
     arms: dict = {
         "enumeration": {
             "status": "ok",
-            "solve": _rate(enum_k, N),
-            "first_accept_is_gold": _rate(gold_first_k, enum_k),
+            "solve": rate_cell(enum_k, N),
+            "first_accept_is_gold": rate_cell(gold_first_k, enum_k),
             "solved_calls_mean": calls_mean,
             "refine_calls_mean": calls_mean * k_refine,
             "wall_clock_s": {"mean": (sum(enum_walls) / N) if N else 0.0,
@@ -484,33 +361,28 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
         }
     }
     if nc_policy is None:
-        arms["no_context"] = {"status": "skipped", "reason": nc_skip_reason}
+        arms["no_context"] = {"status": "skipped",
+                              "reason": "no checkpoint provided (stub/test run)"}
     else:
         arms["no_context"] = {
             "status": "ok",
             "samplers": {
                 sampler: {
-                    "invention_rate": _rate(
+                    "invention_rate": rate_cell(
                         sum(r["no_context"][sampler]["pick"] == r["gold_idx"] for r in rows), N),
-                    "solve_policy": _rate(
+                    "solve_policy": rate_cell(
                         sum(r["no_context"][sampler]["ok"] for r in rows), N),
                 } for sampler in ("reverse", "single_shot")
             },
         }
-    if not pv_active:
-        arms["policy_value"] = {
-            "status": "skipped",
-            "reason": "marc.structure.policy lacks predicted_pin (sibling unit not merged)",
-        }
-    else:
-        errs = [r["pv"]["abs_err"] for r in rows if r["pv"]["abs_err"] is not None]
-        arms["policy_value"] = {
-            "status": "ok",
-            "solve_raw": _rate(sum(r["pv"]["solved_raw"] for r in rows), N),
-            "solve_snapped": _rate(sum(r["pv"]["solved_snapped"] for r in rows), N),
-            "pin_abs_err_mean": (sum(errs) / len(errs)) if errs else None,
-            "value_fallback": sum(r["pv"]["fallback"] for r in rows),
-        }
+    errs = [r["pv"]["abs_err"] for r in rows if r["pv"]["abs_err"] is not None]
+    arms["policy_value"] = {
+        "status": "ok",
+        "solve_raw": rate_cell(sum(r["pv"]["solved_raw"] for r in rows), N),
+        "solve_snapped": rate_cell(sum(r["pv"]["solved_snapped"] for r in rows), N),
+        "pin_abs_err_mean": (sum(errs) / len(errs)) if errs else None,
+        "value_fallback": sum(r["pv"]["fallback"] for r in rows),
+    }
 
     # ---- Holm-corrected declared comparison family --------------------------
     tests: dict = {}
@@ -526,10 +398,9 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
             nc_k = sum(r["no_context"][sampler]["ok"] for r in rows)
             z, p = two_proportion_z(pol_k, N, nc_k, N)
             tests[f"{sampler}:policy_vs_no_context"] = {"z": z, "p": p}
-    if pv_active:
-        pv_k = sum(r["pv"]["solved_raw"] for r in rows)
-        z, p = two_proportion_z(pv_k, N, rnd_k, N)
-        tests["reverse:policy_value_vs_random"] = {"z": z, "p": p}
+    pv_k = sum(r["pv"]["solved_raw"] for r in rows)
+    z, p = two_proportion_z(pv_k, N, rnd_k, N)
+    tests["reverse:policy_value_vs_random"] = {"z": z, "p": p}
     names = list(tests)
     for name, ph in zip(names, _holm([tests[nm]["p"] for nm in names])):
         tests[name]["p_holm"] = ph
@@ -556,7 +427,7 @@ def evaluate_full(policy, *, data: str, n: int, K: int, k_refine: int, T: int,
     for r in rows:
         certificates[r["certificate"]] = certificates.get(r["certificate"], 0) + 1
     positive_control = {
-        "gold_oracle": _rate(gold_k, N),
+        "gold_oracle": rate_cell(gold_k, N),
         "threshold": 0.95,
         "ok": positive_ok,
         "by_construction": [

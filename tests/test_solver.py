@@ -4,7 +4,6 @@ import pytest
 
 from marc.eval.problems import in_distribution
 from marc.eval.solver import (
-    FunctionSolver,
     GradientRefinementSolver,
     Solver,
     load_solver,
@@ -21,19 +20,6 @@ def test_gradient_solver_conforms_and_solves():
     assert any(
         all(abs(c - s) < 1e-6 for c, s in zip(cand, p.solution)) for cand in cands
     )
-
-
-def test_function_solver_wraps_callable():
-    p = in_distribution(1)[0]
-    solver = FunctionSolver(lambda problem: problem.solution)
-    assert isinstance(solver, Solver)
-    assert solver.sample(p, 2) == [list(p.solution), list(p.solution)]
-
-
-def test_function_solver_pass_graph():
-    p = in_distribution(1)[0]
-    solver = FunctionSolver(lambda g: [0.0] * len(g.variables), pass_graph=True)
-    assert solver.sample(p, 1) == [[0.0, 0.0]]
 
 
 def test_gradient_solver_sample_with_info():

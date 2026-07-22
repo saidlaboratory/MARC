@@ -1,8 +1,6 @@
 """Tests for the W1 eval protocol in scripts/run_invention_eval.py:
-seed hygiene, frozen legacy evaluate(), evaluate_full schema, Holm, enumeration,
-capability-guarded arms."""
+seed hygiene, evaluate_full schema, Holm, enumeration, no-checkpoint skip."""
 
-import importlib.util
 import os
 import subprocess
 import sys
@@ -13,20 +11,15 @@ import torch
 from marc.structure.invention_data import make_dataset
 from marc.structure.schema import ABSENT, NUM_SLOT_TYPES, SlotType
 
+from conftest import load_script
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(ROOT, "scripts", "run_invention_eval.py")
 
 
-def _load_eval_module():
-    spec = importlib.util.spec_from_file_location("run_invention_eval_w1", SCRIPT)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
 @pytest.fixture(scope="module")
 def mod():
-    return _load_eval_module()
+    return load_script("run_invention_eval")
 
 
 class _GoldStub:
@@ -73,27 +66,6 @@ def test_legacy_reconstruction(mod):
     assert hyg["allow_seed_overlap"] is True
 
 
-# --- 3: legacy evaluate() schema is frozen -----------------------------------
-
-
-def test_legacy_evaluate_keys_unchanged(mod):
-    instances = make_dataset("toys", 3, 100, K=3)
-    res = mod.evaluate(_GoldStub(), instances, k_refine=1, T=6, seed=0)
-    assert set(res) == {"positive_control_ok", "samplers"}
-    for sampler in ("reverse", "single_shot"):
-        block = res["samplers"][sampler]
-        assert set(block) == {
-            "invention_rate", "none_rate", "hard_negative_confusion",
-            "solve", "comparisons", "per_family",
-        }
-        assert set(block["solve"]) == {
-            "fixed", "policy", "random_slot", "always_none", "gold_oracle",
-        }
-        assert set(block["comparisons"]) == {"policy_vs_random", "policy_vs_fixed"}
-        for cmp in block["comparisons"].values():
-            assert set(cmp) == {"z", "p"}
-
-
 # --- 4: evaluate_full schema + pooled counts ---------------------------------
 
 
@@ -131,9 +103,8 @@ def test_evaluate_full_schema_and_pooling(mod):
     assert res["arms"]["enumeration"]["solve"]["k"] == sum(
         ps["enumeration"]["solve_k"] for ps in res["per_seed"])
     assert res["samplers"]["reverse"]["invention_rate"]["n"] == 4  # 2 seeds x n=2
-    # declared Holm family: the 4 base tests, plus the guarded policy_value arm
-    # (reverse:policy_value_vs_random) which is active here because _GoldStub
-    # supplies a callable predicted_pin (pv_active = callable(predicted_pin)).
+    # declared Holm family: the 4 base tests plus reverse:policy_value_vs_random
+    # (no_context tests need a checkpoint, absent here with ckpt=None).
     ch = res["comparisons_holm"]
     assert ch["method"] == "holm" and ch["alpha"] == 0.05
     assert set(ch["tests"]) == {
@@ -141,7 +112,7 @@ def test_evaluate_full_schema_and_pooling(mod):
         "single_shot:policy_vs_random", "single_shot:policy_vs_fixed",
         "reverse:policy_value_vs_random",
     }
-    assert ch["m"] == 5  # 4 base + 1 guarded policy_value arm (pv active here)
+    assert ch["m"] == 5
     for t in ch["tests"].values():
         assert set(t) == {"z", "p", "p_holm", "significant_05"}
         assert t["p_holm"] >= t["p"]
@@ -181,29 +152,18 @@ def test_enumeration_solves_certified_toys(mod):
     assert e["wall_clock_s"]["total"] > 0.0
 
 
-# --- 7: guarded arms skip cleanly when P1/P2 absent --------------------------
+# --- 7: no_context skips cleanly without a checkpoint ------------------------
 
 
-def test_guarded_arms_skip_cleanly(mod, monkeypatch):
-    class _NoAblate:
-        def __init__(self, D=16, L=1, K=3):
-            pass
-
-    monkeypatch.setattr(mod, "StructurePolicy", _NoAblate)
-    monkeypatch.delattr(mod._policy_mod, "predicted_pin", raising=False)
-    res = mod.evaluate_full(
-        _GoldStub(), data="toys", n=1, K=3, k_refine=1, T=6,
-        eval_seeds=[900000], ckpt={"model_kwargs": {}, "model_state_dict": {}},
-    )
+def test_no_context_skips_without_ckpt(mod):
+    res = mod.evaluate_full(_GoldStub(), data="toys", n=1, K=3, k_refine=1,
+                            T=6, eval_seeds=[900000], ckpt=None)
     nc = res["arms"]["no_context"]
     assert nc["status"] == "skipped"
-    assert nc["reason"] == "StructurePolicy lacks ablate_context (W3 not merged)"
-    pv = res["arms"]["policy_value"]
-    assert pv["status"] == "skipped"
-    assert "predicted_pin" in pv["reason"]
-    # skipped arms never enter the Holm family
+    assert nc["reason"] == "no checkpoint provided (stub/test run)"
+    # the skipped arm never enters the Holm family
     assert "reverse:policy_vs_no_context" not in res["comparisons_holm"]["tests"]
-    assert "reverse:policy_value_vs_random" not in res["comparisons_holm"]["tests"]
+    assert "single_shot:policy_vs_no_context" not in res["comparisons_holm"]["tests"]
 
 
 # --- 8: n > SEED_STRIDE errors -----------------------------------------------

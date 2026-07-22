@@ -30,49 +30,18 @@ import time
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 
 from marc.data.templates import HARD_TEMPLATES_EXT
 from marc.graph.pyg import build_heterodata
 from marc.cas.checker import Checker
-from marc.eval.metrics import two_proportion_z, wilson_interval
+from marc.eval.metrics import rate_cell, two_proportion_z, wilson_interval
 from marc.eval.runner import Problem
 from marc.eval.solver import ScipySolver, load_solver
 from marc.refine.iterative import refine
-from marc.diffusion.schedule import cosine_beta_schedule
-from marc.diffusion.forward import corrupt
-from marc.model.denoiser import GraphDenoiser
+from marc.train.toy_x0 import gen, train_x0
 
 T = 1000
-_, ALPHA_BAR = cosine_beta_schedule(T)
 SCALE = 5.0  # bilinear/quadratic solutions are integers in [-3,3]
-
-
-def gen(template, count, seed0):
-    out = []
-    for i in range(count):
-        g, sol = template.generate(seed=seed0 + i)
-        out.append((g, [float(v) for v in sol.values()]))
-    return out
-
-
-def train_x0(items, epochs, D=128, L=4):
-    torch.manual_seed(0)
-    net = GraphDenoiser(D=D, L=L)
-    opt = torch.optim.Adam(net.parameters(), lr=1e-3)
-    datas = [(build_heterodata(g), torch.tensor([[v] for v in sol], dtype=torch.float32) / SCALE)
-             for g, sol in items]
-    for _ in range(epochs):
-        net.train()
-        for data, x0 in datas:
-            t = torch.randint(1, T + 1, (1,))
-            eps = torch.randn_like(x0)
-            data["variable"].x = corrupt(x0, t, eps, ALPHA_BAR)
-            opt.zero_grad()
-            nn.functional.mse_loss(net(data, t), x0).backward()
-            opt.step()
-    net.eval()
-    return net
 
 
 def refine_count(items, noise, K):
@@ -170,8 +139,7 @@ def _timed(count_fn, *args):
 
 def _cell(kn, ms):
     k, n = kn
-    return {"k": k, "n": n, "rate": k / n, "ci95": wilson_interval(k, n),
-            "wall_ms_total": ms, "wall_ms_mean": ms / n}
+    return {**rate_cell(k, n), "wall_ms_total": ms, "wall_ms_mean": ms / n}
 
 
 def _fmt(k, n):

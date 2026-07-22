@@ -6,16 +6,11 @@ log-linear slope recovery), that the two reachability estimators are consistent
 the independent (separable) family's log-reachability slope is markedly steeper
 than the coupled family's. The full parameter-free validation is produced by
 ``scripts/run_crossover_theory.py`` (too heavy for the unit suite)."""
-import importlib.util
 import math
-from pathlib import Path
 
-_spec = importlib.util.spec_from_file_location(
-    "run_crossover_theory",
-    Path(__file__).resolve().parent.parent / "scripts" / "run_crossover_theory.py",
-)
-rct = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(rct)
+from conftest import load_script
+
+rct = load_script("run_crossover_theory")
 
 
 def test_best_of_k_identity():

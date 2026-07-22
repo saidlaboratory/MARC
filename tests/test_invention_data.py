@@ -25,6 +25,8 @@ from marc.structure.invention_data import (
 )
 from marc.structure.schema import ABSENT, NUM_SLOT_TYPES, PaddedGraph, SlotType
 
+from conftest import load_script
+
 
 def test_slot_type_vocab_extended():
     assert int(SlotType.FACTOR) == 2
@@ -161,25 +163,12 @@ def test_module_constants():
     assert DATA_VERSION == 8
 
 
-def _load_script(fname):
-    import importlib.util
-    import os
-
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    spec = importlib.util.spec_from_file_location(
-        f"solver_pin_{fname.removesuffix('.py')}", os.path.join(root, "scripts", fname)
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
 def test_reference_solver_single_definition():
     # one solver protocol: certification (this module), the eval arms, and the
     # training reward must all grade with the SAME object, not hand-synced copies
     assert REFERENCE_SOLVER == {"name": "lm", "k_refine": 4}
-    assert _load_script("run_invention_eval.py").REFERENCE_SOLVER is REFERENCE_SOLVER
-    assert _load_script("train_structure_policy.py").REFERENCE_SOLVER is REFERENCE_SOLVER
+    assert load_script("run_invention_eval").REFERENCE_SOLVER is REFERENCE_SOLVER
+    assert load_script("train_structure_policy").REFERENCE_SOLVER is REFERENCE_SOLVER
 
 
 def test_scalar_pin_prior_matches_aux_required():

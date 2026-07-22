@@ -5,25 +5,7 @@ import torch
 from marc.model.embeddings import (
     FactorEncoder,
     VariableEncoder,
-    sinusoidal_embedding,
 )
-
-
-def test_sinusoidal_embedding_shape_and_finiteness():
-    t = torch.tensor([0, 1, 500, 999])
-    emb = sinusoidal_embedding(t, dim=16)
-    assert emb.shape == (4, 16)
-    assert torch.isfinite(emb).all()
-    # distinct timesteps -> distinct embeddings
-    assert not torch.allclose(emb[0], emb[1])
-
-
-def test_sinusoidal_embedding_requires_even_dim():
-    try:
-        sinusoidal_embedding(torch.tensor([1]), dim=15)
-    except AssertionError:
-        return
-    raise AssertionError("odd dim should have raised")
 
 
 def test_variable_encoder_shape_and_type_conditioning():
