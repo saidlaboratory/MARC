@@ -66,3 +66,9 @@ paper/tex/*.pdf
 !results/p_scaling/crossover_families.json
 !results/p_geometry/pointchain_learned_3seed.json
 !results/p_real/real_systems.json
+!results/p_repair/transfer/
+results/p_repair/transfer/*
+!results/p_repair/transfer/transfer_train_vieta.json
+!results/p_repair/transfer/transfer_train_quad_link.json
+!results/p_repair/transfer/transfer_train_sq_sum_xy.json
+!results/p_repair/transfer/transfer_matrix.json
