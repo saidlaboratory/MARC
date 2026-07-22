@@ -280,6 +280,24 @@ enumeration ceiling** with one solver call vs enumeration's 2.62 (N=60); control
 random 0.250.  Linear K=4 solves 0.300 vs 0.217/0.227, oracle and enumeration 1.000
 (N=300), one call vs 2.54.
 
+**Transfer breadth (rotations; `nonlinear_holdout_vieta.json`,
+`random_support_holdout_offset.json`, `random_support_holdout_coupled.json`):** the
+two original transfer cells generalize.  Reverse nonlinear direction
+(quad_link-trained → unseen vieta): 0.393 vs 0.180 random (N=150; forward was 0.420
+vs 0.253) — partial transfer is bidirectional.  Linear held-out-pattern rotations:
+offset 0.407, coupled 0.450, shared 0.380, each vs ~0.23–0.29 random (N=400 per
+cell) — the linear pattern-transfer effect is not specific to one held-out choice.
+
+**Operator-feature ablation (attribution check; `nonlinear_opmask_ablation.json`,
+`linear_opmask_ablation.json`):** masking the operator-identity features (factor
+degree/has_cross/has_square; edge diag-quadratic/max-exponent/cross) and retraining
+leaves the ranker essentially intact — nonlinear 0.981 [0.960,0.991] vs 0.997, linear
+0.379 [0.352,0.407] vs 0.339.  The v0.2→v0.3 gain is therefore attributed to
+**candidate conditioning** (encoding each candidate-augmented graph), with the
+compatibility signal carried by constants/coefficients/incidence jointly with the
+candidate — NOT to the operator flags per se.  The earlier "operator-aware encoding is
+what distinguishes x+y−3 from x·y−3" attribution is corrected in the paper.
+
 **Cheap-probe control (the "why not just probe?" answer; `probe_nonlinear.json`,
 `probe_linear_holdout.json`):** spend a short-budget LM solve on every candidate, pick
 first-accept else lowest residual, grade the pick at full budget.  Nonlinear: the

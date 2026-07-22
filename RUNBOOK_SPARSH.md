@@ -58,7 +58,7 @@ checkpoints, and results together are a few GB at most.
 python3 -m pytest -q
 ```
 
-Expect all green (~330 tests, about a minute). **If anything is red, don't
+Expect all green (~414 tests, a couple of minutes). **If anything is red, don't
 launch the overnight run — ping the team instead.**
 
 ```bash
