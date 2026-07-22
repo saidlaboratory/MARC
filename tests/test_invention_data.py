@@ -159,7 +159,7 @@ def test_module_constants():
     # aux_required.generate_instances(patterns=...) requires — NOT the toy names.
     from marc.data.aux_required import PATTERNS as AUX_PATTERNS
     assert FAMILIES_BY_SOURCE["aux_required"] == tuple(AUX_PATTERNS)
-    assert FAMILIES_BY_SOURCE["nonlinear"] == ("vieta", "quad_link")
+    assert FAMILIES_BY_SOURCE["nonlinear"] == ("vieta", "quad_link", "sq_sum_xy")
     assert DATA_VERSION == 8
 
 
@@ -314,9 +314,9 @@ def test_cas_real_root_certificates():
 
 
 def test_nonlinear_menu_end_to_end():
-    # THE expensive test: 2 instances, one per nonlinear family
-    ds = make_dataset("nonlinear", 2, 0, K=4)
-    assert [i.family for i in ds] == ["vieta", "quad_link"]
+    # THE expensive test: 3 instances, one per nonlinear family
+    ds = make_dataset("nonlinear", 3, 0, K=4)
+    assert [i.family for i in ds] == ["vieta", "quad_link", "sq_sum_xy"]
     for inst in ds:
         # v8: every distractor carries a CAS no-real-roots proof, so the
         # "exactly one solvable option" claim is exact for these menus
