@@ -33,6 +33,9 @@ checker, best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-star
 $q(n)$, and the measured slope of $\log q(n)$ decides the regime: learning wins precisely when
 acceptance basins factorize across variables and dimension is high. One measured constant
 reproduces the entire random-restart curve with no free parameters (mean absolute error 0.012).
+The characterization holds beyond the synthetic families: across eight standard real systems
+(robotics, positioning, optimization, and computer-algebra benchmarks) classical multi-start
+solves all eight and none falls in the learning-favorable regime.
 The decision classical solvers cannot make is discrete: which structural augmentation turns an
 unsolvable system solvable. Moving learning there, an operator-aware repair ranker clears its
 controls decisively ($0.997$ versus $0.236$ on balanced nonlinear menus, $p<10^{-70}$;
