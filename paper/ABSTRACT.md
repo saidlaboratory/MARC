@@ -12,24 +12,27 @@ Exact Constraint Solving
 
 ## Abstract
 
-Learned proposals for constraint solving are usually evaluated against cold-start
-refinement; the control that matters is random multi-start at the same budget. We run
-that control on our own system and our headline claim shrinks. MARC poses continuous
-algebraic systems as factor graphs, proposes values with a graph diffusion model,
-polishes them on exact computer-algebra energies, and accepts only what an exact
-symbolic checker verifies. Under this protocol, learned value proposals help only
-where acceptance basins factorize across variables and dimension defeats random
-search (0.975 versus 0.075 at n=3); a parameter-free law in the measured single-start
-reachability reproduces the full restart curve (MAE 0.012), predicts the failure
-under variable coupling, and holds on eight named real systems, where classical
-multi-start leaves no learning-favorable regime. The decision that has no classical
-baseline is discrete: which structural augmentation repairs an unsolvable system. A
-candidate-conditioned ranker chooses repairs on certificate-grade menus — "exactly
-one solvable option" is a computer-algebra theorem, not a budget-relative claim — at
-0.997 versus 0.236 random (p < 10^-70, seed-robust), beating budget-matched
-per-candidate probes on accuracy and cost together. Every negative result is reported
-with confidence intervals; they are the boundary of the claim. Learning earns its
-keep on the structural decision; everything else belongs to the solvers.
+Evaluations of diffusion-based proposal models for constraint solving rarely include one
+key control: random multi-start under the same refinement budget. When applied to our
+system, this control sharply curtails our headline claim. MARC turns a continuous
+algebraic constraint system into a factor graph, over which a graph-neural diffusion
+denoiser proposes assignments, descent on an exact computer-algebra energy polishes them,
+and an exact symbolic checker certifies solutions. Does the learned proposal improve on
+random multi-start at choosing satisfying assignments? Only narrowly, in a predictable
+regime. Across trapped low-dimensional families it ties with random restart, but dominates
+in high dimension, where random search fails. Once variables couple, the advantage is
+gone. Since all methods share the same polishing and checker, best-of-K random
+multi-start succeeds with probability exactly 1-(1-q(n))^K, where q(n) is single-start
+reachability; a single measured constant, with no free parameters, reproduces the entire
+curve (mean absolute error 0.012). The narrow favorable regime is not specific to our
+synthetic families: across eight real-world systems, from robotics to algebra, classical
+multi-start solved all eight, but none were in the learning-favorable regime. What
+classical solvers lack is discrete choice: which structural augmentation renders an
+unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms
+random on certificate-grade menus (0.997 vs 0.236 balanced nonlinear menu accuracy;
+p < 10^-70; 0.982 +/- 0.006 across seeds), and beats a budget-matched per-candidate
+probe on accuracy and cost. We delineate the regimes where learned proposals improve
+solvers, and show that learning can succeed where no classical algorithm applies.
 
 ## Keywords
 
