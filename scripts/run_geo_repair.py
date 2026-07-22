@@ -87,9 +87,10 @@ class Packed:
     labels: torch.Tensor
 
 
-def build_split(ks, n_per_k, seed, label_streams=3):
+def build_split(ks, n_per_k, seed, label_streams=3, label_restarts=None, workers=0):
     packs = []
-    for inst in make_dataset(n_per_k, seed, ks=tuple(ks), label_streams=label_streams):
+    for inst in make_dataset(n_per_k, seed, ks=tuple(ks), label_streams=label_streams,
+                             label_restarts=label_restarts, workers=workers):
         packs.append(Packed(
             inst=inst,
             graphs=[build_semantic_heterodata(c.apply(inst.graph))
@@ -336,6 +337,15 @@ def main(argv=None):
     ap.add_argument("--ckpt", default="checkpoints/geo_repair.pt")
     ap.add_argument("--label-streams", type=int, default=3,
                     help="labels = majority vote over this many independent streams")
+    ap.add_argument("--train-label-restarts", type=int, default=None,
+                    help="label the TRAIN split at this per-solve budget instead of "
+                         "the reference budget (1 + --label-streams 1 on the train "
+                         "side = raw probe outcomes, ~12x cheaper per instance); "
+                         "val/test always keep reference-budget labels")
+    ap.add_argument("--train-label-streams", type=int, default=None,
+                    help="override --label-streams for the TRAIN split only")
+    ap.add_argument("--dataset-workers", type=int, default=0,
+                    help="fan dataset generation over this many processes")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args(argv)
     if args.quick:
@@ -350,9 +360,15 @@ def main(argv=None):
     t0 = time.time()
     print("building hard-failure populations "
           "(generate -> 2-stream direct-solve -> keep failures -> label)", flush=True)
-    train_set = build_split(train_ks, args.n_train, args.seed, args.label_streams)
-    val_set = build_split(train_ks, args.n_val, args.seed + 500000, args.label_streams)
-    test_set = build_split(test_ks, args.n_test, args.seed + 900000, args.label_streams)
+    train_ls = (args.label_streams if args.train_label_streams is None
+                else args.train_label_streams)
+    train_set = build_split(train_ks, args.n_train, args.seed, train_ls,
+                            label_restarts=args.train_label_restarts,
+                            workers=args.dataset_workers)
+    val_set = build_split(train_ks, args.n_val, args.seed + 500000,
+                          args.label_streams, workers=args.dataset_workers)
+    test_set = build_split(test_ks, args.n_test, args.seed + 900000,
+                           args.label_streams, workers=args.dataset_workers)
     print(f"failures: train={len(train_set)} val={len(val_set)} test={len(test_set)} "
           f"(wall {time.time()-t0:.0f}s)", flush=True)
 

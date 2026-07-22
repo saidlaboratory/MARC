@@ -143,6 +143,31 @@ def test_label_instance_one_bool_per_construction(monkeypatch):
     assert all(len(g.factors) == len(graph.factors) + 1 for g, _ in calls)
 
 
+def test_label_instance_passes_label_restarts(monkeypatch):
+    graph, _, gv = _chain(6, seed=3)
+    vocab = construction_vocabulary(6, gv)
+    seen = []
+
+    def fake(g, *, seed, k_restarts=None):
+        seen.append(k_restarts)
+        return False
+
+    monkeypatch.setattr(geo_repair, "solve_graph", fake)
+    label_instance(graph, vocab, solve_seed=99, k_restarts=1)
+    assert set(seen) == {1}
+
+
+def test_make_dataset_parallel_matches_serial():
+    kw = dict(ks=(6,), label_streams=3, cache_dir=None)
+    serial = geo_repair.make_dataset(3, 424242, **kw)
+    par = geo_repair.make_dataset(3, 424242, workers=2, **kw)
+    assert [i.id for i in par] == [i.id for i in serial]
+    assert [i.worked for i in par] == [i.worked for i in serial]
+    assert [i.givens for i in par] == [i.givens for i in serial]
+    assert [[f.expression for f in i.graph.factors] for i in par] == \
+           [[f.expression for f in i.graph.factors] for i in serial]
+
+
 def test_construction_features_dim_onehot_and_constants():
     k = 6
     _, _, gv = _chain(k)
@@ -190,7 +215,7 @@ class _Fixed(torch.nn.Module):
         super().__init__()
         self.scores = scores
 
-    def forward(self, _):
+    def forward(self, *_):
         return self.scores
 
 
