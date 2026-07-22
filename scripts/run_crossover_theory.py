@@ -113,9 +113,10 @@ def single_start_q(family: str, n: int, trials: int, span: float, seed0: int):
 # *measured* slope, not the coupled/independent label; separability is only the provable
 # special case (q=v^n). This makes geometry a real-domain regime the law flags as
 # learning-favorable (steep slope), unlike the flat coupled-bilinear chain.
-GEOMETRY_REFINE = dict(steps=1200, lr=0.008, sigma0=0.0, noise=False,
-                       polish_steps=6000, polish_lr=0.02)
-GEOMETRY_INIT_SD = 3.0
+# single source of truth for the tuned recipe: marc/refine/presets.py (issue #104)
+from marc.refine.presets import GEOMETRY_INIT_SD
+from marc.refine.presets import GEOMETRY_POLISH_KWARGS as GEOMETRY_REFINE
+
 NS_GEOMETRY_PTS = [1, 2, 3, 4]   # k points -> 2k variables (n = 2, 4, 6, 8)
 
 

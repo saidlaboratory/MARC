@@ -37,16 +37,10 @@ from marc.eval.runner import run_split_eval
 from marc.eval.solver import GradientRefinementSolver, load_solver
 from marc.refine.iterative import refine
 
-# Tuned for the geometry domain's nonconvex quartic energy — noise off, smaller
-# learning rate, much longer polish than the linear-system suites need. See
-# results/p4_scale/roadmap.md for why (the default refine() hyperparameters,
-# tuned against convex linear systems, solve ~0% of geometry instances).
-GEOMETRY_REFINE_KWARGS = dict(
-    steps=1200, lr=0.008, sigma0=0.0, noise=False,
-    polish_steps=6000, polish_lr=0.02, init_scale=3.0,
-)
-# the same deterministic descent, minus the solver-level init knob
-_POLISH_KWARGS = {k: v for k, v in GEOMETRY_REFINE_KWARGS.items() if k != "init_scale"}
+# Shared tuned recipe (issue #104): single source of truth in marc/refine/presets.py
+# so the four geometry-family scripts cannot silently diverge in budget.
+from marc.refine.presets import GEOMETRY_POLISH_KWARGS as _POLISH_KWARGS
+from marc.refine.presets import GEOMETRY_REFINE_KWARGS
 
 NOTES_PATH = Path("results/p4_scale/scaling_notes.md")
 OUT_PATH = Path("results/p4_scale/geometry_eval.json")
@@ -107,13 +101,17 @@ def learned_arm(problems, solver, K):
 def build_payload(id_problems, ho_problems, k, refine_solver=None,
                   learned_solver=None, ckpt=None):
     solver = refine_solver or GradientRefinementSolver(**GEOMETRY_REFINE_KWARGS)
+    # Issue #104: every arm is timed at the SAME outer boundary (solve + checker +
+    # loop overhead). The runner's internal wall_ms puts the checker outside the
+    # timed window, which leaned the printed ms/prob comparison in refine's favor;
+    # those runner-internal numbers remain in metrics["splits"] but the per-arm
+    # cells below all use the outer perf_counter.
+    t0 = time.perf_counter()
     metrics = run_split_eval(id_problems, ho_problems, solver=solver,
                              n_samples=k, solver_name="refine")
+    refine_ms = (time.perf_counter() - t0) * 1000.0
     pp = metrics["per_problem"]
     n_all = len(id_problems) + len(ho_problems)
-    # refine's per-problem timing already comes from the runner; sum both splits
-    refine_ms = (metrics["splits"]["in_distribution"]["wall_ms_total"]
-                 + metrics["splits"]["held_out_structure"]["wall_ms_total"])
     t0 = time.perf_counter()
     rand_id, rand_ho = random_arm(id_problems, k), random_arm(ho_problems, k)
     rand_ms = (time.perf_counter() - t0) * 1000.0
@@ -141,7 +139,10 @@ def build_payload(id_problems, ho_problems, k, refine_solver=None,
     else:
         arms["learned"] = {"status": "skipped",
                            "reason": "no checkpoint: set --ckpt or MARC_CKPT"}
-    return {**metrics, "arms": arms, "learned_vs_random": learned_vs_random}
+    return {**metrics, "arms": arms, "learned_vs_random": learned_vs_random,
+            "timing_boundary": "outer perf_counter per arm: solve + checker + loop "
+                               "overhead (issue #104; runner-internal wall_ms in "
+                               "splits[] excludes the checker and is NOT comparable)"}
 
 
 def _arm_row(name, arm):
