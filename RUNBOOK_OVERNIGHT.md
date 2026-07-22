@@ -262,13 +262,19 @@ Then check each output JSON for the `seed_hygiene` block with
 
 Seed 11 is running on Quang's machine. Seeds 29 and 47 are yours; each run
 regenerates the identical dataset deterministically (that is the slow part,
-~1.5-2h solo per run on CPU) and then trains + evaluates (~1h). Run them one
+~30min solo per run on CPU at protocol scale) and then trains + evaluates (~20min). Run them one
 at a time if the box is busy, both in parallel if not:
 
     OMP_NUM_THREADS=6 python3 scripts/run_geo_repair.py --opt-seed 29 \
+        --train-ks 10,12 --transfer-ks 14 --n-train 250 --n-val 80 --n-test 120 --epochs 60 \
         --out results/p_geo_repair/geo_repair_s29.json --ckpt checkpoints/geo_repair_s29.pt
     OMP_NUM_THREADS=6 python3 scripts/run_geo_repair.py --opt-seed 47 \
+        --train-ks 10,12 --transfer-ks 14 --n-train 250 --n-val 80 --n-test 120 --epochs 60 \
         --out results/p_geo_repair/geo_repair_s47.json --ckpt checkpoints/geo_repair_s47.pt
+
+IMPORTANT: these exact flags ARE the protocol — the scale was set to fit the
+submission window and every seed must use it so the multiseed rows are
+comparable. Do not enlarge without regenerating all seeds.
 
 If Quang's seed-11 run dies, the same command with `--opt-seed 11` and the
 matching out/ckpt paths reproduces it exactly (data seed is fixed; opt-seed
