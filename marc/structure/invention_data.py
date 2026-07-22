@@ -110,6 +110,16 @@ NONLINEAR_SUPPORTS: Dict[str, Tuple[Tuple[float, float], ...]] = {
     "quad_link": tuple(
         (float(s), float(d)) for s in (1, -1) for d in range(5) if (s, d) != (-1, 1)
     ),
+    # sq_sum_xy (#126): u = a*(x+y)^2 + d. Perfect square, so ONE-SIDED like
+    # quad_link -- a wrong-parameter defining relation forces (x+y)^2 = negative
+    # (an empty set), giving CAS no-real-roots distractors on both sides of every
+    # gold (feasibility calibrated against vieta/quad_link in
+    # scripts/feasibility_third_nonlinear.py: 9.72 certified-rootless distractors/
+    # gold, 100% menu-fillable at K=4). Distinct from the other two families by its
+    # cross term: (x+y)^2 = x^2 + 2xy + y^2 carries an xy the others lack.
+    "sq_sum_xy": tuple(
+        (float(a), float(d)) for a in (1, -1) for d in range(-4, 5)
+    ),
 }
 
 
@@ -121,6 +131,8 @@ def nonlinear_expression(family: str, a: float, d: float) -> str:
         return f"u - ({a})*(x**2 + y**2) - ({d})"
     if family == "quad_link":
         return f"u - ({a})*x**2 - ({d})"
+    if family == "sq_sum_xy":
+        return f"u - ({a})*(x + y)**2 - ({d})"
     raise ValueError(f"unknown nonlinear family {family!r}")
 
 
@@ -452,7 +464,7 @@ FAMILIES: Tuple[str, ...] = tuple(_TEMPLATES)
 FAMILIES_BY_SOURCE: Dict[str, Tuple[str, ...]] = {
     "toys": FAMILIES,
     "aux_required": _AUX_FAMILIES,
-    "nonlinear": ("vieta", "quad_link"),
+    "nonlinear": ("vieta", "quad_link", "sq_sum_xy"),
 }
 
 
@@ -557,6 +569,28 @@ def _nonlinear_variant(family: str, seed: int) -> Tuple[FactorGraph, Candidate, 
                 continue  # fixed x+y=k1, x*y=k2 has real roots -> not aux-required
             exprs = [("eq1", f"x + y - ({k1})", {"x": 1, "y": 1}),
                      ("eq2", f"x*y - ({k2})", {"x": 1, "y": 1})]
+            sol = {"x": x_star, "y": y_star}
+        elif family == "sq_sum_xy":
+            # augmented: 0.5*(x+y)**2 + 0.5*(x-y) + c1*u = k1,
+            # 0.5*(x+y)**2 - 0.5*(x-y) + c2*u = k2, u = a*(x+y)**2 + delta.
+            # Sum of the two fixed factors gives (x+y)**2 = k1+k2, so k1+k2 < 0 is
+            # rootless (empty) -- the same one-sided mechanism as quad_link, on the
+            # perfect square (x+y)**2 instead of x**2.
+            x_star = float(rng.choice(_NONZERO))
+            y_star = float(rng.choice(_NONZERO))
+            s = x_star + y_star
+            if s == 0:
+                continue  # (x+y)**2 = 0 collapses the square out of the fixed graph
+            q = s ** 2
+            u0 = a_g * q + delta
+            if u0 == 0:
+                continue
+            k1 = 0.5 * q + 0.5 * (x_star - y_star) + c1 * u0
+            k2 = 0.5 * q - 0.5 * (x_star - y_star) + c2 * u0
+            if k1 + k2 >= 0:
+                continue  # fixed has real roots ((x+y)**2 = k1+k2 >= 0)
+            exprs = [("eq1", f"0.5*(x + y)**2 + 0.5*(x - y) - ({k1})", {"x": 1, "y": 1}),
+                     ("eq2", f"0.5*(x + y)**2 - 0.5*(x - y) - ({k2})", {"x": 1, "y": 1})]
             sol = {"x": x_star, "y": y_star}
         else:  # quad_link
             # augmented: 0.5*x**2 + 0.5*y + c1*u = k1,
