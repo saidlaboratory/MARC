@@ -466,13 +466,26 @@ exactly. The family is syntactically coupled, yet its reachability collapses: sl
 ($R^2 = 0.999$), with $q(n) = 0.653$, 0.147, 0.027, 0.007 at $n = 2, 4, 6, 8$
 % provenance: RESULTS.md R9 (geometry) + crossover_law.md §5a
 (Figure~\ref{fig:law}, left). Each point's two-circle subproblem has a reflection ambiguity
-and spurious basins, so a random start rarely places every point in the right basin. The law
-therefore flags geometry as learning-favorable: random search collapses here, so an amortized
-proposal that learns each point's marginal placement can win. Solve rates with the classical
-polish alone are non-saturated (0.56 in-distribution, 0.28 held out), so the domain is hard
-rather than trivially solvable. Training the denoiser on geometry chains against the
-random-restart control is the law-guided next experiment.
-% pending: geometry learned-vs-random result (D512 checkpoint eval in progress) — insert number here
+and spurious basins, so a random start rarely places every point in the right basin, and solve
+rates with the classical polish alone are non-saturated (0.56 in-distribution, 0.28 held out).
+Reachability collapse alone would suggest, by analogy with the separable family, that an
+amortized proposal should win here. We tested that prediction by training a denoiser on the
+point-chain family with the identical R5 protocol (per-length inline $x_0$ training, one-shot
+proposal, the same geometry polish, best-of-8, Checker gate). It does not hold: the learned
+proposal ties random restart at every chain length and collapses with it (both 0.625, 0.175,
+0.025, 0.000 at $n = 2, 4, 6, 8$; zero of four significant wins, $p = 0.50$ each)
+% provenance: RESULTS.md R9 (geometry) + PROVENANCE R25 (pointchain_learned.json)
+. The negative is the informative result, because it separates two conditions the independent
+family had conflated. Reachability collapse (condition one, read off the slope) determines
+whether random search fails; it does here. Separability (condition two) determines whether the
+denoiser has per-variable marginals to amortize; geometry fails it, because each point's
+coordinates are pinned only jointly through the chain. The corrected law needs both: a learned
+proposal beats classical search iff reachability collapses \emph{and} the solution is
+per-variable separable. The separable traps have both and learning wins; the coupled bilinear
+family fails the first, random survives, and learning ties; geometry satisfies the first but
+fails the second, and learning ties random and collapses with it. The slope diagnoses random's
+behavior, but only separability lets a learned proposal exploit the collapse, so geometry
+pins down that collapse is necessary but not sufficient.
 
 \subsection{Coupling removes the advantage}
 \label{sec:coupled}
@@ -637,8 +650,10 @@ separate experiment. The learned proposal's ceiling is measured, not derived: th
 the random-restart curve and the collapse of the restart cost, not the learned model's
 absolute accuracy, and it says nothing about the capacity-limited decay at $n = 6$. And while
 the reachability prediction is validated on three families, the solve-rate consequence is
-confirmed only on the separable positive and the coupled negative; on geometry the law
-predicts that learning can help, and that experiment has not been run.
+confirmed on the separable positive, the coupled negative, and now geometry, where a trained
+denoiser ties random restart and collapses with it: reachability collapse turned out to be
+necessary but not sufficient, and the geometry test corrected our initial reading that the
+slope alone flags a domain as learning-favorable.
 
 Several failures are specific and reportable. CircleLine is never solved by the learned
 proposal: 0.000 in-distribution against 0.200 for random restart, and 0.000 in cross-family

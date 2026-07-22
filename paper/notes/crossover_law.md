@@ -147,15 +147,35 @@ has a reflection ambiguity and spurious basins, so a random start rarely places 
 point in the right basin and errors compound down the chain. Measured $q(n)$:
 **0.653, 0.147, 0.027, 0.007** at $n=2,4,6,8$.
 
-**Why this matters.** It shows the law's diagnostic is the *measured slope*, not the
-coupled/independent label, and it identifies geometry as a **real domain the law flags
-as learning-favorable** (steep collapse $\Rightarrow$ random search fails
-$\Rightarrow$ an amortized proposal that learns each point's marginal can win). This
-is the concrete, law-guided next experiment (train the denoiser on geometry chains and
-test it against the random-restart control), and it directly answers the
-"all-synthetic" critique of R5/R7. Preliminary geometry solve rates with the classical
-polish alone are non-saturated (in-distribution $0.56$, held-out $0.28$; `results/p4_scale/`),
-consistent with a hard, non-trivial domain rather than a saturated one.
+**We ran the learned arm, and it refutes the optimistic reading — which sharpens the
+law.** Training a denoiser on the point-chain family with the *identical* R5
+methodology (per-$k$ inline $x_0$ training, one-shot proposal + the same geometry
+polish, best-of-8, Checker gate; `scripts/run_pointchain_learned.py`), the learned
+proposal **exactly ties random restart at every chain length** and collapses *with*
+it (both $0.625, 0.175, 0.025, 0.000$ at $n=2,4,6,8$; $0/4$ significant wins,
+$p=0.50$ each). Reachability collapse alone did **not** make the domain
+learning-favorable.
+
+This is the informative outcome. It separates two conditions that the independent
+family had conflated:
+
+1. **Reachability collapse** ($q(n)$ decays, so random search fails) — governed by the
+   measured $\log q$ slope. Geometry has it ($-0.77$).
+2. **Separability** (the solution factorizes across variables, so the denoiser can
+   amortize it as per-variable marginals it proposes correctly at high $n$). Geometry
+   does **not** have it: each point's coordinates are pinned only jointly through the
+   chain, there is no per-variable marginal to memorize, so the denoiser collapses
+   exactly where random does.
+
+**Corrected law (two conditions, not one).** A learned proposal beats classical search
+iff (1) single-start reachability collapses with dimension *and* (2) the solution is
+per-variable separable. The independent traps have both, and learning wins (R5). The
+coupled bilinear family fails (1) (reachability stays flat), so random survives and
+learning ties (R7). Geometry satisfies (1) but fails (2), and learning ties random and
+collapses with it — the cell that proves collapse is *necessary but not sufficient*,
+and that the earlier "the slope alone is the diagnostic" reading was too optimistic.
+The slope predicts *random's* behavior; separability predicts whether *learning* can
+exploit it. Geometry is the real-domain test that pins this down.
 
 ## 6. Honesty / limitations
 

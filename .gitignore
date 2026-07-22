@@ -60,3 +60,4 @@ paper/tex/*.pdf
 !results/p_repair/probe_nonlinear.json
 !results/p_repair/probe_linear_holdout.json
 /*.log
+!results/p_geometry/pointchain_learned.json
