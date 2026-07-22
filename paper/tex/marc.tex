@@ -370,6 +370,22 @@ caveats bound it. The learned model degrades at $n = 6$ (0.100), and it loses to
 restart at $n \le 2$. The claim is that the amortized proposal beats random search in high
 dimension, and only there.
 
+Two natural objections are that this is one designed family and that random multi-start is a
+weak baseline. We answer both by rerunning the experiment on three structurally different
+separable families (varying the spurious-well shape and the root range) with an added
+Levenberg--Marquardt arm (analytic Jacobian, eight Gaussian multistarts).
+% provenance: RESULTS.md R27 + PROVENANCE R27 (crossover_families.json)
+Levenberg--Marquardt is not a way out: multi-start LM must also hit all $n$ independent basins,
+so it collapses along the same $p^n$ curve (baseline LM $0.825, 0.575, 0.200, 0.100, 0.000$ at
+$n = 1, 2, 3, 4, 6$). On two of the three families the learned proposal significantly beats
+\emph{both} random restart and LM at high dimension (on the baseline family, learned $1.000$
+against $0.000$ for both at $n = 6$; on the wide-root family, $0.225$ against $0.000$ for both at
+$n = 4$). The crossover is therefore a property of separable structure, not of one construction,
+and it holds against the strong classical solver, not only against random search. On the third
+family (two spurious wells) the small denoiser did not learn the harder marginals and collapsed
+with the classical methods, which sharpens the boundary: learning wins only where it can actually
+amortize the per-variable marginals.
+
 \subsection{A factorization law predicts both results}
 \label{sec:law}
 
