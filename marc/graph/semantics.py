@@ -38,44 +38,6 @@ def _poly(expression: str, symbols: list[sp.Symbol]):
         return None
 
 
-def poly_summary(
-    expression: str | sp.Poly, symbols: list[sp.Symbol] | None = None
-) -> tuple[float, float, float, float, float]:
-    """Shared polynomial summary: ``(degree, terms, has_cross, has_square, constant)``.
-
-    Used by both this module's per-factor features and the repair ranker's
-    candidate features (``marc.model.repair_ranker.candidate_features``) so the
-    two views of "what kind of polynomial is this" cannot silently drift apart.
-    ``degree`` is total_degree/4, ``terms`` is log1p(term count), ``has_cross``/
-    ``has_square`` are 0/1 flags, and ``constant`` is the signed-log constant term.
-
-    ``expression`` may be a pre-built ``sp.Poly`` (reused as-is, no re-parsing) or
-    a raw expression string, in which case ``symbols`` are the generators to build
-    the polynomial over (defaulting to the expression's own free symbols, sorted
-    by name). Falls back to an all-zero summary — rather than raising — if
-    ``expression`` doesn't parse as a polynomial, e.g. a non-polynomial defining
-    expression.
-    """
-    if isinstance(expression, sp.Poly):
-        poly = expression
-    else:
-        if symbols is None:
-            try:
-                symbols = sorted(sp.sympify(expression).free_symbols, key=lambda s: s.name)
-            except (sp.SympifyError, TypeError, ValueError):
-                symbols = []
-        poly = _poly(expression, symbols)
-    if poly is None:
-        return (0.0, 0.0, 0.0, 0.0, 0.0)
-    terms = poly.terms()
-    degree = float(max(int(poly.total_degree()), 0)) / 4.0
-    term_count = math.log1p(len(terms))
-    has_cross = float(any(sum(e > 0 for e in m) >= 2 for m, _ in terms))
-    has_square = float(any(any(e >= 2 for e in m) for m, _ in terms))
-    constant = _slog(float(poly.eval({s: 0 for s in poly.gens})))
-    return (degree, term_count, has_cross, has_square, constant)
-
-
 def build_semantic_heterodata(graph: FactorGraph) -> HeteroData:
     """Convert ``graph`` to operator-aware heterogeneous tensors.
 
@@ -103,17 +65,19 @@ def build_semantic_heterodata(graph: FactorGraph) -> HeteroData:
             continue
         terms = poly.terms()
         constant = float(poly.eval({s: 0 for s in symbols}))
-        degree, term_count, has_cross, has_square, slog_constant = poly_summary(poly)
+        degree = max(int(poly.total_degree()), 0)
         arity = sum(any(m[i] for m, _ in terms) for i in range(len(symbols)))
+        has_square = any(any(e >= 2 for e in monom) for monom, _ in terms)
+        has_cross = any(sum(e > 0 for e in monom) >= 2 for monom, _ in terms)
         coeff_l1 = sum(abs(float(c)) for _, c in terms)
         factor_features.append([
-            slog_constant,
+            _slog(constant),
             math.log1p(abs(constant)),
-            degree,
-            term_count,
+            degree / 4.0,
+            math.log1p(len(terms)),
             arity / 8.0,
-            has_cross,
-            has_square,
+            float(has_cross),
+            float(has_square),
             math.log1p(coeff_l1),
         ])
     data["factor"].x = torch.tensor(factor_features, dtype=torch.float32).reshape(

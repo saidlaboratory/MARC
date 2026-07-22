@@ -9,18 +9,23 @@ leaving all continuous solving to the classical backend.
 
 from __future__ import annotations
 
+import math
+from typing import Sequence
+
+import sympy as sp
 import torch
 import torch.nn as nn
+from torch_geometric.data import Batch
 from torch_geometric.utils import scatter
 
-from marc.graph.semantics import EDGE_FEATURE_DIM, FACTOR_FEATURE_DIM, poly_summary
-from marc.structure import M_MAX
+from marc.graph.semantics import EDGE_FEATURE_DIM, FACTOR_FEATURE_DIM
 from marc.structure.invention_data import Candidate, InventionInstance
 
 from .embeddings import _mlp
 from .layers import BipartiteLayer
 
 
+M_MAX = 8
 CANDIDATE_FEATURE_DIM = 2 * M_MAX + 7
 
 
@@ -87,6 +92,15 @@ class CandidateOnlyRanker(nn.Module):
         return self.net(features).squeeze(-1)
 
 
+def batch_candidate_graphs(instances: Sequence[InventionInstance], build_fn) -> Batch:
+    """Flatten menus in instance-major order into one PyG batch."""
+    return Batch.from_data_list([
+        build_fn(candidate.apply(inst.fixed_graph))
+        for inst in instances
+        for candidate in inst.candidates
+    ])
+
+
 def candidate_features(inst: InventionInstance, candidate: Candidate) -> torch.Tensor:
     """Fixed-width recipe features for the no-context control.
 
@@ -107,8 +121,16 @@ def candidate_features(inst: InventionInstance, candidate: Candidate) -> torch.T
     present = float(candidate.defining_expression is not None)
     degree = terms = has_cross = has_square = constant = 0.0
     if candidate.defining_expression is not None:
-        degree, terms, has_cross, has_square, constant = poly_summary(
-            candidate.defining_expression
+        expr = sp.sympify(candidate.defining_expression)
+        symbols = sorted(expr.free_symbols, key=lambda s: s.name)
+        poly = sp.Poly(expr, *symbols)
+        degree = float(poly.total_degree()) / 4.0
+        terms = math.log1p(len(poly.terms()))
+        has_cross = float(any(sum(e > 0 for e in m) >= 2 for m, _ in poly.terms()))
+        has_square = float(any(any(e >= 2 for e in m) for m, _ in poly.terms()))
+        constant = math.copysign(
+            math.log1p(abs(float(poly.eval({s: 0 for s in symbols})))),
+            float(poly.eval({s: 0 for s in symbols})),
         )
     values = [
         (float(candidate.pin_value) / 4.0
