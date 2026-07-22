@@ -57,8 +57,18 @@ def _families(source: str, excluded: set[str]) -> list[str]:
     return [f for f in FAMILIES_BY_SOURCE[source] if f not in excluded]
 
 
+def _mask_operator_features(g):
+    """Ablation: zero the operator-identity features (factor degree/has_cross/
+    has_square; edge diag-quadratic/max-exponent/cross), keeping constants,
+    incidence, and magnitudes — the information level of the v0.2 slot policy."""
+    g["factor"].x[:, [2, 5, 6]] = 0.0
+    g[("variable", "connected_to", "factor")].edge_attr[:, [1, 2, 4]] = 0.0
+    return g
+
+
 def build_split(sources: list[str], n_per_source: int, seed: int, K: int,
-                excluded: set[str] | None = None) -> list[Packed]:
+                excluded: set[str] | None = None,
+                mask_operator: bool = False) -> list[Packed]:
     if len(sources) > 5:
         raise ValueError(
             "the 100000-per-source seed stride aliases into the +500000 "
@@ -77,7 +87,9 @@ def build_split(sources: list[str], n_per_source: int, seed: int, K: int,
             out.append(Packed(
                 source=source,
                 inst=inst,
-                graphs=[build_semantic_heterodata(c.apply(inst.fixed_graph))
+                graphs=[(_mask_operator_features(build_semantic_heterodata(c.apply(inst.fixed_graph)))
+                         if mask_operator else
+                         build_semantic_heterodata(c.apply(inst.fixed_graph)))
                         for c in inst.candidates],
                 features=torch.stack([candidate_features(inst, c) for c in inst.candidates]),
             ))
@@ -316,6 +328,8 @@ def evaluate(full, control, packs: list[Packed], *, batch_size: int,
 def main(argv=None):
     ap = argparse.ArgumentParser(description="candidate-conditioned structural repair")
     ap.add_argument("--train-data", default="aux_required")
+    ap.add_argument("--mask-operator-features", action="store_true",
+                    help="ablation: zero operator-identity graph features")
     ap.add_argument("--eval-data", default=None)
     ap.add_argument("--exclude-family", action="append", default=[])
     ap.add_argument("--n-train", type=int, default=500, help="instances per source")
@@ -356,9 +370,12 @@ def main(argv=None):
         saved = ckpt_payload["model_kwargs"]
         args.D, args.L = int(saved["D"]), int(saved["L"])
     else:
-        train_set = build_split(train_sources, args.n_train, args.seed, args.K, excluded)
-        val_set = build_split(train_sources, args.n_val, args.seed + 500000, args.K, excluded)
-    test_set = build_split(eval_sources, args.n_test, args.seed + 900000, args.K)
+        train_set = build_split(train_sources, args.n_train, args.seed, args.K, excluded,
+                                mask_operator=args.mask_operator_features)
+        val_set = build_split(train_sources, args.n_val, args.seed + 500000, args.K, excluded,
+                              mask_operator=args.mask_operator_features)
+    test_set = build_split(eval_sources, args.n_test, args.seed + 900000, args.K,
+                           mask_operator=args.mask_operator_features)
     full = GraphRepairRanker(D=args.D, L=args.L)
     control = CandidateOnlyRanker(D=args.D)
     if args.eval_only:

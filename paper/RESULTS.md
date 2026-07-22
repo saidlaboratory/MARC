@@ -76,6 +76,10 @@ transfers across *related* non-convex structure but is not a universal solver, a
 training family hurts. `python scripts/run_crossfamily_eval.py`
 
 ## R5 · Dimension scaling — the learned proposal beats random search *only in high dimension* (the real amortization result)
+**History only — cite R15 (methodology unified-v2, `results/p_scaling/scaling.json`) for
+current numbers: learned 0.950/0.950/0.975/0.925/0.250 vs random 1.000/0.725/0.075/0.000/0.000
+at n=1/2/3/4/6. The rows below predate the stats unification (bespoke descent + solution-space
+acceptance) and are NOT comparable; the paper cites unified-v2.**
 Bundled non-convex traps with per-instance-varying (wide, signed ±[3,8]) roots. Including the
 **random multi-start + polish control** (best-of-8, same budget) — the baseline that matters:
 
@@ -280,6 +284,24 @@ enumeration ceiling** with one solver call vs enumeration's 2.62 (N=60); control
 random 0.250.  Linear K=4 solves 0.300 vs 0.217/0.227, oracle and enumeration 1.000
 (N=300), one call vs 2.54.
 
+**Transfer breadth (rotations; `nonlinear_holdout_vieta.json`,
+`random_support_holdout_offset.json`, `random_support_holdout_coupled.json`):** the
+two original transfer cells generalize.  Reverse nonlinear direction
+(quad_link-trained → unseen vieta): 0.393 vs 0.180 random (N=150; forward was 0.420
+vs 0.253) — partial transfer is bidirectional.  Linear held-out-pattern rotations:
+offset 0.407, coupled 0.450, shared 0.380, each vs ~0.23–0.29 random (N=400 per
+cell) — the linear pattern-transfer effect is not specific to one held-out choice.
+
+**Operator-feature ablation (attribution check; `nonlinear_opmask_ablation.json`,
+`linear_opmask_ablation.json`):** masking the operator-identity features (factor
+degree/has_cross/has_square; edge diag-quadratic/max-exponent/cross) and retraining
+leaves the ranker essentially intact — nonlinear 0.981 [0.960,0.991] vs 0.997, linear
+0.379 [0.352,0.407] vs 0.339.  The v0.2→v0.3 gain is therefore attributed to
+**candidate conditioning** (encoding each candidate-augmented graph), with the
+compatibility signal carried by constants/coefficients/incidence jointly with the
+candidate — NOT to the operator flags per se.  The earlier "operator-aware encoding is
+what distinguishes x+y−3 from x·y−3" attribution is corrected in the paper.
+
 **Cheap-probe control (the "why not just probe?" answer; `probe_nonlinear.json`,
 `probe_linear_holdout.json`):** spend a short-budget LM solve on every candidate, pick
 first-accept else lowest residual, grade the pick at full budget.  Nonlinear: the
@@ -365,3 +387,34 @@ classical methods collapse ~p^n while an amortized proposal that memorizes per-v
 holds." The honest boundary: on double_well the small denoiser did not learn the harder two-well
 marginals and collapsed with the classical methods — learning wins only where it can actually
 amortize the marginals. `scripts/run_crossover_families.py` (PROVENANCE R27).
+
+## R29 · Oracle-marginal control — true marginals also tie random under coupling (the R9 mechanism, made causal)
+The law's explanation of the R7 coupled null is that a value proposal can only amortize
+per-variable marginals, which carry no joint information under coupling. As stated that was
+correlational — maybe our denoiser was just a bad marginal learner. R29 removes the learner:
+sample each coordinate independently from the family's **true** per-variable marginal (pooled
+from 200 training-side instances at the same n, seed-disjoint from test, `overlap_instances: 0`
+— the same range the learned arm trained on), then the identical best-of-8 polish + checker with
+the same restart seeds as the random arm (CRN). Since the family draws each coordinate i.i.d.
+from `{-3..3}\{0}`, the pooled marginal is ≈ uniform on the support: this arm is the exact
+product-of-marginals proposal, a ceiling for *any* factorized learner. The recomputed random
+column reproduces R7 digit-for-digit at every n. Best-of-8, 60 test/n.
+`scripts/run_oracle_marginal.py` (`results/p_scaling/oracle_marginal.json`).
+
+| n | random restart | **oracle marginal** | learned (R7) | oracle > random? |
+|---|---|---|---|---|
+| 2 | 0.483 | **0.733** | 0.233 | **yes** (p=0.0025) |
+| 3 | 0.600 | 0.600 | 0.533 | no (exact tie) |
+| 4 | 0.517 | 0.483 | 0.517 | no |
+| 6 | 0.367 | 0.333 | 0.333 | no |
+| 8 | 0.467 | 0.483 | 0.483 | no |
+
+**Honest conclusion:** at n≥3 a *perfect* marginal proposal ties random restart (0/4 significant,
+all gaps within noise) — the R7 null is not a training failure but a ceiling: no better marginal
+learner could have closed it, so the mechanism (nothing to amortize in the marginals under
+coupling) is confirmed causally and architecture-free. The n=2 exception is instructive, not
+damaging: with only two coupled coordinates the 8 support draws still land near joint solutions,
+so marginal information has bite while the joint grid (6^n points) is tiny — and the learned
+model (0.233) sat far *below* its own marginal ceiling there, a separate small-n training miss.
+The boundary reads: marginals help at trivially low n and are measurably insufficient from n=3
+on, exactly where the law needs them to be.

@@ -8,8 +8,8 @@
 \usepackage{natbib}
 \usepackage[hidelinks]{hyperref}
 
-\title{When Do Learned Diffusion Proposals Help Constraint Solving?\\
-A Controlled Study on Continuous Algebraic Systems}
+\title{Learn the Structure, Not the Values:\\
+A Controlled Characterization of Learning in Exact Constraint Solving}
 % author block: team fills in names, order, and affiliations before submission
 \author{...}
 \date{}
@@ -18,33 +18,23 @@ A Controlled Study on Continuous Algebraic Systems}
 \maketitle
 
 \begin{abstract}
-Diffusion models are increasingly used to propose solutions for constraint and optimization
-problems, but evaluations usually omit the control that matters most: random multi-start under
-the same refinement budget. We run that control, and our own headline claim shrinks. MARC
-represents a continuous algebraic constraint system as a factor graph, proposes candidate
-assignments with a graph-neural diffusion denoiser, polishes each by descent on an exact
-computer-algebra energy, and accepts only assignments that pass an exact symbolic checker. We
-first ask whether the learned proposal helps the value decision (which numbers satisfy the
-equations). It does, but only in a narrow and predictable regime: it ties random restart on
-trapped low-dimensional families, wins only in high dimension where random search collapses
-(0.550 versus 0.050 at $n{=}3$), and loses that advantage once variables couple. Because every
-method shares one polish operator and one checker, best-of-$K$ random restart is exactly
-$1-(1-q(n))^K$ in the single-start reachability $q(n)$, and the measured slope of $\log q(n)$
-decides the regime: learning wins precisely when acceptance basins factorize across variables
-and dimension is high. One measured constant reproduces the entire random-restart curve with no
-free parameters (mean absolute error 0.012). Both conditions are necessary and the boundary
-holds outside the synthetic families: a real geometric domain collapses in reachability yet a
-trained proposal ties random there, and across eight standard real systems (robotics,
-positioning, optimization, and algebra) classical multi-start solves all eight, none in the
-learning-favorable regime. The decision classical solvers cannot make is discrete: which
-structural augmentation turns an
-unsolvable system solvable. Moving learning there, an operator-aware repair ranker clears its
-controls decisively ($0.997$ versus $0.236$ on balanced nonlinear menus, $p<10^{-70}$;
-$0.982\pm0.006$ across optimization seeds) and beats a cheap per-candidate solver probe on
-accuracy and cost together. We report every negative with confidence intervals. The
-contribution is a characterization of where learned proposals help continuous constraint
-solving, and a positive result once learning moves to the decision that has no classical
-baseline.
+Learned proposals for constraint solving are usually evaluated against cold-start refinement;
+the control that matters is random multi-start at the same budget. We run that control on our
+own system and our headline claim shrinks. MARC poses continuous algebraic systems as factor
+graphs, proposes values with a graph diffusion model, polishes them on exact computer-algebra
+energies, and accepts only what an exact symbolic checker verifies. Under this protocol,
+learned value proposals help only where acceptance basins factorize across variables and
+dimension defeats random search ($0.975$ versus $0.075$ at $n{=}3$); a parameter-free law in
+the measured single-start reachability reproduces the full restart curve (MAE $0.012$),
+predicts the failure under variable coupling, and holds on eight named real systems, where
+classical multi-start leaves no learning-favorable regime. The decision that has no classical
+baseline is discrete: which structural augmentation repairs an unsolvable system. A
+candidate-conditioned ranker chooses repairs on certificate-grade menus --- ``exactly one
+solvable option'' is a computer-algebra theorem, not a budget-relative claim --- at $0.997$
+versus $0.236$ random ($p<10^{-70}$, seed-robust), beating budget-matched per-candidate probes
+on accuracy and cost together. Every negative result is reported with confidence intervals;
+they are the boundary of the claim. Learning earns its keep on the structural decision;
+everything else belongs to the solvers.
 \end{abstract}
 
 \section{Introduction}
@@ -111,48 +101,67 @@ are reported in full because they are the boundary of the claim.
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Graph-based diffusion for combinatorial optimization.}
-DIFUSCO \citep{sun2023difusco} applies graph denoising diffusion to discrete $\{0,1\}$
-assignments for NP-complete problems such as TSP and MIS, and remains the reference neural CO
-solver. Follow-up work extends the idea to unsupervised training \citep{sanokowski2024diffuco},
-constraint-aware trajectory optimization \citep{li2024constraintaware}, and constraint-matrix
-diffusion for vehicle routing \citep{anon2026vrpdiffusion}. MARC differs in problem class and
-in supervision: we solve continuous algebraic systems (real-valued assignments satisfying
-symbolic residuals), and a symbolic CAS provides exact residuals, exact energy gradients, and
-an exact accept checker. None of the CO-diffusion line integrates a symbolic verifier, and
-none studies entrapment as a falsifiable hypothesis. We do not compete on their benchmarks and
-make no claim to.
+\paragraph{Multistart global optimization.}
+The classical parts of our factorization law are classical. Best-of-$K$ multistart succeeds
+with probability $1-(1-q)^K$ in the single-start reachability $q$, and basin structure governs
+the cost of stochastic global search \citep{rinnooykan1987clustering,
+rinnooykan1987multilevel}; that annealed noise escapes minima where descent stalls is likewise
+textbook \citep{welling2011sgld, bras2021langevin, regularized2025langevin}, and our
+entrapment experiment (Section~\ref{sec:entrapment}) is confirmation on this substrate, not
+novelty. What we add is the diagnostic, not the $v^n$ basin count: the measured $\log q(n)$
+slope, one constant that reproduces the best-of-8 restart curve parameter-free (MAE 0.012),
+and the two-condition dissection --- collapse \emph{and} separability --- deciding when a
+learned proposal can beat the multistart bound at all.
 
-\paragraph{Diffusion plus iterative refinement.}
-The closest hybrid to ours is diffusion-based learning for constrained non-convex optimization
-with bootstrapped refinement \citep{bootstrapped2025refinement}, which also lets a diffusion
-model propose and a refinement stage correct. Two things distinguish our study. Our polish is
-the same CAS energy descent that defines the problem and the checker, so the proposal and the
-verifier share one exact objective. And our ablation isolates the denoiser's marginal
-contribution over cold-start refinement with confidence intervals, including the random
-multi-start control that, in our experiments, removes the apparent advantage of the learned
-proposal on small-solution families.
+\paragraph{Learned initialization and amortized optimization.}
+A model that maps a problem instance to a solver starting point is a learned warm start:
+\citet{amos2023amortized} surveys amortized optimization, learned starts accelerate AC
+optimal power flow \citep{baker2019warmstart}, reinforcement learning tunes QP solvers
+\citep{ichnowski2021rlqp}, and amortized Langevin inference \citep{taniguchi2022langevin} and
+diffusion proposals with bootstrapped refinement \citep{bootstrapped2025refinement} are the
+nearest neural instances, replacing search whose cost grows like $v^{-n}$ with dimension.
+This is the literature our value-proposal negative indicts. Its standard evaluation compares
+a learned start against a cold start; under random multistart at the same refinement budget
+--- a control this line does not run on itself --- our own proposal's advantage survives only
+where solutions factorize per variable and dimension defeats random search.
 
-\paragraph{Langevin dynamics, escape from local minima, and amortized inference.}
-That injected annealed noise escapes minima where deterministic descent stalls is classical;
-stochastic-gradient Langevin methods \citep{welling2011sgld} and the convergence theory of
-Langevin simulated annealing \citep{bras2021langevin} supply the grounding, and regularized
-Langevin dynamics has been applied to combinatorial optimization directly
-\citep{regularized2025langevin}. Our entrapment experiment (Section~\ref{sec:entrapment})
-confirms this on algebraic constraint systems and we present it as confirmation, not novelty.
-The dimension-scaling result is an instance of amortized inference in the sense of amortized
-Langevin dynamics \citep{taniguchi2022langevin}: a learned per-instance proposal replaces
-search whose cost grows like $p^n$ with dimension. Our coupled-family experiment bounds that
-argument; the amortization holds only while the solution factorizes per variable.
+\paragraph{Learning for combinatorial optimization.}
+Two branches of neural CO border this work: graph diffusion solvers for NP-complete problems
+--- DIFUSCO \citep{sun2023difusco} and its unsupervised \citep{sanokowski2024diffuco},
+trajectory \citep{li2024constraintaware}, and vehicle-routing \citep{anon2026vrpdiffusion}
+successors --- and learning-to-branch, from strong-branching surrogates \citep{khalil2016branch}
+to bipartite-GNN branching \citep{gasse2019exact}, surveyed by \citet{bengio2021mlco}. MARC
+differs in problem class and in where the verifier sits: continuous algebraic systems, an
+exact CAS supplying residuals, gradients, and the sole acceptance checker, and a learned
+discrete decision that is a pre-solve repair of the constraint graph, not branching inside a
+search tree. We do not compete on their benchmarks; neither branch reports the
+budget-matched multistart control this study is built around.
 
-\paragraph{Learned structure proposals.}
-AlphaGeometry \citep{trinh2024alphageometry} pairs a neural proposer of auxiliary
-constructions with a symbolic deduction engine, and is the strongest precedent for the
-division of labor MARC adopts. Discrete diffusion over structured state spaces
-\citep{austin2021d3pm, vignac2023digress} supplies the formalism for the structure-proposal
-direction we discuss in Section~\ref{sec:scope}. Our present results concern value proposals;
-the structure policy is built but its numbers are pending a clean protocol and are not cited
-here.
+\paragraph{Per-instance algorithm selection.}
+The repair ranker of Section~\ref{sec:repair} is, at bottom, per-instance selection: given an
+instance and $K$ discrete options, pick the one under which a downstream solver succeeds. The
+problem statement is fifty years old \citep{rice1976algorithm}, SATzilla made per-instance
+portfolio selection standard practice \citep{xu2008satzilla}, and \citet{kerschke2019survey}
+survey the field; AlphaGeometry \citep{trinh2024alphageometry} is the precedent for learning
+the structural decision itself, and discrete diffusion \citep{austin2021d3pm,
+vignac2023digress} supplied the formalism for our withdrawn predecessor policy. Three things
+in Section~\ref{sec:repair} are not in this line: certificate-grade menu semantics (``exactly
+one solvable option'' is a CAS theorem, not a budget-relative claim), candidate conditioning
+(the ranker encodes each candidate-augmented graph, not instance features alone), and
+controls that price the classical recourse --- budget-matched restarts and a per-candidate
+solver probe --- rather than a single default algorithm.
+
+\paragraph{Distance geometry.}
+The geometric family of Section~\ref{sec:law} --- chains of points pinned by squared-distance
+constraints --- is a distance geometry problem with known discrete structure: each new point
+lies on an intersection of circles, the per-point reflection ambiguity is the discrete branch
+that branch-and-prune enumerates, and the solution set carries a group of partial reflections
+\citep{lavor2012dmdgp, liberti2014distance}. We claim none of that structure; the ambiguities
+our reachability measurement counts are exactly those branches. What we add is measurement
+under shared machinery: the reachability slope under one fixed polish ($-0.77$), the finding
+that a trained proposal ties restart-matched random search there anyway, and --- where
+learning enters the branches through structural repair --- selection learned from measured
+labels under restart-matched controls; the branch vocabulary is this literature's.
 
 \section{Method}
 \label{sec:method}
@@ -186,7 +195,9 @@ $\hat{\varepsilon}$. Sampling runs DDIM reverse steps with energy-gradient guida
 \begin{equation}
 \hat{s} \;=\; s_\theta(x_t, t, G) \;-\; \lambda_t \nabla E(x_t),
 \end{equation}
-so the exact CAS gradient steers the reverse process toward feasibility.
+where $s_\theta$ is the score implied by the predicted noise ($s_\theta \propto
+-\hat{\varepsilon}$ under the standard Gaussian identity); the exact CAS gradient steers the
+reverse process toward feasibility.
 
 One architectural detail proved necessary. Message passing applies LayerNorm each round, which
 washes out the magnitude of constraint constants, so a variable whose value is pinned by its
@@ -209,8 +220,10 @@ with $\sigma_k \equiv 0$; it stalls at points where $\nabla E = 0$ but $E > 0$. 
 Langevin descent sets $\sigma_k$ on a decreasing schedule and is the classical stochastic
 solver. The mean-prior control starts polish from the training-distribution mean and tests
 whether the learned model does more than reproduce an average solution. The decisive control
-is random multi-start: $K$ initializations drawn uniformly from $[-5,5]^n$, polished
-identically, same budget, no learning. Throughout the paper \emph{refine}, \emph{random}, and
+is random multi-start: $K$ initializations drawn uniformly from a family-matched box covering
+the root range ($[-5,5]^n$ on the Section~\ref{sec:hybrid} families, $[-8,8]^n$ on the
+dimension-scaling traps, $[-4,4]^n$ on the coupled chains), polished identically, same budget,
+no learning. Throughout the paper \emph{refine}, \emph{random}, and
 their variants are labeled classical baselines; the learned hybrid is the system.
 
 MARC as a whole is an orchestrator built from these parts: learned components propose,
@@ -224,7 +237,8 @@ decisions the learned component actually improves.
 
 All problem families are procedurally generated with held-out test instances. Unless stated
 otherwise, solve rates are best-of-8 over $N = 60$ held-out instances per family, intervals
-are 95\% Wilson intervals, and comparisons are two-proportion $z$-tests. Before any
+are 95\% Wilson intervals, and comparisons are one-sided two-proportion $z$-tests of
+learned $>$ baseline, so identical proportions read as $p = 0.50$. Before any
 comparison we verified that the learned solver converges at all: after five implementation
 faults were found and fixed (the denoiser never received $x_t$; constants were absent from the
 graph tensors; $t$ did not condition variable nodes; guidance magnitudes exploded; a
@@ -340,34 +354,38 @@ wide signed range ($\pm[3,8]$), so neither a fixed prior nor a lucky draw suffic
 Table~\ref{tab:scaling} shows solve rates by dimension with the full battery, including the
 random multi-start control at the same best-of-8 budget.
 
-% provenance: RESULTS.md R5
+% provenance: RESULTS.md R15 (methodology unified-v2, results/p_scaling/scaling.json)
 \begin{table}[t]
 \centering
 \caption{Dimension scaling on bundled traps with per-instance-varying roots in $\pm[3,8]$
-(best-of-8). Bold marks the best method per row.}
+(best-of-8, unified-v2 protocol: one shared polish and one checker for every arm, $N{=}40$
+per cell). Bold marks the best method per row.}
 \label{tab:scaling}
 \begin{tabular}{cccccc}
 \toprule
 $n$ & deterministic & Langevin & mean-prior & random restart & learned \\
 \midrule
-1 & 0.000 & 0.225 & 0.000 & \textbf{0.875} & 0.675 \\
-2 & 0.000 & 0.025 & 0.000 & \textbf{0.700} & 0.425 \\
-3 & 0.000 & 0.000 & 0.000 & 0.050 & \textbf{0.550} \\
-4 & 0.000 & 0.000 & 0.000 & 0.000 & \textbf{0.650} \\
-6 & 0.000 & 0.000 & 0.000 & 0.025 & \textbf{0.100} \\
+1 & 0.000 & 0.775 & 0.000 & \textbf{1.000} & 0.950 \\
+2 & 0.000 & 0.225 & 0.000 & 0.725 & \textbf{0.950} \\
+3 & 0.000 & 0.000 & 0.000 & 0.075 & \textbf{0.975} \\
+4 & 0.000 & 0.000 & 0.000 & 0.000 & \textbf{0.925} \\
+6 & 0.000 & 0.000 & 0.000 & 0.000 & \textbf{0.250} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-There is a clean crossover at $n = 3$. At $n \le 2$ random restart wins (0.875 against 0.675
-at $n = 1$): the solution space is small enough to brute-force and learning buys nothing. From
-$n = 3$ random restart collapses (0.050, then 0.000), because a random initialization must
-land in all $n$ basins simultaneously and the cost of that event grows like $p^n$. The learned
-proposal holds where random fails: 0.550 at $n = 3$ and 0.650 at $n = 4$. Langevin and the
+There is a clean crossover by $n = 3$. At $n = 1$ random restart wins (1.000 against 0.950):
+the solution space is small enough to brute-force and learning buys nothing. From
+$n = 3$ random restart collapses (0.075, then 0.000), because a random initialization must
+land in all $n$ basins simultaneously: the probability of that event decays like $v^n$ in the
+per-variable reachability $v$, so the restart cost grows like $v^{-n}$
+(Section~\ref{sec:law}). The learned
+proposal holds essentially flat where random fails: 0.975 at $n = 3$ and 0.925 at $n = 4$ ---
+the flat learned ceiling the law of Section~\ref{sec:law} takes as its input. Langevin and the
 mean-prior are at or near zero from $n = 3$. This is the amortized-inference result: a
 per-instance learned proposal replaces a search whose cost is exponential in dimension. Two
-caveats bound it. The learned model degrades at $n = 6$ (0.100), and it loses to random
-restart at $n \le 2$. The claim is that the amortized proposal beats random search in high
+caveats bound it. The learned model degrades at $n = 6$ (0.250), and random restart is at
+ceiling at $n = 1$. The claim is that the amortized proposal beats random search in high
 dimension, and only there.
 
 Two natural objections are that this is one designed family and that random multi-start is a
@@ -376,7 +394,7 @@ separable families (varying the spurious-well shape and the root range) with an 
 Levenberg--Marquardt arm (analytic Jacobian, eight Gaussian multistarts).
 % provenance: RESULTS.md R27 + PROVENANCE R27 (crossover_families.json)
 Levenberg--Marquardt is not a way out: multi-start LM must also hit all $n$ independent basins,
-so it collapses along the same $p^n$ curve (baseline LM $0.825, 0.575, 0.200, 0.100, 0.000$ at
+so it collapses along the same geometric $v^n$ curve (baseline LM $0.825, 0.575, 0.200, 0.100, 0.000$ at
 $n = 1, 2, 3, 4, 6$). On two of the three families the learned proposal significantly beats
 \emph{both} random restart and LM at high dimension (on the baseline family, learned $1.000$
 against $0.000$ for both at $n = 6$; on the wide-root family, $0.225$ against $0.000$ for both at
@@ -459,7 +477,9 @@ predicted from $v$ and the learned ceiling.}
 \end{figure}
 
 The separable family behaves exactly as the law requires. $\log q(n)$ is linear with slope
-$-1.03$ ($R^2 = 0.98$), giving $v = 0.27$, and substituting that single measured constant into
+$-1.03$ ($R^2 = 0.98$; the slope alone would imply $v = e^{-1.03} = 0.36$, so the decay is
+close to but not perfectly exponential). The parameter-free prediction uses the directly
+measured $v = q(1) = 0.27$: substituting that single constant into
 Eq.~\eqref{eq:bestofk} reproduces the entire best-of-8 random-restart curve with no free
 parameters: predicted 0.919, 0.454, 0.147, 0.042, 0.003 against the measured 0.902, 0.467,
 0.162, 0.030, 0.002 at $n = 1, 2, 3, 4, 6$, a mean absolute error of 0.012
@@ -472,7 +492,11 @@ to 600 over the separable dimensions while staying between 2.0 and 4.3 on the co
 Any fixed restart budget is therefore exhausted on the separable family, and random search
 must eventually lose to a proposal whose ceiling stays comparatively flat. On the coupled
 family random search never collapses, a finite crossover dimension does not exist, and a
-learned proposal has nothing to amortize. We do not claim a sharp crossover at a particular
+learned proposal has nothing to amortize. An oracle control closes the mechanism: sampling
+each variable from its \emph{true} per-variable marginal (pooled from disjoint instances) and
+polishing identically also ties random restart at every $n \ge 3$ on the coupled family (0/4
+significant wins), so the coupled null is a representational ceiling of any marginal
+proposal --- no better-trained denoiser could cross it. We do not claim a sharp crossover at a particular
 $n$; the robust, predicted quantity is the geometric collapse of the restart cost against the
 learned ceiling, and the coupled negative that follows is the law's other prediction.
 
@@ -483,17 +507,21 @@ real-valued geometric domain makes this concrete: chains of unknown points $P_1,
 ($n = 2k$ coordinates) with squared-distance constraints to fixed anchors and between
 consecutive points, a genuinely non-convex quartic energy whose solutions the checker accepts
 exactly. The family is syntactically coupled, yet its reachability collapses: slope $-0.77$
-($R^2 = 0.999$), with $q(n) = 0.653$, 0.147, 0.027, 0.007 at $n = 2, 4, 6, 8$
+($R^2 = 0.999$), with $q(n) = 0.653$, 0.147, 0.027, 0.007 at $n = 2, 4, 6, 8$ (150
+single-start trials per $n$; its polish is an order of magnitude slower than the synthetic
+families' 600)
 % provenance: RESULTS.md R9 (geometry) + crossover_law.md §5a
 (Figure~\ref{fig:law}, left). Each point's two-circle subproblem has a reflection ambiguity
 and spurious basins, so a random start rarely places every point in the right basin, and solve
-rates with the classical polish alone are non-saturated (0.56 in-distribution, 0.28 held out).
+rates with the classical polish alone are non-saturated (0.56 in-distribution, Wilson
+[0.37, 0.73], and 0.28 held out; $N = 25$ per split).
 Reachability collapse alone would suggest, by analogy with the separable family, that an
 amortized proposal should win here. We tested that prediction by training a denoiser on the
 point-chain family with the identical R5 protocol (per-length inline $x_0$ training, one-shot
 proposal, the same geometry polish, best-of-8, Checker gate). It does not hold: the learned
 proposal ties random restart at every chain length and collapses with it (both 0.625, 0.175,
-0.025, 0.000 at $n = 2, 4, 6, 8$; zero of four significant wins, $p = 0.50$ each)
+0.025, 0.000 at $n = 2, 4, 6, 8$, $N = 40$ per length; zero of four significant wins,
+$p = 0.50$ each)
 % provenance: RESULTS.md R9 (geometry) + PROVENANCE R25 (pointchain_learned.json)
 . The negative is the informative result, because it separates two conditions the independent
 family had conflated. Reachability collapse (condition one, read off the slope) determines
@@ -558,9 +586,14 @@ and constants, and scores the augmented graphs listwise; the highest-scoring rep
 one classical solve and the exact checker remains the acceptance gate. A matched candidate-only
 control sees the same augmentation recipe but no problem graph, and \texttt{random} chooses
 uniformly among the same $K$ candidates. The predecessor policy classified menu slots over a
-single fixed graph encoding, could not see nonlinear operator identity, and fell to chance on an
-unseen pattern; the operator-aware encoding is what distinguishes $x + y - 3$ from
-$x \cdot y - 3$.
+single fixed graph encoding and fell to chance on an unseen pattern; the architectural change
+that matters is \emph{candidate conditioning} --- encoding each candidate-augmented graph rather
+than the fixed graph once. An ablation locates the signal: masking the operator-identity
+features (degree, cross/square participation at factor and edge level) and retraining leaves
+the ranker essentially intact ($0.981$ vs.\ $0.997$ nonlinear, $0.379$ vs.\ $0.339$ linear),
+so the compatibility signal these menus carry lives chiefly in constants, coefficient
+magnitudes, and incidence read \emph{jointly with the candidate}, not in the operator flags
+per se; we retain the full featurization but do not attribute the gain to it.
 
 % provenance: RESULTS.md R10 + PROVENANCE R20--R24; results/p_repair (Data Version 8)
 \begin{table}[t]
@@ -586,16 +619,28 @@ Table~\ref{tab:repair} reports the three tests that probe generalization. The pr
 (Data Version 8) is deliberately strict: one reference solver certifies the data, grades every
 arm, and runs the end-to-end solves; nonlinear ``exactly one solvable option'' is an exact CAS
 theorem (a distractor proven to have no real solution is unsolvable at any budget); gold and
-distractor parameters share one support and one prior, so nothing about a candidate's surface
-form reveals the label. On balanced nonlinear menus the ranker reaches $0.997$ against $0.236$
-for random, with an exact paired McNemar test giving $p = 1.1\times10^{-72}$ (239 full-only
-correct versus 0 control-only). Transfer to an unseen nonlinear relation is positive but partial
-($0.420$ against $0.253$), not relation-level invariance. On an unseen linear pattern the ranker
-reaches $0.380$ against $0.287$ ($p = 7.8\times10^{-7}$ over all $1{,}200$ linear test
-instances). The linear signal is deliberately reported at its post-audit size: closing each
+distractor parameters share one support and one prior, so whatever surface-form signal survives
+is capped at the candidate-only ceiling and anything above that ceiling must come from reading
+the problem graph. On the balanced nonlinear test that ceiling is $0.333$ (Wilson 95\% CI
+[0.29, 0.38], $N{=}360$) --- above the $0.25$ chance floor, far below the ranker. On balanced
+nonlinear menus the ranker reaches $0.997$ against $0.236$ for random, with an exact paired
+McNemar test giving $p = 3.3\times10^{-83}$ (274 ranker-only correct versus 0 random-only);
+against the candidate-only control the same test gives $p = 1.1\times10^{-72}$ (239 versus 0).
+Transfer to an unseen nonlinear relation is positive but partial and holds in both
+directions ($0.420$ against $0.253$ for vieta-trained on quad\_link, $0.393$ against $0.180$
+for the reverse; $N{=}150$ each), not relation-level invariance. On an unseen linear pattern
+the ranker reaches $0.380$ against $0.287$ ($N{=}400$), and rotating the held-out pattern
+gives $0.407$ (offset) and $0.450$ (coupled) against $\sim$$0.23$ random, so the effect is not
+specific to one holdout choice; over all $1{,}200$ linear test instances it reads
+$0.339$ against $0.249$ for random ($p = 7.8\times10^{-7}$, exact paired McNemar). The linear signal is deliberately reported at its post-audit size: closing each
 discovered shortcut lowered it ($0.565 \to 0.445 \to 0.380$ across data versions) while pushing
 the candidate-only control to chance, so what remains is entirely problem-graph reading — modest
-where every operator is linear, decisive where operator identity matters.
+where every operator is linear, decisive on certificate-grade nonlinear menus. Both headline rows
+were retrained across three optimization seeds (11, 29, 47) with independent per-seed
+evaluation draws: the nonlinear result is optimization-robust ($0.982 \pm 0.006$). The linear
+edge is not seed-stable ($0.317 \pm 0.069$, one seed at $0.227$ below the random arm's
+$0.248 \pm 0.002$), consistent with reading the linear rows as mechanism evidence rather than
+a deployable margin.
 
 % provenance: paper/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
 \begin{figure}[t]
@@ -613,17 +658,19 @@ The learned component is also cheap where value diffusion was not: one forward p
 candidate rather than a reverse-diffusion rollout. End to end, applying the selected repair and
 invoking the reference solver, the nonlinear ranker's single call solves $0.933$ --- exactly the
 oracle and enumeration ceiling --- where blind enumeration averages $2.62$ calls ($N{=}60$);
-linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling. A cheap-probe
-control bounds the claim from the other side: spending a short-budget solver call on every
-candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls per instance, where the
-ranker's single call solves $0.939$ --- learning beats probing on accuracy and cost at once,
+linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling ($N{=}300$). A
+cheap-probe control bounds the claim from the other side: spending a short-budget solver call
+on every candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls per instance,
+where the ranker's single call solves $0.939$ ($N{=}360$; the same checkpoint replayed on the
+full probe-suite test split, hence the small offset from the $N{=}60$ end-to-end $0.933$) ---
+learning beats probing on accuracy and cost at once,
 because provably rootless distractors cannot be ``solved'' at any budget while short probes do
 miss the gold. On linear menus the same probe saturates ($0.99$ at $4.4$ calls) and enumeration
 is already perfect at $2.5$, so the linear rows are evidence of mechanism, not a deployment
 case. The $K = 4$
 checkpoint transfers to larger linear menus without retraining, but the accuracy advantage
 shrinks with $K$ and is gone by $K = 16$ ($0.300/0.187/0.113$ against random
-$0.227/0.120/0.107$); what survives at large $K$ is only the cost gap, as the enumeration it
+$0.227/0.120/0.107$ at $K = 4/8/16$, $N = 300/150/150$); what survives at large $K$ is only the cost gap, as the enumeration it
 displaces grows to $9.05$ solver calls per instance (Figure~\ref{fig:repair}, right). Directly
 training at $K = 16$ performs at chance, so the transferred checkpoint is selected and both
 negatives are kept in the record. The scope is menu-based repair on synthetic factor graphs;
@@ -680,9 +727,9 @@ advantage requires per-variable-separable solutions and a regime where random re
 collapses, and on coupled systems it ties or loses to random multi-start at every dimension
 tested. We believe the cause is structural rather than a matter of tuning; the denoiser
 effectively learns per-variable marginals, so any joint solution space removes the advantage.
-Even on the favorable independent families the model loses to random restart at $n \le 2$ and
-degrades to 0.100 at $n = 6$, so the useful window is the crossover region, not high dimension
-in general.
+Even on the favorable independent families the model gains nothing at $n = 1$ (random restart
+is at ceiling) and degrades to 0.250 at $n = 6$, so the useful window is the crossover region,
+not high dimension in general.
 
 The factorization law carries its own caveats. Eq.~\eqref{eq:bestofk} uses the
 instance-averaged $q$; per-instance reachability varies, so best-of-$K$ computed from the
@@ -703,12 +750,17 @@ transfer. Transfer succeeds on only two of four held-out families, and adding Ci
 training mix collapsed an otherwise recoverable transfer (0.70 to 0.00), so a bad training
 family actively hurts. The entrapment result, while pre-registered and precise, is
 confirmatory: annealed Langevin escaping deterministic traps is textbook behavior, and we
-claim measurement on this substrate, not novelty. The structure-selection policy has not
-separated from random selection in the runs completed so far, and its quantitative evaluation
-is withdrawn pending the clean seed protocol. Finally, every solve-rate comparison in this
-paper is on synthetic families; the geometry domain of Section~\ref{sec:law} enters only at
-the reachability level so far, and the MATH coverage measurement (0/48) quantifies how far the
-current formalizer is from real problem text.
+claim measurement on this substrate, not novelty. The predecessor structure policy (a
+discrete-diffusion slot classifier) never separated from random selection and its numbers
+remain withdrawn; the candidate-conditioned ranker of Section~\ref{sec:repair} replaces it
+under the Data Version 8 protocol. Within that result, the linear edge is not stable across
+optimization seeds ($0.317 \pm 0.069$, one seed below the random arm), so only the nonlinear
+headline ($0.982 \pm 0.006$) is optimization-robust and the linear rows stand as mechanism
+evidence only. Finally, the synthetic-family boundary has two measured exceptions: the
+geometry domain of Section~\ref{sec:law} enters at both the reachability and the solve-rate
+level (its learned arm ties random restart and collapses with it), and the real-systems suite
+of Section~\ref{sec:real} is solve-rate but classical-arms only; the MATH coverage measurement
+(0/48) quantifies how far the current formalizer is from real problem text.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -725,8 +777,10 @@ random-restart curve it predicts without a fitted parameter. These boundaries cl
 from learned value proposals to a general claim over classical search on this problem class. What survives is the
 substrate (exact symbolic residuals, energy guidance, and an exact checker wrapped around any
 proposer) and the division of labor it supports. The decision classical solvers cannot make is
-not which values to try but which structure to add, and that is where our current work,
-including the structure policy whose evaluation is pending a clean protocol, is directed.
+not which values to try but which structure to add, and that is exactly where the learned
+component earns its place: the certificate-grade repair ranker of Section~\ref{sec:repair}
+clears every control it faces, on menus where "exactly one solvable option" is a theorem
+rather than a budget-relative claim.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

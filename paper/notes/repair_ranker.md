@@ -74,7 +74,9 @@ is in: on nonlinear the ranker's one call (solve 0.939, 3.1 ms) beats the strong
 cannot be probed into solving, while short probes do miss the gold.  On linear the
 probe saturates (0.99 at ~4.4 calls) and enumeration is already perfect at 2.5, so
 the linear rows are a mechanism demonstration, not a deployment case, and we say so.
-Multiseed robustness is still being regenerated under v8 (#103).  Autoformalization
+Multiseed repeats landed under v8 (#103, seeds 11/29/47, per-seed eval draws):
+nonlinear full 0.982 ± 0.006 is seed-robust, linear full 0.317 ± 0.069 is not (one
+seed below random 0.248 ± 0.002) — see RESULTS.md R22.  Autoformalization
 and open-ended multi-aux generation remain future work.
 
 The AAAI story is therefore not "a universal solver."  It is a controlled result

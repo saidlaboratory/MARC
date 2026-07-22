@@ -1,0 +1,201 @@
+{
+  "status": "ok",
+  "method": "oracle-marginal proposal control on the coupled chained-bilinear family (each coordinate drawn independently from the true per-variable marginal, pooled from training-side instances; identical best-of-K polish + checker and restart seeds as the random arm)",
+  "config": {
+    "quick": false,
+    "K": 8,
+    "test": 60,
+    "pool": 200,
+    "ns": [
+      2,
+      3,
+      4,
+      6,
+      8
+    ],
+    "pool_seed0": 0,
+    "test_seed0": 500000,
+    "learned_source": "results/p_coupled/coupled.json"
+  },
+  "seed_hygiene": {
+    "pool_seeds": [
+      0,
+      200
+    ],
+    "test_seeds": [
+      500000,
+      500060
+    ],
+    "overlap_instances": 0,
+    "note": "pool = first slice of the learned arm's own training range, so the oracle sees the same data the learned model trained on; restart seeds 9000*s+nv shared with random_count (CRN)"
+  },
+  "rows": [
+    {
+      "n": 2,
+      "random": {
+        "k": 29,
+        "n": 60,
+        "rate": 0.48333333333333334,
+        "ci95": [
+          0.3617484128577001,
+          0.6069240514915643
+        ]
+      },
+      "oracle_marginal": {
+        "k": 44,
+        "n": 60,
+        "rate": 0.7333333333333333,
+        "ci95": [
+          0.6099104639810865,
+          0.8286750351292115
+        ]
+      },
+      "learned_r7": {
+        "k": 14,
+        "n": 60,
+        "rate": 0.23333333333333334,
+        "ci95": [
+          0.1443943161843107,
+          0.3543651134039202
+        ]
+      },
+      "p_oracle_gt_random": 0.002513880762521002,
+      "p_oracle_gt_learned": 2.1233740790856796e-08,
+      "random_reproduces_r7": true
+    },
+    {
+      "n": 3,
+      "random": {
+        "k": 36,
+        "n": 60,
+        "rate": 0.6,
+        "ci95": [
+          0.47365824394206846,
+          0.714306969962345
+        ]
+      },
+      "oracle_marginal": {
+        "k": 36,
+        "n": 60,
+        "rate": 0.6,
+        "ci95": [
+          0.47365824394206846,
+          0.714306969962345
+        ]
+      },
+      "learned_r7": {
+        "k": 32,
+        "n": 60,
+        "rate": 0.5333333333333333,
+        "ci95": [
+          0.40893208671135106,
+          0.65372298459012
+        ]
+      },
+      "p_oracle_gt_random": 0.5,
+      "p_oracle_gt_learned": 0.23059884174578923,
+      "random_reproduces_r7": true
+    },
+    {
+      "n": 4,
+      "random": {
+        "k": 31,
+        "n": 60,
+        "rate": 0.5166666666666667,
+        "ci95": [
+          0.39307594850843575,
+          0.6382515871422999
+        ]
+      },
+      "oracle_marginal": {
+        "k": 29,
+        "n": 60,
+        "rate": 0.48333333333333334,
+        "ci95": [
+          0.3617484128577001,
+          0.6069240514915643
+        ]
+      },
+      "learned_r7": {
+        "k": 31,
+        "n": 60,
+        "rate": 0.5166666666666667,
+        "ci95": [
+          0.39307594850843575,
+          0.6382515871422999
+        ]
+      },
+      "p_oracle_gt_random": 0.6424996726559555,
+      "p_oracle_gt_learned": 0.6424996726559555,
+      "random_reproduces_r7": true
+    },
+    {
+      "n": 6,
+      "random": {
+        "k": 22,
+        "n": 60,
+        "rate": 0.36666666666666664,
+        "ci95": [
+          0.2562073884620827,
+          0.4931723263320327
+        ]
+      },
+      "oracle_marginal": {
+        "k": 20,
+        "n": 60,
+        "rate": 0.3333333333333333,
+        "ci95": [
+          0.2272909421592783,
+          0.459433701333366
+        ]
+      },
+      "learned_r7": {
+        "k": 20,
+        "n": 60,
+        "rate": 0.3333333333333333,
+        "ci95": [
+          0.2272909421592783,
+          0.459433701333366
+        ]
+      },
+      "p_oracle_gt_random": 0.6490583691273086,
+      "p_oracle_gt_learned": 0.5,
+      "random_reproduces_r7": true
+    },
+    {
+      "n": 8,
+      "random": {
+        "k": 28,
+        "n": 60,
+        "rate": 0.4666666666666667,
+        "ci95": [
+          0.34627701540988,
+          0.5910679132886489
+        ]
+      },
+      "oracle_marginal": {
+        "k": 29,
+        "n": 60,
+        "rate": 0.48333333333333334,
+        "ci95": [
+          0.3617484128577001,
+          0.6069240514915643
+        ]
+      },
+      "learned_r7": {
+        "k": 29,
+        "n": 60,
+        "rate": 0.48333333333333334,
+        "ci95": [
+          0.3617484128577001,
+          0.6069240514915643
+        ]
+      },
+      "p_oracle_gt_random": 0.42747636307648057,
+      "p_oracle_gt_learned": 0.5,
+      "random_reproduces_r7": true
+    }
+  ],
+  "verdict": "oracle marginals tie random \u2014 marginals are causally insufficient under coupling; the mechanism holds architecture-free",
+  "wall_s": 44.18998098373413
+}

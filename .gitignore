@@ -15,7 +15,7 @@ results/*
 !results/p3_h2/h2_report.md
 !results/p2_main/cot_baseline.json
 !results/p_crossover/crossover_theory.json
-# v0.3 structural-repair evidence (selected Data Version 6 files only)
+# v0.3 structural-repair evidence (selected Data Version 8 files only)
 !results/p_repair/
 results/p_repair/*
 !results/p_repair/README.md
@@ -30,6 +30,7 @@ results/p_repair/*
 !results/p_repair/nonlinear_holdout_quad.json
 !results/p_repair/linear_K8_e2e.json
 !results/p_repair/linear_K16_e2e.json
+!results/p_repair/linear_K16_trained.json
 checkpoints/
 
 # Virtual environments & IDE

@@ -43,9 +43,11 @@ rose (0.889 → 0.997) because v8 menus finally carry theorem-grade “exactly o
 solvable option” semantics, which is exactly the discrimination the operator-aware
 encoder was built for.
 
-Optimization-seed repeats are pending regeneration under v8 (issue #103; the earlier
-multiseed files also reused a single random-arm draw across seeds — their
-`population_sd: 0.0` rows are an artifact, not a tight baseline).
+Optimization-seed repeats (v8, train seeds 11/29/47; issue #103 fixed the earlier
+artifact where one random-arm draw was reused across seeds): nonlinear full
+0.982 ± 0.006 (0.975/0.983/0.989), linear full 0.317 ± 0.069 (0.333/0.392/0.227,
+one seed below random 0.248 ± 0.002) — the nonlinear headline is seed-robust, the
+linear edge is not (`nonlinear_multiseed.json`, `linear_multiseed.json`).
 
 ## End-to-end and amortization
 

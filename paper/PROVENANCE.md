@@ -41,6 +41,16 @@ Commits are the short SHA at time of run. Re-record if a number is regenerated.
 | R26 | **External validity: named real systems** (synthetic-only critique) | classical **LM solves 8/8**; gradient-polish random restart 4/8; Langevin 1/8; deterministic 0/8. Systems where random fails (Rosenbrock/Himmelblau/trilateration/3R-IK) are polish-limited (LM fixes them), not a basin collapse — no learning-favorable regime (low-dim + coupled) | `PYTHONPATH=. python3 scripts/run_real_systems.py --K 8 --trials 200` | numeric acceptance max\|r\|<1e-6; 8 named systems (robotics/positioning/optimization/geometry/algebra) | sparsh/real-systems |
 | R27 | **Crossover replicates + beats LM** (strengthens R5) | learned beats BOTH random and LM at high-n on **2/3** separable families (baseline: learned 1.000 vs random 0.000 / LM 0.000 at n=6; wide_roots: 0.225 vs 0/0 at n=4). LM also collapses ~p^n (baseline LM 0.825/0.575/0.200/0.100/0.000). double_well: learned failed to amortize (honest limit) | `PYTHONPATH=.:scripts python3 scripts/run_crossover_families.py --K 8 --test 40 --epochs 200 --ntrain 200` | per-n inline x0 train; test seed0 90000+n; `results/p_scaling/crossover_families.json` | sparsh/crossover-families |
 
+## Checkpoint regeneration
+`checkpoints/` is gitignored, so any R-row command that loads a `.pt` needs the checkpoint
+regenerated first:
+- `checkpoints/denoiser_stage_b_standard.pt` (R1/R2): `python scripts/train_p2_checkpoints.py`
+  (also writes `denoiser_stage_a.pt` and `denoiser_stage_b_purist.pt`).
+- `checkpoints/structure_policy.pt` (R16/R16h): the training command recorded in the R16 row.
+- Repair ranker checkpoints (R20–R24): the `--ckpt` paths in each row are written by the
+  training command in the same row; the `*_paired.json` replays then load them with
+  `--eval-only`.
+
 ## Notes / caveats attached to specific numbers
 - **Dimension scaling is now cited from R15** (methodology unified-v2, `results/p_scaling/scaling.json`,
   PR #62). The old R6/R6b/R7/R8 rows predate the stats unification and are **not comparable** to
