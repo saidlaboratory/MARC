@@ -155,7 +155,7 @@ marc/
   structure/   THE CORE BET — padded slots, absorbing-D3PM corruption,
                invention menus + certificates, structure policy + reverse sampler
   refine/      classical Langevin refinement + residual Jacobians
-  model/       GNN encoders, operator-aware repair ranker, structure head
+  model/       GNN encoders, candidate-conditioned repair ranker, structure head
   diffusion/   value-diffusion machinery (retained: hybrid + ablations context)
   train/       Stage-A denoising, Stage-B GRPO (corrected), scale trainer (GPU/MPS),
                structure-policy training (CE + optional solve-reward)
