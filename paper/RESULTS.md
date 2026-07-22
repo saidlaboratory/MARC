@@ -294,8 +294,15 @@ and measured policy+solve wall-clock stays 3.8–4.9 ms while enumeration grows
 Direct K=16 training performs at chance (val ≈ 0.04–0.06 throughout), so the
 cross-budget checkpoint is selected and the direct-training negative remains reported.
 
-Optimization-seed repeats: **pending regeneration under v8** (issue #103; the prior
-multiseed files also reused one random-arm draw across seeds, `population_sd: 0.0`).
+Optimization-seed repeats (v8, seeds 11/29/47, shared certified splits, per-seed eval
+draws — issue #103 fixed; the prior files reused one random-arm draw across seeds):
+**nonlinear full 0.982 ± 0.006** (0.975/0.983/0.989; control 0.319 ± 0.013, random
+0.263 ± 0.019) — the nonlinear headline is optimization-robust. **Linear full
+0.317 ± 0.069** (0.333/0.392/0.227; random 0.248 ± 0.002) — real seed-to-seed
+variance on linear, reported as a limitation alongside the K-scaling one: the linear
+ranker's small edge over random is not stable across optimization seeds.
+`python3 scripts/run_repair_multiseed.py --data {nonlinear,aux_required} ... --jobs 3`
+(`nonlinear_multiseed.json`, `linear_multiseed.json`).
 
 **Conclusion:** the failed value-denoising project now has a positive, controlled learned
 component in the correct division of labor: learn which structural repair deserves a
