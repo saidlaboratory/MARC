@@ -39,7 +39,7 @@ diffusion model's novelty is weak; that is fine because we do not claim it as th
   in; mergeable. **Action: get it merged.**
 - Branches `sparsh/crossover-families` work below is not yet pushed at handoff — see next section.
 
-## WINS IN FLIGHT — check these FIRST (two runs may still be going or just finished)
+## WINS LANDED this session (PR #117 open) — both experiments finished
 1. **Crossover replication + learned-beats-LM** — the strongest new win.
    `PYTHONPATH=.:scripts python3 scripts/run_crossover_families.py --K 8 --test 40 --epochs 200 --ntrain 200`
    → `results/p_scaling/crossover_families.{json,log}`. Establishes TWO things:
@@ -49,7 +49,7 @@ diffusion model's novelty is weak; that is fine because we do not claim it as th
    collapses ~p^n (measured on baseline: LM 0.825/0.575/0.200/0.100/0.000 at n=1/2/3/4/6). This
    closes the "did you compare to a real solver?" attack on R5.
    Files already created (uncommitted): `scripts/run_crossover_families.py`,
-   `tests/test_crossover_families.py` (passing). **When it lands:** add R27 to RESULTS.md +
+   `tests/test_crossover_families.py` (passing). **DONE — landed as R27 in PR #117.** (RESULTS.md +
    PROVENANCE, add a paper table/paragraph to the R5/scaling section of `marc.tex`, commit to a
    branch `sparsh/crossover-families`, push, PR (NO Claude footer).
 2. **3-seed geometry hardening** — `scripts/run_pointchain_learned.py --seeds 3`
