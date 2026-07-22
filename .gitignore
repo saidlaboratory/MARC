@@ -70,5 +70,14 @@ paper/tex/*.pdf
 !results/p_geo_repair/geo_repair_s29.json
 !results/p_geo_repair/geo_repair_s47.json
 !results/p_geo_repair/analysis.json
+!results/p_geo_repair/geo_repair_v3_s11.json
+!results/p_geo_repair/geo_repair_v3_s29.json
+!results/p_geo_repair/geo_repair_v3_s47.json
+!results/p_geo_repair/analysis_v3.json
+!results/p_geo_repair/geo_repair_p3_s11.json
+!results/p_geo_repair/geo_repair_p3_s29.json
+!results/p_geo_repair/geo_repair_p3_s47.json
+!results/p_geo_repair/analysis_p3.json
+!results/p_geo_repair/probe_concentration.json
 results/p_geo_repair/cache/
 Blood-RNA-ML-benchmark/
