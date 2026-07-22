@@ -55,8 +55,10 @@ from marc.graph.graph import FactorGraph
 from marc.graph.schema import Edge, FactorNode, VariableNode
 from marc.structure.invention_data import REFERENCE_SOLVER
 
-#: bump whenever identical seeds generate different instances/vocabularies
-GEO_REPAIR_VERSION: int = 2
+#: bump whenever identical seeds generate different instances/vocabularies.
+#: v3: labels are majority votes over label_streams independent restart streams
+#: (single-stream labels were noisy enough that the ranker could not learn).
+GEO_REPAIR_VERSION: int = 3
 
 #: stream separation for every solver purpose; larger than any split-base
 #: spacing so purpose streams can never collide across splits
@@ -162,15 +164,24 @@ def givens_hash(givens: Dict) -> str:
 
 
 def label_instance(graph: FactorGraph, constructions: Sequence[Construction],
-                   *, solve_seed: int) -> List[bool]:
-    """Measured labels under common random numbers: every construction is graded
-    with the same restart stream, so label differences come from the
-    construction alone."""
-    return [solve_graph(c.apply(graph), seed=solve_seed) for c in constructions]
+                   *, solve_seed: int, streams: int = 1) -> List[bool]:
+    """Measured labels under common random numbers: within a stream every
+    construction is graded with the same restarts, so differences come from
+    the construction alone. With ``streams`` > 1 a construction's label is the
+    majority vote across independent streams — stream-stable repairs, which
+    denoises the training target (a single stream flips ~half its verdicts on
+    a fresh stream)."""
+    votes = [
+        [solve_graph(c.apply(graph), seed=solve_seed + 97 * j) for c in constructions]
+        for j in range(streams)
+    ]
+    need = streams // 2 + 1
+    return [sum(v[i] for v in votes) >= need for i in range(len(constructions))]
 
 
 def make_dataset(n_per_k: int, seed: int, ks: Sequence[int] = (6, 8),
-                 n_extra: Optional[int] = None) -> List[GeoRepairInstance]:
+                 n_extra: Optional[int] = None, label_streams: int = 1,
+                 cache_dir: Optional[str] = "results/p_geo_repair/cache") -> List[GeoRepairInstance]:
     """Generate chains, keep the HARD reference-solver failures, label their menus.
 
     An instance is a failure only if the direct solve fails under two
@@ -180,6 +191,15 @@ def make_dataset(n_per_k: int, seed: int, ks: Sequence[int] = (6, 8),
     (n_per_k, seed, ks, n_extra). Purpose streams are STREAM_SALT-separated:
     failure tests at +0/+1 salt, labels at +2, evaluation at +3 and up.
     """
+    cache_path = None
+    if cache_dir is not None:
+        import pickle
+        from pathlib import Path
+        key = f"v{GEO_REPAIR_VERSION}_n{n_per_k}_s{seed}_k{'-'.join(map(str, ks))}_e{n_extra}_ls{label_streams}"
+        cache_path = Path(cache_dir) / f"{key}.pkl"
+        if cache_path.exists():
+            with open(cache_path, "rb") as fh:
+                return pickle.load(fh)
     out: List[GeoRepairInstance] = []
     for k in ks:
         for t in range(n_per_k):
@@ -191,12 +211,18 @@ def make_dataset(n_per_k: int, seed: int, ks: Sequence[int] = (6, 8),
                 continue  # direct solve succeeded on either stream -> not hard
             vocab = construction_vocabulary(k, givens)
             worked = label_instance(graph, vocab,
-                                    solve_seed=inst_seed + 2 * STREAM_SALT)
+                                    solve_seed=inst_seed + 2 * STREAM_SALT,
+                                    streams=label_streams)
             out.append(GeoRepairInstance(
                 id=f"pruned_chain_k{k}_s{inst_seed}",
                 seed=inst_seed, k=k, graph=graph, givens=givens,
                 constructions=vocab, worked=worked, solution=sol,
             ))
+    if cache_path is not None:
+        import pickle
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_path, "wb") as fh:
+            pickle.dump(out, fh)
     return out
 
 

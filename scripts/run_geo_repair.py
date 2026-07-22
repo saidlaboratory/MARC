@@ -47,6 +47,7 @@ from marc.eval.metrics import rate_cell, two_proportion_z
 from marc.graph.semantics import build_semantic_heterodata
 from marc.model.repair_ranker import GraphRepairRanker
 from marc.structure.geo_repair import (
+    CONSTRUCTION_FEATURE_DIM,
     GEO_REPAIR_VERSION,
     STREAM_SALT,
     ConstructionOnlyRanker,
@@ -55,6 +56,24 @@ from marc.structure.geo_repair import (
     make_dataset,
     solve_graph,
 )
+
+
+class GraphPlusRecipeRanker(torch.nn.Module):
+    """Full model: the candidate-conditioned GNN score plus an additive head on
+    the construction recipe features — the graph must carry the instance
+    signal, but the model no longer has to re-derive kind/position/sign from
+    topology alone."""
+
+    def __init__(self, D: int = 96, L: int = 3):
+        super().__init__()
+        self.gnn = GraphRepairRanker(D=D, L=L)
+        self.recipe = torch.nn.Sequential(
+            torch.nn.Linear(CONSTRUCTION_FEATURE_DIM, 32), torch.nn.ReLU(),
+            torch.nn.Linear(32, 1),
+        )
+
+    def forward(self, graph_batch, feats):
+        return self.gnn(graph_batch) + self.recipe(feats).squeeze(-1)
 from marc.structure.invention_data import REFERENCE_SOLVER
 
 K_REF = REFERENCE_SOLVER["k_refine"]
@@ -68,9 +87,9 @@ class Packed:
     labels: torch.Tensor
 
 
-def build_split(ks, n_per_k, seed):
+def build_split(ks, n_per_k, seed, label_streams=3):
     packs = []
-    for inst in make_dataset(n_per_k, seed, ks=tuple(ks)):
+    for inst in make_dataset(n_per_k, seed, ks=tuple(ks), label_streams=label_streams):
         packs.append(Packed(
             inst=inst,
             graphs=[build_semantic_heterodata(c.apply(inst.graph))
@@ -99,7 +118,7 @@ def top1_hit_rates(full, control, packs, batch_size, device):
     for start in range(0, len(packs), batch_size):
         ps = packs[start:start + batch_size]
         gb, feats, _labels, sizes = _flat_batch(ps, device)
-        fs = full(gb).cpu()
+        fs = full(gb, feats).cpu()
         cs = control(feats).cpu()
         off = 0
         for p, sz in zip(ps, sizes):
@@ -130,7 +149,7 @@ def train(full, control, train_set, val_set, *, epochs, batch_size, lr, opt_seed
         for start in range(0, len(train_set), batch_size):
             ps = train_set[start:start + batch_size]
             gb, feats, labels, _sizes = _flat_batch(ps, device)
-            loss = bce(full(gb), labels) + bce(control(feats), labels)
+            loss = bce(full(gb, feats), labels) + bce(control(feats), labels)
             opt.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -195,7 +214,7 @@ def evaluate(full, control, packs, *, batch_size, device, opt_seed, fixed_name):
     for start in range(0, len(packs), batch_size):
         ps = packs[start:start + batch_size]
         gb, feats, _labels, sizes = _flat_batch(ps, device)
-        fs = full(gb).cpu()
+        fs = full(gb, feats).cpu()
         cs = control(feats).cpu()
         off = 0
         for p, sz in zip(ps, sizes):
@@ -315,6 +334,8 @@ def main(argv=None):
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--out", default="results/p_geo_repair/geo_repair.json")
     ap.add_argument("--ckpt", default="checkpoints/geo_repair.pt")
+    ap.add_argument("--label-streams", type=int, default=3,
+                    help="labels = majority vote over this many independent streams")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args(argv)
     if args.quick:
@@ -329,9 +350,9 @@ def main(argv=None):
     t0 = time.time()
     print("building hard-failure populations "
           "(generate -> 2-stream direct-solve -> keep failures -> label)", flush=True)
-    train_set = build_split(train_ks, args.n_train, args.seed)
-    val_set = build_split(train_ks, args.n_val, args.seed + 500000)
-    test_set = build_split(test_ks, args.n_test, args.seed + 900000)
+    train_set = build_split(train_ks, args.n_train, args.seed, args.label_streams)
+    val_set = build_split(train_ks, args.n_val, args.seed + 500000, args.label_streams)
+    test_set = build_split(test_ks, args.n_test, args.seed + 900000, args.label_streams)
     print(f"failures: train={len(train_set)} val={len(val_set)} test={len(test_set)} "
           f"(wall {time.time()-t0:.0f}s)", flush=True)
 
@@ -342,7 +363,7 @@ def main(argv=None):
     content_overlap = sum(len(hashes[a] & hashes[b])
                           for i, a in enumerate(names) for b in names[i + 1:])
 
-    full = GraphRepairRanker(D=args.D, L=args.L)
+    full = GraphPlusRecipeRanker(D=args.D, L=args.L)
     control = ConstructionOnlyRanker(D=64)
     history, best_f, best_c = train(
         full, control, train_set, val_set, epochs=args.epochs,
