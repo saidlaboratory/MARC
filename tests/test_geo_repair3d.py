@@ -11,7 +11,7 @@ import random
 import pytest
 import sympy as sp
 
-from marc.data.geometry import make_pruned_chain_3d
+from marc.data.geometry import make_clique_chain_3d, make_pruned_chain_3d
 from marc.structure.geo_repair3d import (
     CONSTRUCTION3D_FEATURE_DIM,
     KINDS,
@@ -105,6 +105,20 @@ def test_cayley_menger_regular_tetrahedron():
     # so V^2 = 1/72.
     vsq = cayley_menger_vol_sq(1, 1, 1, 1, 1, 1)
     assert math.isclose(vsq, 1.0 / 72.0, rel_tol=1e-9)
+
+
+@pytest.mark.parametrize("seed", range(4))
+def test_clique_chain_solution_satisfies_graph(seed):
+    # consecutive-clique DMDGP variant: planted config satisfies every factor,
+    # each i>=3 point is pinned to its three predecessors, base is gauge-fixed.
+    k = 8
+    g, sol, gv = make_clique_chain_3d(k, random.Random(seed))
+    assert len(g.variables) == 3 * k
+    assert set(gv) == {"base", "clique", "extra"}
+    for i in range(3, k):
+        assert [j for j, _ in gv["clique"][i]] == [i - 1, i - 2, i - 3]
+    env = _env(g, sol)
+    assert max(abs(_res(f.expression, env)) for f in g.factors) < 1e-9
 
 
 def test_construction_features_shape():
