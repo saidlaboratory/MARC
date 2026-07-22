@@ -1,0 +1,39 @@
+{
+  "experiment": "geo_repair3d_pilot",
+  "issue": 123,
+  "design": "clique",
+  "design_note": "consecutive-clique DMDGP: each point i>=3 pinned to its 3 predecessors -> propagating 2^(k-3) reflection tree",
+  "reference_solver": {
+    "name": "lm",
+    "k_refine": 4
+  },
+  "rows": [
+    {
+      "k": 18,
+      "n": 24,
+      "n_extra": 9,
+      "two_stream_failures": 15,
+      "failure_rate": 0.625,
+      "restart_control_rescued": 4,
+      "restart_plus16_rescued": 6,
+      "genuine_hard_survive_plus32_all_streams": 0,
+      "genuine_hard_rate": 0.0
+    },
+    {
+      "k": 20,
+      "n": 24,
+      "n_extra": 10,
+      "two_stream_failures": 17,
+      "failure_rate": 0.708,
+      "restart_control_rescued": 1,
+      "restart_plus16_rescued": 4,
+      "genuine_hard_survive_plus32_all_streams": 1,
+      "genuine_hard_rate": 0.042
+    }
+  ],
+  "total_two_stream_failures": 32,
+  "total_genuine_hard": 1,
+  "genuine_hard_rate": 0.0208,
+  "confirm_streams": 3,
+  "verdict": "NO TRAP IN 3D (clique): two-stream failures occur but are restart-noise -- only 1/48 (2.1%) survive +32 restarts across independent streams, no population. The planar reflection-tree difficulty does not survive in 3D; a bit more restart budget always rescues it. Negative result; no construction claim."
+}
