@@ -1,71 +1,41 @@
-# Abstract & title
+# Abstract — MARC (AAAI 2026)
 
-> Draft for AAAI main track. Numbers marked `⟨run⟩` are refreshed from
-> `results/p_crossover/crossover_theory.json` (600-trial run) before submission.
-> Framing is the honest one: a predictive law that explains both the positive
-> (R5) and the negative (R7) under one mechanism. No claim is made that a learned
-> solver beats classical search in general — the opposite is a central finding.
+**Title:** When Do Learned Diffusion Proposals Help Constraint Solving?
+A Controlled Study on Continuous Algebraic Systems
 
-## Title (primary)
-**When Do Learned Proposals Beat Classical Search in Continuous Constraint Solving? A Predictive Factorization Law**
+> Submission abstract. Numbers verified against `paper/RESULTS.md` + `paper/PROVENANCE.md`
+> (Data Version 8). Two acts: (1) the value-diffusion characterization + factorization
+> law (boundary of the claim); (2) structural repair, where relocating learning to the
+> decision with no classical baseline yields a decisive positive. Keep both.
 
-### Alternates
-- A Factorization Law for Amortized Inference in Constraint Solving
-- Learning Helps Constraint Solving Exactly When Basins Factorize
+## Primary (v2 — repair co-headlined, em-dash-free) — ~250 words
 
----
-
-## Abstract (primary, ~210 words)
-
-Amortized neural inference — training a model to propose solutions that a cheap
-classical routine then polishes — is an increasingly common recipe for
-combinatorial and continuous optimization. Yet evaluations rarely isolate what the
-*learned* proposal contributes, comparing hybrids against weak cold-start baselines
-instead of the obvious control: random multi-start with the same polish budget. We
-revisit amortized inference for continuous algebraic constraint solving with a
-neuro-symbolic diffusion solver — problems compile to factor graphs, a graph
-denoiser proposes assignments by reverse diffusion, and an exact computer-algebra
-checker gates every acceptance — and add the controls the recipe usually skips:
-random multi-start + polish, and a Levenberg–Marquardt solver with the analytic
-Jacobian.
-
-Under these controls we find that the learned proposal's advantage is neither
-universal nor illusory but *governed by a measurable geometric property*: whether
-the problem's acceptance basins factorize across variables. Best-of-$K$ random
-restart succeeds with probability $1-(1-q(n))^K$, where $q(n)$ is the single-start
-reachability; when constraints are variable-separable, $q(n)=v^n$ exactly, so the
-restart budget grows as $v^{-n}$ and search collapses in high dimension while a
-learned proposal that reproduces each marginal stays flat and must eventually win.
-Measuring the single constant $v=0.27$ predicts the full random-restart curve with
-no free parameters (MAE $0.012$) and the expected-restart budget's $v^{-n}$
-explosion (from 4 to 600 restarts over dimensions 1–6). Breaking separability with a
-coupled chained-bilinear family, the law predicts — and we confirm — that $q(n)$
-stops decaying ($\log$-slope $-0.13$ vs $-1.03$ when separable, both $R^2>0.95$),
-random search never collapses ($\approx4$ restarts at every dimension), the learned
-proposal ties it at every dimension, and the classical solver dominates. A real-domain
-geometry family sharpens the result: the diagnostic is the *measured* reachability
-slope, not a syntactic label — geometry is coupled yet its reachability collapses,
-flagging it as learning-favorable. Amortization thus pays off precisely, and only,
-when single-start reachability decays with dimension. We report the negative regimes
-as primary findings with Wilson intervals and $z$-tests throughout, alongside a
-controlled entrapment result (annealed noise cuts deterministic trapping by
-$0.525\pm0.086$, $N=200$). The law converts scattered "helps here, not there"
-observations into a falsifiable account of when amortized inference earns its
-training cost — and a reproducible protocol for evaluating it.
+Diffusion models are increasingly used to propose solutions for constraint and
+optimization problems, but evaluations usually omit the control that matters most:
+random multi-start under the same refinement budget. We run that control, and our own
+headline claim shrinks. MARC represents a continuous algebraic constraint system as a
+factor graph, proposes assignments with a graph-neural diffusion denoiser, polishes
+each by descent on an exact computer-algebra energy, and accepts only assignments an
+exact symbolic checker verifies. We first ask whether the learned proposal helps the
+value decision (which numbers satisfy the equations). It does, but only in a narrow and
+predictable regime: it ties random restart on trapped low-dimensional families, wins
+only in high dimension where random search collapses, and loses that advantage once
+variables couple. Because every method shares one polish operator and one checker,
+best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
+$q(n)$, and the measured slope of $\log q(n)$ decides the regime; one measured constant
+reproduces the whole random-restart curve with no free parameters (mean absolute error
+0.012). The decision classical solvers cannot make is discrete: which structural
+augmentation turns an unsolvable system solvable. Moving learning there, an
+operator-aware repair ranker clears its controls decisively (0.997 versus 0.236 on
+balanced nonlinear menus, $p<10^{-70}$; $0.982\pm0.006$ across optimization seeds) and
+beats a cheap per-candidate solver probe on accuracy and cost together. We report every
+negative with confidence intervals. The contribution is a characterization of where
+learned proposals help continuous constraint solving, and a positive result once
+learning moves to the decision that has no classical baseline.
 
 ---
 
-## Positioning (for the intro, not the abstract)
+## Alternate (v1 — law-forward, no repair headline; the pre-repair version, kept for reference)
 
-- **Contribution type:** an *analysis / understanding* paper with a system as the
-  instrument. The novelty is the predictive law + the controlled protocol, not a
-  new SOTA solver. AAAI accepts this category; the bar is generality, rigor, and a
-  falsifiable claim that holds — which the parameter-free prediction delivers.
-- **Why it is not oversold:** the headline is a law that *bounds* where learning
-  helps; the negative results (coupling kills the advantage; LM dominates) are the
-  evidence, not hidden caveats. This is the framing the team's own controls forced
-  (`AAAI_READINESS.md`, `HANDOFF.md`).
-- **Related work hook:** DIFUSCO / Langevin-CO / amortized-inference papers report
-  hybrid wins without the random-restart control; AlphaGeometry-style
-  neural-proposal + symbolic-checker division of labor. We supply the missing
-  control and the law that explains the results. (`paper/related_work.md`.)
+See git history / `paper/tex/marc.tex` prior abstract. Under-features the repair
+positive; superseded by the primary above.
