@@ -418,3 +418,21 @@ so marginal information has bite while the joint grid (6^n points) is tiny — a
 model (0.233) sat far *below* its own marginal ceiling there, a separate small-n training miss.
 The boundary reads: marginals help at trivially low n and are measurably insufficient from n=3
 on, exactly where the law needs them to be.
+
+## R28 · Geometry construction repair — a bounded negative, and the trap that produced it
+The relocation thesis, tested on 2D pruned distance-geometry chains (DDGP discrete-branch
+setting; `marc/structure/geo_repair.py`, protocol scale n=250/80/120 per k, train k={10,12},
+transfer k=14).  **The population definition decides the answer.**  Single-stream failure
+selection makes constructions look decisive (pilot ceiling 0.63–0.74 vs 0.09–0.27 matched
+restarts); two-stream hardening removes the margin: enumeration ceiling **0.603** trained /
+**0.600** transfer (N=63/60), while plain restart scaling reaches **0.54 at +16** and
+**0.73 at +32** restarts — budget-equivalent or better.  Learned selection does not separate
+from random (ranker 0.238 = restart_control 0.238; random 0.19–0.22; 2 opt seeds, McNemar
+p=0.61) — single-stream labels flip on ~half of fresh streams.  The live thread: the
+1-restart-per-candidate **probe (0.667 at ~20 restarts) beats every equal-budget restart
+point**, so the selection information exists; GEO_REPAIR_VERSION 3 (majority-vote labels
+over 3 streams, 5x data, recipe head) is the registered second attempt, running.
+Reported as a selection-on-noise methods finding: construction-style interventions invite
+exactly this trap, and our own pilot fell into it.
+`scripts/run_geo_repair.py`, `results/p_geo_repair/geo_repair_s{29,47}.json`, `analysis.json`
+(PROVENANCE R28).

@@ -579,21 +579,24 @@ synthetic factor graphs; ``exactly one solvable option'' is an exact certificate
 linear menus (rank) and $99\%$ of nonlinear test menus (CAS real-root nonexistence), with the
 remainder carrying a disclosed budget-relative probe certificate.
 
-\paragraph{Geometry as construction repair.}
-% TODO(R28): fill in numbers from results/p_geo_repair/geo_repair.json + PROVENANCE R28 when
-% the run lands; until then this stub carries the design only — cite NO pilot numbers.
-The relocation thesis has a real-domain test in flight, on the pruned point chains of
-the factorization-law section --- exactly where a trained value denoiser tied restart-matched random
-search. Each instance the reference pipeline fails on two independent restart streams
-receives a menu of candidate auxiliary constructions (branch pins, mirror gauges, cosine
-lifts: the discrete branches of the distance-geometry literature); a candidate-conditioned
-ranker scores each construction-augmented graph, and the winner receives one augmented solve.
-Labels here are measured and budget-relative --- repair means the construction flips the
-outcome at the reference budget, not a CAS certificate as in the menus above --- so the
-evaluation carries matched-budget restart controls with a restart-scaling curve, fixed- and
-all-construction no-learning recipes, a per-construction probe, and an enumeration ceiling.
-% TODO(R28): one sentence of headline numbers (ranker vs restart control vs best-fixed) +
-% McNemar p-values, trained-k and held-out-k pools, goes here.
+\paragraph{Geometry as construction repair: a bounded negative.}
+We took the relocation thesis to the pruned point chains of the factorization-law section ---
+the discrete-branch setting of distance geometry --- asking whether choosing one derived
+auxiliary construction (reflection-branch pins, mirror gauges, law-of-cosines lifts, all
+computed from the given distances) repairs instances the reference pipeline fails. The
+population definition decides the answer. With failures selected on a single restart stream,
+constructions look decisive (repair ceiling $0.63$--$0.74$ against $0.09$--$0.27$ for
+matched restarts); selecting failures on two independent streams removes that margin: the
+enumeration ceiling is $0.603$ ($0.600$ on held-out longer chains; $N{=}63/60$), while plain
+restart scaling reaches $0.54$ at $+16$ and $0.73$ at $+32$ restarts --- budget-equivalent or
+better. A ranker over candidate constructions does not separate from random at this data
+scale ($0.238$ versus $0.222$, three optimization seeds, exact McNemar $p{=}0.61$), with
+single-stream labels flipping on roughly half of fresh streams. We report this as a
+selection-on-noise trap that construction-style interventions invite --- our own pilot fell
+into it --- and as an open problem: a 1-restart-per-candidate probe still beats every
+equal-budget restart point ($0.667$ at ${\sim}20$ restarts), so the selection information
+exists in the instance; whether a graph-conditioned model can recover it at a fraction of
+the cost is the registered next experiment.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -654,7 +657,6 @@ division of labor it supports: the decision classical solvers cannot make is not
 to try but which structure to add, and there the certificate-grade repair ranker clears every
 control it faces, on menus where ``exactly one solvable option'' is a theorem rather than a
 budget-relative claim.
-% TODO(R28): close with the geometry construction-repair sentence when the numbers land.
 
 \bibliographystyle{aaai2026}
 \bibliography{refs}

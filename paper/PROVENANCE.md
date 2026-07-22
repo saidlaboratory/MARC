@@ -51,6 +51,8 @@ regenerated first:
   training command in the same row; the `*_paired.json` replays then load them with
   `--eval-only`.
 
+| R28 | Geometry construction repair (bounded negative) | enumeration ceiling 0.603/0.600 (trained/transfer) vs restart scaling 0.54@+16 / 0.73@+32; ranker 0.22-0.24 = restart_control, 3 seeds, McNemar p=0.61; probe 0.667@~20 restarts is the one budget-beating selector | `python3 scripts/run_geo_repair.py --opt-seed {11,29,47} --train-ks 10,12 --transfer-ks 14 --n-train 250 --n-val 80 --n-test 120 --epochs 60` then `scripts/analyze_geo_repair.py` | 2-stream hard-failure population; GEO_REPAIR_VERSION 2; v3 (stable labels, 5x data) in flight | quang/geo-repair |
+
 ## Notes / caveats attached to specific numbers
 - **Dimension scaling is now cited from R15** (methodology unified-v2, `results/p_scaling/scaling.json`,
   PR #62). The old R6/R6b/R7/R8 rows predate the stats unification and are **not comparable** to
