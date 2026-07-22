@@ -1,0 +1,458 @@
+{
+  "status": "ok",
+  "method": "cheap-probe candidate selection (short-budget solve per candidate, pick first-accept else lowest residual), graded at full reference budget",
+  "data_version": 7,
+  "config": {
+    "eval_data": "aux_required,nonlinear",
+    "n_test": 100,
+    "Ks": "4,8,16",
+    "budgets": "60:100,150:200,300:400",
+    "restarts": 1,
+    "seed": 20260722,
+    "ckpt": "checkpoints/repair_ranker.pt",
+    "batch_size": 16,
+    "out": "results/p_repair/probe_baseline.json",
+    "quick": false
+  },
+  "ranker_arms": "skipped (no checkpoint at checkpoints/repair_ranker.pt); rerun with --ckpt after the run_repair_ranker training run",
+  "seed_hygiene": {
+    "test": [
+      21160722,
+      21160822
+    ],
+    "note": "test-only script; split seed formula identical to run_repair_ranker",
+    "overlap_instances": 0
+  },
+  "by_K": {
+    "4": {
+      "K": 4,
+      "n": 200,
+      "arms": {
+        "probe[60:100]": {
+          "invention": {
+            "k": 181,
+            "n": 200,
+            "rate": 0.905,
+            "ci95": [
+              0.8563973488560237,
+              0.9383373863501365
+            ]
+          },
+          "solve": {
+            "k": 183,
+            "n": 200,
+            "rate": 0.915,
+            "ci95": [
+              0.8681031145576462,
+              0.9462547005301477
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 3.63,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 4.63,
+            "wall_s_total": 15.462399506097427,
+            "wall_s_per_instance": 0.07731199753048713
+          }
+        },
+        "probe[150:200]": {
+          "invention": {
+            "k": 186,
+            "n": 200,
+            "rate": 0.93,
+            "ci95": [
+              0.8859442178331628,
+              0.9578482170770813
+            ]
+          },
+          "solve": {
+            "k": 189,
+            "n": 200,
+            "rate": 0.945,
+            "ci95": [
+              0.9042120755340645,
+              0.9690149791986299
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 3.545,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 4.545,
+            "wall_s_total": 12.498077949654544,
+            "wall_s_per_instance": 0.06249038974827272
+          }
+        },
+        "probe[300:400]": {
+          "invention": {
+            "k": 184,
+            "n": 200,
+            "rate": 0.92,
+            "ci95": [
+              0.8740095102048769,
+              0.9501598448237337
+            ]
+          },
+          "solve": {
+            "k": 187,
+            "n": 200,
+            "rate": 0.935,
+            "ci95": [
+              0.8919799625008207,
+              0.9616240123502404
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 3.21,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 4.21,
+            "wall_s_total": 13.22179512711591,
+            "wall_s_per_instance": 0.06610897563557955
+          }
+        },
+        "random": {
+          "invention": {
+            "k": 56,
+            "n": 200,
+            "rate": 0.28,
+            "ci95": [
+              0.22236792842635128,
+              0.34592431417771
+            ]
+          },
+          "solve": {
+            "k": 57,
+            "n": 200,
+            "rate": 0.285,
+            "ci95": [
+              0.22694905173277297,
+              0.3511547308121051
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 0.0,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 1.0,
+            "wall_s_total": 8.963955221901415,
+            "wall_s_per_instance": 0.044819776109507076
+          }
+        },
+        "oracle": {
+          "solve": {
+            "k": 196,
+            "n": 200,
+            "rate": 0.98,
+            "ci95": [
+              0.9497121344948062,
+              0.9921956998236058
+            ]
+          }
+        },
+        "enumeration": {
+          "solve": {
+            "k": 196,
+            "n": 200,
+            "rate": 0.98,
+            "ci95": [
+              0.9497121344948062,
+              0.9921956998236058
+            ]
+          },
+          "cost": {
+            "solver_calls_per_instance": 2.48,
+            "wall_s_total": 22.736553319788072,
+            "wall_s_per_instance": 0.11368276659894036
+          }
+        }
+      }
+    },
+    "8": {
+      "K": 8,
+      "n": 100,
+      "arms": {
+        "probe[60:100]": {
+          "invention": {
+            "k": 99,
+            "n": 100,
+            "rate": 0.99,
+            "ci95": [
+              0.9455124752390653,
+              0.9982326134344526
+            ]
+          },
+          "solve": {
+            "k": 99,
+            "n": 100,
+            "rate": 0.99,
+            "ci95": [
+              0.9455124752390653,
+              0.9982326134344526
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 7.63,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 8.63,
+            "wall_s_total": 7.773213414213387,
+            "wall_s_per_instance": 0.07773213414213387
+          }
+        },
+        "probe[150:200]": {
+          "invention": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 7.31,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 8.31,
+            "wall_s_total": 3.7521395909716375,
+            "wall_s_per_instance": 0.03752139590971638
+          }
+        },
+        "probe[300:400]": {
+          "invention": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 6.82,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 7.82,
+            "wall_s_total": 4.6326133399270475,
+            "wall_s_per_instance": 0.046326133399270476
+          }
+        },
+        "random": {
+          "invention": {
+            "k": 11,
+            "n": 100,
+            "rate": 0.11,
+            "ci95": [
+              0.06254131955225126,
+              0.18631463027903022
+            ]
+          },
+          "solve": {
+            "k": 11,
+            "n": 100,
+            "rate": 0.11,
+            "ci95": [
+              0.06254131955225126,
+              0.18631463027903022
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 0.0,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 1.0,
+            "wall_s_total": 0.13967579408199526,
+            "wall_s_per_instance": 0.0013967579408199525
+          }
+        },
+        "oracle": {
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          }
+        },
+        "enumeration": {
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "cost": {
+            "solver_calls_per_instance": 4.63,
+            "wall_s_total": 0.5946545836341102,
+            "wall_s_per_instance": 0.0059465458363411015
+          }
+        }
+      },
+      "skipped_sources": {
+        "nonlinear": "could not fill exchangeable nonlinear menu"
+      }
+    },
+    "16": {
+      "K": 16,
+      "n": 100,
+      "arms": {
+        "probe[60:100]": {
+          "invention": {
+            "k": 97,
+            "n": 100,
+            "rate": 0.97,
+            "ci95": [
+              0.915479219195973,
+              0.9897456617765851
+            ]
+          },
+          "solve": {
+            "k": 97,
+            "n": 100,
+            "rate": 0.97,
+            "ci95": [
+              0.915479219195973,
+              0.9897456617765851
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 14.93,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 15.93,
+            "wall_s_total": 11.74860550079029,
+            "wall_s_per_instance": 0.1174860550079029
+          }
+        },
+        "probe[150:200]": {
+          "invention": {
+            "k": 98,
+            "n": 100,
+            "rate": 0.98,
+            "ci95": [
+              0.9299868370580063,
+              0.9944981477650318
+            ]
+          },
+          "solve": {
+            "k": 98,
+            "n": 100,
+            "rate": 0.98,
+            "ci95": [
+              0.9299868370580063,
+              0.9944981477650318
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 14.14,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 15.14,
+            "wall_s_total": 6.891570464300457,
+            "wall_s_per_instance": 0.06891570464300457
+          }
+        },
+        "probe[300:400]": {
+          "invention": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 12.44,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 13.44,
+            "wall_s_total": 7.86283133199322,
+            "wall_s_per_instance": 0.0786283133199322
+          }
+        },
+        "random": {
+          "invention": {
+            "k": 7,
+            "n": 100,
+            "rate": 0.07,
+            "ci95": [
+              0.034318824364064096,
+              0.13749671006529757
+            ]
+          },
+          "solve": {
+            "k": 7,
+            "n": 100,
+            "rate": 0.07,
+            "ci95": [
+              0.034318824364064096,
+              0.13749671006529757
+            ]
+          },
+          "cost": {
+            "probe_calls_per_instance": 0.0,
+            "grade_calls_per_instance": 1.0,
+            "solver_calls_per_instance": 1.0,
+            "wall_s_total": 0.1307997508556582,
+            "wall_s_per_instance": 0.001307997508556582
+          }
+        },
+        "oracle": {
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          }
+        },
+        "enumeration": {
+          "solve": {
+            "k": 100,
+            "n": 100,
+            "rate": 1.0,
+            "ci95": [
+              0.9630051925239981,
+              0.9999999999999999
+            ]
+          },
+          "cost": {
+            "solver_calls_per_instance": 8.97,
+            "wall_s_total": 1.1182066120381933,
+            "wall_s_per_instance": 0.011182066120381933
+          }
+        }
+      },
+      "skipped_sources": {
+        "nonlinear": "could not fill exchangeable nonlinear menu"
+      }
+    }
+  },
+  "wall_s": 243.76682496070862
+}
