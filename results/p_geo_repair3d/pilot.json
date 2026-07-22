@@ -1,0 +1,69 @@
+{
+  "experiment": "geo_repair3d_pilot",
+  "issue": 123,
+  "design": "sphere-anchor 3D pruned chains (3 anchors: origin, (c,0,0), (0,d,0); each point sphere-sphere-sphere -> binary reflection across the anchor plane)",
+  "reference_solver": {
+    "name": "lm",
+    "k_refine": 4
+  },
+  "rows": [
+    {
+      "k": 6,
+      "n": 40,
+      "n_extra": 3,
+      "two_stream_failures": 1,
+      "failure_rate": 0.025,
+      "restart_control_rescued": 0,
+      "restart_plus16_rescued": 0,
+      "restart_plus32_rescued": 1,
+      "failures_surviving_plus32": 0
+    },
+    {
+      "k": 7,
+      "n": 40,
+      "n_extra": 4,
+      "two_stream_failures": 1,
+      "failure_rate": 0.025,
+      "restart_control_rescued": 1,
+      "restart_plus16_rescued": 1,
+      "restart_plus32_rescued": 1,
+      "failures_surviving_plus32": 0
+    },
+    {
+      "k": 8,
+      "n": 40,
+      "n_extra": 4,
+      "two_stream_failures": 5,
+      "failure_rate": 0.125,
+      "restart_control_rescued": 3,
+      "restart_plus16_rescued": 4,
+      "restart_plus32_rescued": 5,
+      "failures_surviving_plus32": 0
+    },
+    {
+      "k": 9,
+      "n": 40,
+      "n_extra": 5,
+      "two_stream_failures": 7,
+      "failure_rate": 0.175,
+      "restart_control_rescued": 6,
+      "restart_plus16_rescued": 7,
+      "restart_plus32_rescued": 7,
+      "failures_surviving_plus32": 0
+    },
+    {
+      "k": 10,
+      "n": 40,
+      "n_extra": 5,
+      "two_stream_failures": 10,
+      "failure_rate": 0.25,
+      "restart_control_rescued": 2,
+      "restart_plus16_rescued": 9,
+      "restart_plus32_rescued": 10,
+      "failures_surviving_plus32": 0
+    }
+  ],
+  "total_two_stream_failures": 24,
+  "total_failures_surviving_plus32": 0,
+  "verdict": "NO TRAP IN 3D: two-stream failures are rare and fully rescued by +32 restarts. The planar reflection-tree difficulty does not survive in the sphere-anchor 3D setting (more distance pruning makes it EASIER, opposite to 2D). Negative result; no construction claim."
+}
