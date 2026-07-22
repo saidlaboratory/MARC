@@ -119,7 +119,7 @@ quantifies scope honestly. `python scripts/run_math_coverage.py`
 - Every solve rate has N + a CI or z-test.
 - Report CircleLine failure and the n=6 dropoff openly.
 - No claim to beat combinatorial-optimization SOTA (DIFUSCO etc.) — different problem class
-  (`paper/notes/related_work.md`).
+  (Related Work section of the paper).
 - MARC targets continuous algebraic constraint solving; it does **not** do general MATH/olympiad
   reasoning.
 

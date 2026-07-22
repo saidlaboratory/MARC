@@ -1,51 +1,37 @@
-# Abstract — MARC (AAAI 2026)
+# AAAI-26 abstract submission (deadline July 27; full paper ~7 days later)
 
-**Title:** When Do Learned Diffusion Proposals Help Constraint Solving?
-A Controlled Study on Continuous Algebraic Systems
+Paste-ready text for the submission form. Source of truth: `paper/tex/marc_aaai.tex`
+(the abstract below is the de-TeX'd copy; update BOTH if either changes). One slot
+is reserved for the R28 geometry construction-repair sentence — add it before
+"Every negative result..." once `results/p_geo_repair/` lands, then refresh this file.
 
-> Submission abstract (canonical copy lives in `paper/tex/marc.tex`). Numbers verified
-> against `paper/RESULTS.md` + `paper/PROVENANCE.md` (Data Version 8). Two acts:
-> (1) the value-diffusion characterization + factorization law (boundary of the claim);
-> (2) structural repair, where relocating learning to the decision with no classical
-> baseline yields a decisive positive. Keep both.
->
-> **Length / trimming:** ~265 words. The validation sentence covers both the geometry
-> test and the eight real systems; if the form caps tighter, cut the geometry clause
-> first (a law nuance) and keep the real-systems clause (the strongest main-track
-> signal, answering synthetic-only).
+## Title
 
-## Primary (v5 — repair co-headlined + geometry & real-systems validation, em-dash-free) — ~265 words
+Learn the Structure, Not the Values: A Controlled Characterization of Learning in
+Exact Constraint Solving
 
-Diffusion models are increasingly used to propose solutions for constraint and
-optimization problems, but evaluations usually omit the control that matters most:
-random multi-start under the same refinement budget. We run that control, and our own
-headline claim shrinks. MARC represents a continuous algebraic constraint system as a
-factor graph, proposes assignments with a graph-neural diffusion denoiser, polishes
-each by descent on an exact computer-algebra energy, and accepts only assignments an
-exact symbolic checker verifies. We first ask whether the learned proposal helps the
-value decision (which numbers satisfy the equations). It does, but only in a narrow and
-predictable regime: it ties random restart on trapped low-dimensional families, wins
-only in high dimension where random search collapses, and loses that advantage once
-variables couple. Because every method shares one polish operator and one checker,
-best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
-$q(n)$, and the measured slope of $\log q(n)$ decides the regime; one measured constant
-reproduces the whole random-restart curve with no free parameters (mean absolute error
-0.012). Both conditions are necessary and the boundary holds outside the synthetic
-families: a real geometric domain collapses in reachability yet a trained proposal ties
-random there, and across eight standard real systems (robotics, positioning,
-optimization, and algebra) classical multi-start solves all eight, none in the
-learning-favorable regime. The decision classical solvers cannot make is discrete: which structural
-augmentation turns an unsolvable system solvable. Moving learning there, an
-operator-aware repair ranker clears its controls decisively (0.997 versus 0.236 on
-balanced nonlinear menus, $p<10^{-70}$; $0.982\pm0.006$ across optimization seeds) and
-beats a cheap per-candidate solver probe on accuracy and cost together. We report every
-negative with confidence intervals. The contribution is a characterization of where
-learned proposals help continuous constraint solving, and a positive result once
-learning moves to the decision that has no classical baseline.
+## Abstract
 
----
+Learned proposals for constraint solving are usually evaluated against cold-start
+refinement; the control that matters is random multi-start at the same budget. We run
+that control on our own system and our headline claim shrinks. MARC poses continuous
+algebraic systems as factor graphs, proposes values with a graph diffusion model,
+polishes them on exact computer-algebra energies, and accepts only what an exact
+symbolic checker verifies. Under this protocol, learned value proposals help only
+where acceptance basins factorize across variables and dimension defeats random
+search (0.975 versus 0.075 at n=3); a parameter-free law in the measured single-start
+reachability reproduces the full restart curve (MAE 0.012), predicts the failure
+under variable coupling, and holds on eight named real systems, where classical
+multi-start leaves no learning-favorable regime. The decision that has no classical
+baseline is discrete: which structural augmentation repairs an unsolvable system. A
+candidate-conditioned ranker chooses repairs on certificate-grade menus — "exactly
+one solvable option" is a computer-algebra theorem, not a budget-relative claim — at
+0.997 versus 0.236 random (p < 10^-70, seed-robust), beating budget-matched
+per-candidate probes on accuracy and cost together. Every negative result is reported
+with confidence intervals; they are the boundary of the claim. Learning earns its
+keep on the structural decision; everything else belongs to the solvers.
 
-## Alternate (v1 — law-forward, no repair headline; the pre-repair version, kept for reference)
+## Keywords
 
-See git history / `paper/tex/marc.tex` prior abstract. Under-features the repair
-positive; superseded by the primary above.
+constraint solving; diffusion models; graph neural networks; neuro-symbolic;
+amortized inference; algorithm selection; distance geometry
