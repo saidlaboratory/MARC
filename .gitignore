@@ -70,3 +70,4 @@ paper/tex/*.pdf
 !results/p_geo_repair/geo_repair_s29.json
 !results/p_geo_repair/geo_repair_s47.json
 !results/p_geo_repair/analysis.json
+Blood-RNA-ML-benchmark/
