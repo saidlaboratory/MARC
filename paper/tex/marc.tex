@@ -577,7 +577,14 @@ The learned component is also cheap where value diffusion was not: one forward p
 candidate rather than a reverse-diffusion rollout. End to end, applying the selected repair and
 invoking the reference solver, the nonlinear ranker's single call solves $0.933$ --- exactly the
 oracle and enumeration ceiling --- where blind enumeration averages $2.62$ calls ($N{=}60$);
-linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling. The $K = 4$
+linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling. A cheap-probe
+control bounds the claim from the other side: spending a short-budget solver call on every
+candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls per instance, where the
+ranker's single call solves $0.939$ --- learning beats probing on accuracy and cost at once,
+because provably rootless distractors cannot be ``solved'' at any budget while short probes do
+miss the gold. On linear menus the same probe saturates ($0.99$ at $4.4$ calls) and enumeration
+is already perfect at $2.5$, so the linear rows are evidence of mechanism, not a deployment
+case. The $K = 4$
 checkpoint transfers to larger linear menus without retraining, but the accuracy advantage
 shrinks with $K$ and is gone by $K = 16$ ($0.300/0.187/0.113$ against random
 $0.227/0.120/0.107$); what survives at large $K$ is only the cost gap, as the enumeration it

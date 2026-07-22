@@ -68,11 +68,14 @@ closes by K=16 (0.113 vs 0.107 random) — at that budget the win is wall-clock 
 (1 call and ~4–5 ms vs 9.05 calls and 22.5 ms).  Direct K=16 training performs at
 chance; both negatives stay in the record.  Near-saturation on balanced nonlinear
 (0.997) means that benchmark is close to solved for this model class; the unseen-
-relation transfer (0.420) is where headroom remains.  Multiseed robustness is being
-regenerated under v8 (#103), and a cheap-probe baseline (spend a small budget on
-each candidate instead of learning) is being added (#102) — if the probe matches the
-ranker at matched wall-clock, the framing must change.  Autoformalization and
-open-ended multi-aux generation remain future work.
+relation transfer (0.420) is where headroom remains.  The cheap-probe control (#102)
+is in: on nonlinear the ranker's one call (solve 0.939, 3.1 ms) beats the strongest
+5-call probe (0.881, 34 ms) on accuracy and cost together — rootless distractors
+cannot be probed into solving, while short probes do miss the gold.  On linear the
+probe saturates (0.99 at ~4.4 calls) and enumeration is already perfect at 2.5, so
+the linear rows are a mechanism demonstration, not a deployment case, and we say so.
+Multiseed robustness is still being regenerated under v8 (#103).  Autoformalization
+and open-ended multi-aux generation remain future work.
 
 The AAAI story is therefore not "a universal solver."  It is a controlled result
 about **structural amortization**: operator-aware scoring learns which graph repair

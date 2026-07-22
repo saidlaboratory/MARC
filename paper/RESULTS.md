@@ -274,6 +274,18 @@ enumeration ceiling** with one solver call vs enumeration's 2.62 (N=60); control
 random 0.250.  Linear K=4 solves 0.300 vs 0.217/0.227, oracle and enumeration 1.000
 (N=300), one call vs 2.54.
 
+**Cheap-probe control (the "why not just probe?" answer; `probe_nonlinear.json`,
+`probe_linear_holdout.json`):** spend a short-budget LM solve on every candidate, pick
+first-accept else lowest residual, grade the pick at full budget.  Nonlinear: the
+strongest probe (300-step budget) solves **0.881 at 4.73 calls/instance (33.9 ms)**;
+the ranker solves **0.939 with one call (3.1 ms)** — the learned component beats
+probing on accuracy and cost simultaneously (rootless distractors are unsolvable at
+any budget, so the probe's errors come from short-budget misses on the gold, which
+graph-reading avoids).  Linear: the probe saturates (0.978–0.989 at ~4.4–4.9 calls)
+and plain enumeration is already perfect at 2.49 calls, so the linear rows are a
+controlled mechanism result (the ranker reads the problem graph far better than its
+controls), not a deployment case — stated plainly.
+
 Cross-budget K scaling (K=4 linear checkpoint, zero-shot, N=300/150/150): full
 0.300/0.187/0.113 vs random 0.227/0.120/0.107 — the accuracy advantage shrinks with K
 and is gone at K=16, reported as a limitation.  Enumeration calls grow 2.54/4.40/9.05
