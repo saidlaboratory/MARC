@@ -200,20 +200,26 @@ is set by whether acceptance basins **factorize across variables**:
   ties random) and the classical LM solver dominates (0.77 → 1.0). This is the mechanism
   behind R7 — a *predicted* consequence of broken factorization, not an unexplained negative.
 
-- **Geometry (real domain):** a coupled point-chain family (`marc/data/geometry.py`
-  `make_point_chain`, 2k vars, quartic energy). Syntactically coupled, yet reachability
-  **collapses**: slope **−0.77 (R²=0.999)**, `q(n)` = 0.653, 0.147, 0.027, 0.007 at n=2,4,6,8.
-  So the diagnostic is the *measured slope*, not the coupled/independent label; geometry is a
-  real domain the law flags as **learning-favorable** (classical-polish solve rates non-saturated:
-  in-dist 0.56, held-out 0.28). Training MARC's denoiser here is the flagged next experiment.
+- **Geometry (real domain) — reachability collapses but learning does NOT help:** a coupled
+  point-chain family (`marc/data/geometry.py` `make_point_chain`, 2k vars, quartic energy).
+  Reachability **collapses**: slope **−0.77 (R²=0.999)**, `q(n)` = 0.653, 0.147, 0.027, 0.007.
+  We then trained a denoiser here with the identical R5 methodology
+  (`scripts/run_pointchain_learned.py`): the learned proposal **exactly ties random restart at
+  every chain length and collapses with it** (both 0.625, 0.175, 0.025, 0.000 at n=2,4,6,8; 0/4
+  significant wins, p=0.50). Reachability collapse alone was **not** enough — geometry's
+  coupling means there is no per-variable marginal for the denoiser to amortize.
 
-**Why this matters:** it converts the scattered R5/R7 "helps here, not there" observations into
-a single predictive principle — *a learned proposal beats classical search iff acceptance
-basins factorize and dimension is high* — validated parameter-free. Full derivation and honest
-limitations (instance heterogeneity, learned ceiling measured not derived) in
-`paper/notes/crossover_law.md`. Figure `paper/figures/fig_crossover_theory.pdf`.
-`PYTHONPATH=. python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721`
-(PROVENANCE R17–R19).
+**Why this matters (sharper, two-condition law):** collecting all three families, a learned
+proposal beats classical search iff **(1)** single-start reachability collapses with dimension
+(random fails) **AND (2)** the solution is per-variable separable (the denoiser can amortize it
+as marginals). Independent traps have both → learning wins (R5). Coupled bilinear fails (1),
+random survives → ties (R7). Geometry satisfies (1) but fails (2) → learning ties random and
+collapses with it. The measured slope predicts *random's* collapse; separability predicts
+whether *learning* can exploit it. This corrects the earlier "slope alone is the diagnostic"
+reading. Full derivation + limitations in `paper/notes/crossover_law.md`; figure
+`paper/figures/fig_crossover_theory.pdf`.
+`python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721` (PROVENANCE
+R17–R19); `python3 scripts/run_pointchain_learned.py` (geometry learned arm, PROVENANCE R25).
 
 ## R10 · Candidate-conditioned structural repair (v0.3) — **new primary result (Data Version 8)**
 
