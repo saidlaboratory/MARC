@@ -1,110 +1,87 @@
-# MARC — session handoff (for a fresh context window)
+# MARC — session handoff (fresh-context, 2026-07-22)
 
-**Written:** 2026-07-21 · **AAAI deadline:** 2026-07-27 · **Repo:** `saidlaboratory/MARC`
-(you are on the MacBook M5, MPS; torch 2.12; `PYTHONPATH=.` needed to run scripts).
+**AAAI abstract deadline:** 2026-07-27. Repo `saidlaboratory/MARC`.
+Run scripts with `PYTHONPATH=.` (some also need `:scripts`); MacBook, torch 2.12, MPS.
+Canonical docs: `paper/RESULTS.md`, `paper/PROVENANCE.md` (every number → command/seed/branch),
+`paper/ABSTRACT.md`, `paper/tex/marc.tex` (the paper), `paper/notes/*.md`.
 
-Read this first, then `paper/RESULTS.md` + `paper/PROVENANCE.md` (canonical) and
-`AAAI_READINESS.md` (the strategic call). Everything below is honest; do not re-inflate claims
-that were rigorously falsified.
+## Conventions (IMPORTANT)
+- Commits authored by **@ImSpxrsh, NO Claude co-author** (git is already configured for this).
+- **Do NOT put "Generated with Claude Code" in PR bodies** (team preference).
+- Every rate carries N + Wilson CI or z-test. Negatives are reported as primary findings.
+- `main` push is blocked by the harness; work on a branch, push, open a PR; the team merges.
+- Abstract is em-dash-free (AI-tell hygiene); the paper body uses `---` as house style (fine).
+- Before staging: `git checkout -- marc/graph/__pycache__` (tracked pyc noise reappears).
 
----
+## The paper in one line
+A **controlled study / characterization** of *when* learned proposals help continuous algebraic
+constraint solving. Two acts: (1) value-diffusion is mostly a boundary/negative unified by a
+**factorization law**; (2) relocating learning to the **discrete structural-repair** decision is a
+decisive **positive** (the repair ranker). MARC (factor graphs + GNN diffusion denoiser + CAS +
+exact checker) is the *instrument*, not the claimed contribution — keep it framed that way (the
+diffusion model's novelty is weak; that is fine because we do not claim it as the contribution).
 
-## 1. What MARC is
-A neuro-symbolic **diffusion constraint solver**: math problems → **factor graphs** (variables +
-symbolic residual constraints); a **GNN denoiser** proposes real-valued assignments by reverse
-diffusion; a **CAS (SymPy)** gives exact residuals/energy/gradient + an exact accept checker.
-Classical fallback = energy-gradient / annealed-Langevin refinement (`marc/refine`).
+## DONE + merged to main this session
+- **Abstract v5** (repair co-headlined + geometry + real-systems validation), em-dash-free, ~265w.
+  `paper/tex/marc.tex` + `paper/ABSTRACT.md`. (PRs #113, #115.)
+- **Geometry learned arm (R25)** — the law's live prediction, TESTED and refuted, which sharpened
+  it: a trained denoiser ties random on the coupled geometry point-chain and collapses with it
+  (0.625/0.175/0.025/0.000, 0/4 wins). Corrected the law to **two conditions**: learning helps iff
+  (1) reachability collapses AND (2) the solution is per-variable separable. (PR #114.)
+- Earlier merged: factorization law R9 (MAE 0.012), repair ranker R20–R24 (0.997 vs 0.236,
+  p<1e-70, beats cheap-probe on accuracy+cost, 0.982±0.006 multiseed), fixes #103/#104, R8 regen.
 
-## 2. The single most important thing: the honest verdict
-**Workshop-level, NOT main-track.** Over this session we rigorously tested every plausible
-main-track angle and **all three are negative**:
-1. *Learned proposal beats classical search* → **No.** With the proper **random-multistart +
-   polish control**, the learned model **ties/loses to random restart** on the hard (bilinear)
-   and coupled families. Its only clean win is on **independent high-dim traps** (dimension
-   scaling, learned 0.925 vs random 0.0 at n=4) — but that is amortizing the curse of
-   dimensionality on *separable* problems, and it **vanishes under coupling**.
-2. *Structure/auxiliary invention* → **No.** Adding the "lemma" auxiliary **hurts** the numeric
-   solver (higher-dim search); it only helps symbolic/staged solving = plain CAS. The trained
-   structure **policy** beats fixed/no-context (p<1e-4) but **ties random** selection (p=0.28).
-3. *LLM (Gemini) + MARC verified solving* → **No.** LLM-direct ≈0.80 vs formalize-then-solve
-   ≈0.00 on MATH; formalization is a lossy bottleneck.
+## OPEN PR / branches
+- **PR #116 `sparsh/real-systems`** — **External validity (R26)**: eight NAMED real systems
+  (robotics IK, trilateration, Rosenbrock/Himmelblau, cyclic-4, circle/conic). Classical **LM
+  solves 8/8**; gradient-polish random restart 4/8. No learning-favorable regime (real = low-dim +
+  coupled → classical suffices, consistent with the law). Answers **synthetic-only**. Merged main
+  in; mergeable. **Action: get it merged.**
+- Branches `sparsh/crossover-families` work below is not yet pushed at handoff — see next section.
 
-**Do not claim "learned solver beats classical."** The honest, defensible framing: a
-neuro-symbolic diffusion solver + entrapment analysis + a rigorous *characterization of when
-learned proposals help constraint solving (and when they don't)*, controls and negatives
-included.
+## WINS IN FLIGHT — check these FIRST (two runs may still be going or just finished)
+1. **Crossover replication + learned-beats-LM** — the strongest new win.
+   `PYTHONPATH=.:scripts python3 scripts/run_crossover_families.py --K 8 --test 40 --epochs 200 --ntrain 200`
+   → `results/p_scaling/crossover_families.{json,log}`. Establishes TWO things:
+   (a) the R5 amortization crossover **replicates** across 3 structurally different separable
+   families (baseline / double_well / wide_roots) — not one designed family;
+   (b) the learned proposal beats **LM (the strong classical solver), not just random** — LM ALSO
+   collapses ~p^n (measured on baseline: LM 0.825/0.575/0.200/0.100/0.000 at n=1/2/3/4/6). This
+   closes the "did you compare to a real solver?" attack on R5.
+   Files already created (uncommitted): `scripts/run_crossover_families.py`,
+   `tests/test_crossover_families.py` (passing). **When it lands:** add R27 to RESULTS.md +
+   PROVENANCE, add a paper table/paragraph to the R5/scaling section of `marc.tex`, commit to a
+   branch `sparsh/crossover-families`, push, PR (NO Claude footer).
+2. **3-seed geometry hardening** — `scripts/run_pointchain_learned.py --seeds 3`
+   → `results/p_geometry/pointchain_learned_3seed.log`. Hardens R25 (ties reproduce). When done,
+   update R25's note to "3 seeds, tie robust".
 
-## 3. What IS solid (real, honest)
-- **Learned solver converges** (was diverging/0% → 100% on convex; 5 bugs fixed — see
-  `paper/notes/learned_solver_fix.md`). Trained at scale this run: Stage-A loss **0.60**.
-- **Entrapment (RQ2):** deterministic descent 100% trapped → annealed Langevin 0.475; reduction
-  **0.525 ± 0.086** (95% CI excludes 0, N=200). Real but textbook Langevin.
-- **Dimension-scaling crossover** (independent traps): random wins n≤2, **learned wins n≥3**
-  (curse-of-dimensionality amortization). Honest, but narrow/synthetic.
-- Everything has Wilson CIs + 2-proportion z-tests (`marc/eval/metrics.py`).
+## Honest WIN inventory (what the paper can claim)
+- **STRONG:** repair ranker (R20–R24) beats controls + cheap-probe on accuracy AND cost, multiseed-robust.
+- **STRONG (new):** learned beats BOTH random and LM at high-dim separable; crossover replicates.
+- **SOLID:** entrapment R2 (0.525±0.086); factorization law R9 (parameter-free MAE 0.012, 3-family
+  validation incl. the geometry refutation); structure-selection R16 (0.410 vs 0.200 in-pattern, sig).
+- **EXTERNAL VALIDITY (new):** R26 real systems (LM 8/8) — answers synthetic-only.
+- **HONEST NEGATIVES:** coupling kills value-learning (R7); geometry (R25); CircleLine; transfer 2/4
+  (R4); K=16 repair advantage gone (cost-only, R24).
 
-## 4. Results table (this session, honest)
-| Experiment | Learned vs baselines | Verdict |
-|---|---|---|
-| Convex (p1/main/CoT) | all 1.000, gap 0 | saturated, no signal |
-| Hard bilinear | learned = random (0.55/0.68/0.68), fails CircleLine (0.00) | ties random |
-| Coupled chained bilinear | learned ≤ random at every n (0.23–0.48) | ties/loses |
-| Dimension scaling (independent) | learned 0.95/0.95/0.975/0.925/0.25 vs random 1.0/0.725/0.075/0/0 | **learned ≫ random n≥3** |
-| Structure-invention policy | > fixed & no-context (p<1e-4); = random (p=0.28) | ties random |
-| Geometry (refine) | 0.56 in-dist | non-saturated real-ish domain (future signal?) |
-| CoT (Gemini flash-lite) | 1.0 convex | saturated |
+## Highest-value NEXT wins (priority order)
+1. **A real-domain POSITIVE = the single biggest lever for main-track.** The repair positive is on
+   a synthetic task construction. The real analog is **geometry auxiliary construction**
+   (AlphaGeometry's domain): geometry problems unsolvable without an auxiliary point/line, a menu of
+   candidate auxiliaries (exactly one solvable, certified), train the ranker. Hard but decisive —
+   moves the paper from "coin-flip" to "strong."
+2. **More separable families** for the crossover (extend `run_crossover_families`) — cheap breadth.
+3. **Repair ranker: more generalization axes** (held-out patterns, harder negatives).
+4. **Tighter CIs** on R5/R25 (more seeds).
 
-## 5. Overnight run (this session) — outcome & lessons
-`scripts/run_overnight.py` (crash-safe manifest). Ran to completion: **17 ok / 4 skipped / 1
-failed**.
-- **Stage-A trained (D512/L8, loss 0.60, ~30 min on MPS).**
-- **Stage-B GRPO DIVERGED** (loss 12.9→134k, reward ~−9e8, ~35min/epoch) — I cut it.
-- **`eval_main_learned` killed** after 3h+ stuck (D512 diffusion+guidance loop too slow on MPS
-  over the full perturbation/length suite; convex/saturated anyway).
-- **CRITICAL harness gap:** the eval scripts (`run_hard_eval`, `run_coupled_eval`,
-  `run_dimension_scaling`) **retrain their own small models and do NOT load the D512 checkpoint**
-  — so scaled training never reaches the differentiating evals. **Fix before any future scaled
-  run:** wire `MARC_CKPT` into those eval scripts. Until then, scaled runs are wasted on the
-  convex saturated evals.
-- Relaunch trick that worked: `--skip tests,train_stage_a,train_stage_b`; kill a stuck eval
-  subprocess and the harness marks it failed and continues.
+## Honest main-track verdict
+Borderline / credible-but-not-a-lock (~coin-flip). Strengths: the law (falsifiable, parameter-free,
+3-family), the repair positive, the controlled protocol, external validity, learned-beats-LM.
+Weaknesses: strongest positive is a synthetic task construction; diffusion model weak/negative
+(fine if framed as instrument); fundamentally an analysis paper. Biggest lever: a real-domain
+positive (item 1).
 
-## 6. Git / repo state
-- **On branch `main`.** The overnight-results commit (`OVERNIGHT_RESULTS.md` +
-  `results/overnight/`, b8d6d31) **landed on `origin/main`** after the pull; the tree is
-  clean — nothing pending.
-- Merged this session: PR #75 (stale-test fix + status). PR #56 (coupled negative) and branches
-  `sparsh/structure-invention`, `sparsh/aaai-readiness` carry the negatives (may be open).
-- Test suite: **green (365 passed)** — fixed a stale `test_invention_eval` Holm-family assertion.
-- Commits are authored by **@ImSpxrsh, no Claude co-author** (keep this convention).
-
-## 7. Canonical docs (avoid the sprawl)
-- `paper/RESULTS.md` — all results, corrected framing (READ THIS).
-- `paper/PROVENANCE.md` — every number → command/seed/commit (R1–R14).
-- `AAAI_READINESS.md` — the workshop-vs-main-track call + reframe table.
-- `OVERNIGHT_RESULTS.md` — this run's outcome.
-- Source notes: `paper/notes/{learned_solver_fix,dimension_scaling_result,math_coverage,
-  related_work,ablation_reframe,h2_reframe}.md`.
-- Process: `FIXING_PLAN.md`, `MEETING_NOTES.md`, `SUMMARY.md`, `RUNBOOK_SPARSH.md`.
-
-## 8. Next steps (priority)
-1. ~~Push the pending results commit~~ — **done** (b8d6d31 on `origin/main`; §6).
-2. **Decide target = workshop** (default) unless a new positive appears. Start the `.tex` — ~60%
-   (intro/method/related-work) is experiment-free; `paper/notes/related_work.md` positions vs
-   DIFUSCO / Langevin-CO / amortized inference.
-3. If still chasing main-track: only remaining shots are **(a) wire the D512 checkpoint into the
-   evals and see if scale changes coupled/hard** (cheap, likely still negative), **(b) a real
-   domain with a genuine positive** (geometry at 0.56 is the least-saturated lead), or **(c) new
-   method**. All are longer than the deadline; be honest about odds.
-4. **Consolidate `paper/*.md`** into `paper/notes/`, keep RESULTS + PROVENANCE at top level.
-
-## 9. Security / hygiene
-- **Rotate the OpenAI + Gemini API keys** — both were pasted into this working chat (exposed).
-  Gemini free tier is quota-limited (~flash 20/day; flash-lite higher). Keys were used only via
-  out-of-repo env files, never committed, and scrubbed after use.
-- Big checkpoints live in `checkpoints/scale_D512_L8/` (gitignored, ~426 MB each).
-
-## 10. One-line status
-Rigorous, honest, working system with one narrow positive (high-dim independent amortization);
-**workshop-ready, not main-track**; overnight run confirmed the findings and exposed the
-harness/checkpoint wiring gap; the results commit is pushed (b8d6d31 on `origin/main`).
+## Health
+- Full suite `PYTHONPATH=. python3 -m pytest -q` was **404 passing**; +new tests → ~406–408.
+- Result JSONs whitelisted in `.gitignore` (results/ is ignored; add `!results/p_.../x.json` per file).
