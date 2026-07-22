@@ -30,7 +30,8 @@ variables couple. Because every method shares one polish operator and one checke
 best-of-$K$ random restart is exactly $1-(1-q(n))^K$ in the single-start reachability
 $q(n)$, and the measured slope of $\log q(n)$ decides the regime; one measured constant
 reproduces the whole random-restart curve with no free parameters (mean absolute error
-0.012). Both conditions are necessary and the boundary holds outside the synthetic
+0.012). Factorized acceptance basins and high dimension are both necessary, and the
+boundary holds outside the synthetic
 families: a real geometric domain collapses in reachability yet a trained proposal ties
 random there, and across eight standard real systems (robotics, positioning,
 optimization, and algebra) classical multi-start solves all eight, none in the
