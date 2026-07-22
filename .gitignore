@@ -56,3 +56,4 @@ paper/tex/*.synctex.gz
 paper/tex/*.pdf
 !results/p5_invention/invention.json
 !results/p5_invention/invention_heldout.json
+!results/p_repair/probe_baseline.json
