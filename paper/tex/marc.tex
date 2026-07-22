@@ -611,6 +611,28 @@ negatives are kept in the record. The scope is menu-based repair on synthetic fa
 of nonlinear test menus (CAS real-root nonexistence), with the remainder carrying a disclosed
 budget-relative probe certificate.
 
+\subsection{External validity: standard real systems}
+\label{sec:real}
+
+Every family above is procedurally generated, so we also ran the solver battery on eight
+recognized test problems encoded once as factor graphs: two-circle and conic--line
+intersections, GPS-style trilateration, the Rosenbrock and Himmelblau stationary-point systems,
+two- and three-link inverse kinematics, and the cyclic-4 computer-algebra benchmark. Their real
+roots are irrational, so acceptance is a numeric residual tolerance ($\max_j |r_j(x)| < 10^{-6}$),
+the fair criterion for comparing numerical solvers.
+% provenance: RESULTS.md R26 + real_systems.md (results/p_real/real_systems.json)
+The result reinforces the paper's boundary on problems we did not construct. Multi-start
+Levenberg--Marquardt solves all eight; annealed Langevin solves one and random restart with the
+gradient polish solves four. Where the gradient polish fails --- the Rosenbrock valley, the
+Himmelblau saddles, the overdetermined trilateration basin, the six-variable 3R chain, all with
+single-start reachability $0.00$ --- a stronger \emph{classical} polish (LM) fixes every case,
+so the bottleneck there is the finisher, not the proposal, and a learned proposal would inherit
+the same weak polish. No system in the suite falls in the amortization regime the law identifies:
+these problems are low-dimensional and coupled, so classical search suffices, exactly as the
+factorization law predicts for real coupled systems. This is external validity for the
+characterization, not a new positive: the learned component is not run per system, because a
+suite with one instance per structure offers nothing to amortize.
+
 \subsection{Scope: what these problems are, and are not}
 \label{sec:scope}
 
