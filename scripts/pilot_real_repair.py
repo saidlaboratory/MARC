@@ -42,8 +42,10 @@ Protocol (mirrors marc.structure.geo_repair):
     +K_REF*V fresh restarts (matched to the full enumeration budget over the
     V-construction vocabulary).
 
-Pilot only: prints the table, writes /tmp JSON, touches nothing in results/.
-Run:  PYTHONPATH=. python3 scripts/pilot_real_repair.py [--n 100]
+This is the citable R30 protocol run (`--out results/p_real_repair/real_repair.json`);
+`best_single` is picked in-sample and is pilot-grade, but the headline ceiling-vs-restart
+margin is not. Prints the table and writes the JSON at ``--out``.
+Run:  PYTHONPATH=. python3 scripts/pilot_real_repair.py --n 200 --out results/p_real_repair/real_repair.json
 """
 from __future__ import annotations
 

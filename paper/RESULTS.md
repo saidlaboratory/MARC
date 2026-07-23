@@ -448,3 +448,34 @@ pick on the screens that chose it → 0.762; on a fresh stream → 0.199.
 `probe_concentration.json`, `geo_repair_p3_s{11,29,47}.json`, `analysis_p3.json`
 (PROVENANCE R28/R28b/R28c).  v2 protocol-scale runs (superseded, kept as the label-noise
 data point): `geo_repair_s{11,29,47}.json`, `analysis.json`.
+
+## R30 · Real-systems construction repair — the external anchor (a POSITIVE, where R28 was negative)
+Same derived-construction vocabulary as R28 (Heron/Cayley-Menger branch pins + law-of-cosines
+lifts, functions of the GIVENS only), taken to hardened, parameterized variants of the paper's
+named real systems (`scripts/pilot_real_repair.py`, `results/p_real_repair/real_repair.json`,
+N=200/class).  **Same two-stream failure-selection discipline that caught us in 2D** (an
+instance enters only if the direct LM solve fails on two independent restart streams; every arm
+graded on a fresh common stream; numeric acceptance max|r|<1e-6 on the ORIGINAL factors only —
+aux factors join the least-squares but never the acceptance test).  Two of four classes carry a
+hard-failure population, and on both the vocabulary repairs where budget-matched restarts cannot:
+
+| class | hard-fail rate | N_fail | ceiling (any construction) | restart+4 | restart+4V (enum-matched) | McNemar ceiling>restart+4V |
+|---|---|---|---|---|---|---|
+| trilat_far (far-side GPS init) | 0.87 | 174 | **1.000** [0.98,1.00] | 0.057 | 0.379 | p=3.1e-33 |
+| conic_ghost (ghost-root attractor) | 0.28 | 56 | **1.000** [0.94,1.00] | 0.018 | 0.107 | p=8.9e-16 |
+
+`ik3r_random` and `circles_far` are **documented negatives** — LM never fails there under
+two-stream selection (0/N hard failures), so there is no population to repair; kept as such.
+
+**The contrast is the point.**  R28 (2D pruned chains) was a reachability fluke: the constructions
+tied restart scaling because the failures solved on fresh randomness.  R30's biting classes are
+**structural-branch traps** (the far-side mirror minimum, the ghost-root attractor) that restart
+scaling cannot escape at any budget we ran (+4V = 36/20 restarts → 0.38/0.11) but a single derived
+branch pin escapes deterministically (1.00).  The failure MODE decides — exactly the paper's
+reachability-vs-structure thesis — and this is the external anchor that answers "you built all your
+benchmarks": construction repair works on recognized real systems, on the failure modes where it
+should.  **Honest scope:** within a biting class the working construction is essentially constant
+(the far-side branch, the real-root axis pin), so this is *portfolio/enumeration* repair, not
+per-instance selection — a ranker has nothing to select here, consistent with R28.  `best_single`
+is picked in-sample (pilot-grade); the citable headline is the ceiling-vs-restart margin, which is
+not.  (PROVENANCE R30.)
