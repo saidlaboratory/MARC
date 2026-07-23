@@ -1,0 +1,830 @@
+{
+  "reference_solver": {
+    "name": "lm",
+    "k_refine": 4
+  },
+  "config": {
+    "n": 80,
+    "ks": "10,12",
+    "seed": 20260722,
+    "out": "results/p_geo_repair/pilot3d.json"
+  },
+  "verdict": "construction ceiling matches restart scaling \u2014 the 2D trap holds in 3D",
+  "ks": [
+    {
+      "k": 10,
+      "n": 80,
+      "n_fail": 27,
+      "fail": {
+        "k": 27,
+        "n": 80,
+        "rate": 0.3375,
+        "ci95": [
+          0.24345459812221978,
+          0.44643681616376707
+        ]
+      },
+      "ceiling": {
+        "k": 13,
+        "n": 27,
+        "rate": 0.48148148148148145,
+        "ci95": [
+          0.3074295064970908,
+          0.6601467541378958
+        ]
+      },
+      "restart4": {
+        "k": 5,
+        "n": 27,
+        "rate": 0.18518518518518517,
+        "ci95": [
+          0.0818058657428532,
+          0.36699056505191746
+        ]
+      },
+      "restart16": {
+        "k": 14,
+        "n": 27,
+        "rate": 0.5185185185185185,
+        "ci95": [
+          0.3398532458621043,
+          0.6925704935029092
+        ]
+      },
+      "restart32": {
+        "k": 19,
+        "n": 27,
+        "rate": 0.7037037037037037,
+        "ci95": [
+          0.515189666191624,
+          0.8414714668235244
+        ]
+      },
+      "enumeration": {
+        "k": 13,
+        "n": 27,
+        "rate": 0.48148148148148145,
+        "ci95": [
+          0.3074295064970908,
+          0.6601467541378958
+        ]
+      },
+      "mcnemar_ceiling_vs_restart32": 0.99609375,
+      "rows": [
+        {
+          "seed": 20260726,
+          "V": 27,
+          "n_working": 2,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260727,
+          "V": 27,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260728,
+          "V": 29,
+          "n_working": 10,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260730,
+          "V": 25,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260734,
+          "V": 29,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260747,
+          "V": 29,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260748,
+          "V": 29,
+          "n_working": 12,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260755,
+          "V": 29,
+          "n_working": 5,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260756,
+          "V": 27,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260757,
+          "V": 25,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260759,
+          "V": 27,
+          "n_working": 6,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260761,
+          "V": 27,
+          "n_working": 5,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260762,
+          "V": 29,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260764,
+          "V": 25,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260765,
+          "V": 25,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260766,
+          "V": 27,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260767,
+          "V": 27,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260771,
+          "V": 29,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260773,
+          "V": 25,
+          "n_working": 3,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260774,
+          "V": 27,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260776,
+          "V": 27,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": true
+        },
+        {
+          "seed": 20260784,
+          "V": 27,
+          "n_working": 2,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260785,
+          "V": 29,
+          "n_working": 4,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20260793,
+          "V": 25,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260795,
+          "V": 25,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20260800,
+          "V": 29,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20260801,
+          "V": 25,
+          "n_working": 2,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        }
+      ]
+    },
+    {
+      "k": 12,
+      "n": 80,
+      "n_fail": 42,
+      "fail": {
+        "k": 42,
+        "n": 80,
+        "rate": 0.525,
+        "ci95": [
+          0.41695451180328746,
+          0.6307545013834838
+        ]
+      },
+      "ceiling": {
+        "k": 25,
+        "n": 42,
+        "rate": 0.5952380952380952,
+        "ci95": [
+          0.44494045528177417,
+          0.7295735232879093
+        ]
+      },
+      "restart4": {
+        "k": 12,
+        "n": 42,
+        "rate": 0.2857142857142857,
+        "ci95": [
+          0.1716685874457567,
+          0.43567496077245566
+        ]
+      },
+      "restart16": {
+        "k": 23,
+        "n": 42,
+        "rate": 0.5476190476190477,
+        "ci95": [
+          0.39948862747122693,
+          0.6877683618136149
+        ]
+      },
+      "restart32": {
+        "k": 34,
+        "n": 42,
+        "rate": 0.8095238095238095,
+        "ci95": [
+          0.6669893264500356,
+          0.9001811039014357
+        ]
+      },
+      "enumeration": {
+        "k": 25,
+        "n": 42,
+        "rate": 0.5952380952380952,
+        "ci95": [
+          0.44494045528177417,
+          0.7295735232879093
+        ]
+      },
+      "mcnemar_ceiling_vs_restart32": 0.998291015625,
+      "rows": [
+        {
+          "seed": 20300722,
+          "V": 31,
+          "n_working": 17,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300723,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20300724,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300726,
+          "V": 33,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300727,
+          "V": 35,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300731,
+          "V": 33,
+          "n_working": 12,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300734,
+          "V": 31,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": true
+        },
+        {
+          "seed": 20300735,
+          "V": 35,
+          "n_working": 16,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300736,
+          "V": 31,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20300738,
+          "V": 33,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300741,
+          "V": 35,
+          "n_working": 2,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300742,
+          "V": 33,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300743,
+          "V": 35,
+          "n_working": 5,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300744,
+          "V": 33,
+          "n_working": 17,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300745,
+          "V": 35,
+          "n_working": 17,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300747,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300750,
+          "V": 35,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300752,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300753,
+          "V": 33,
+          "n_working": 5,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300754,
+          "V": 35,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300755,
+          "V": 29,
+          "n_working": 11,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300757,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300759,
+          "V": 31,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20300763,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300766,
+          "V": 35,
+          "n_working": 9,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300768,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300770,
+          "V": 35,
+          "n_working": 8,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300771,
+          "V": 35,
+          "n_working": 14,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300775,
+          "V": 35,
+          "n_working": 15,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300777,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300778,
+          "V": 35,
+          "n_working": 13,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300779,
+          "V": 33,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300782,
+          "V": 35,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": false
+        },
+        {
+          "seed": 20300783,
+          "V": 35,
+          "n_working": 12,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300787,
+          "V": 35,
+          "n_working": 3,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": true
+        },
+        {
+          "seed": 20300788,
+          "V": 29,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20300793,
+          "V": 35,
+          "n_working": 8,
+          "ceiling": true,
+          "restart4": true,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300796,
+          "V": 31,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20300797,
+          "V": 35,
+          "n_working": 3,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": false,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300798,
+          "V": 31,
+          "n_working": 0,
+          "ceiling": false,
+          "restart4": false,
+          "restart16": false,
+          "restart32": false,
+          "enumeration": false
+        },
+        {
+          "seed": 20300799,
+          "V": 33,
+          "n_working": 1,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        },
+        {
+          "seed": 20300800,
+          "V": 35,
+          "n_working": 4,
+          "ceiling": true,
+          "restart4": false,
+          "restart16": true,
+          "restart32": true,
+          "enumeration": true
+        }
+      ]
+    }
+  ],
+  "wall_s": 3852.066846847534
+}

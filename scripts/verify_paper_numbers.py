@@ -85,6 +85,12 @@ CHECKS = [
     ("R30 conic ceiling", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "conic_ghost")["ceiling"]["rate"],
      1.000, 3, None),
+
+    # R31 3D DMDGP (negative; token=None until it lands in the tex via #122)
+    ("R31 3D k=12 ceiling", "results/p_geo_repair/pilot3d.json",
+     lambda d: next(r for r in d["ks"] if r["k"] == 12)["ceiling"]["rate"], 0.595, 3, None),
+    ("R31 3D k=12 restart+32", "results/p_geo_repair/pilot3d.json",
+     lambda d: next(r for r in d["ks"] if r["k"] == 12)["restart32"]["rate"], 0.810, 3, None),
 ]
 
 

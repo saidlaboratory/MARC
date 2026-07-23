@@ -81,6 +81,7 @@ paper/tex/*.pdf
 !results/p_geo_repair/geo_repair_p3_s47.json
 !results/p_geo_repair/analysis_p3.json
 !results/p_geo_repair/probe_concentration.json
+!results/p_geo_repair/pilot3d.json
 results/p_geo_repair/cache/
 !results/p_real_repair/
 !results/p_real_repair/real_repair.json

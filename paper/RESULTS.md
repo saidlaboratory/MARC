@@ -495,3 +495,27 @@ should.  **Honest scope:** within a biting class the working construction is ess
 per-instance selection — a ranker has nothing to select here, consistent with R28.  `best_single`
 is picked in-sample (pilot-grade); the citable headline is the ceiling-vs-restart margin, which is
 not.  (PROVENANCE R30.)
+
+## R31 · 3D DMDGP construction repair — the 2D trap holds in the native-3D setting (negative)
+The R28 machinery lifted to native 3D (`marc/data/geometry.py::make_pruned_chain_3d`,
+`marc/structure/geo_repair3d.py`): k points in Z^3 fixed by sphere distances (origin + fixed
+anchor + predecessor), the real DMDGP discrete branch (three spheres → two reflected points),
+branch pins = signed tetrahedron volume via Cayley-Menger determinant of the given squared
+distances. Tests validate the geometry (planted config is an exact root of every factor; each
+sign pair splits at the true branch; CM matches a known tetrahedron). **Same two-stream
+discipline, restart curve measured before any construction claim** (`scripts/pilot_geo_repair3d.py`,
+`results/p_geo_repair/pilot3d.json`, n=80/k):
+
+| k (n=3k) | hard-fail | N_fail | ceiling (any) | restart+4 | restart+16 | restart+32 | enum | McNemar ceil>+32 |
+|---|---|---|---|---|---|---|---|---|
+| 10 | 0.34 | 27 | 0.48 | 0.19 | 0.52 | **0.70** | 0.48 | p=0.996 |
+| 12 | 0.53 | 42 | 0.60 | 0.29 | 0.55 | **0.81** | 0.60 | p=0.998 |
+
+**The 2D trap holds in 3D.** The construction ceiling matches restart+16 and is beaten by
+restart+32 at both k (McNemar p≈1.0 — restarts win, not constructions). Like the 2D chains,
+these synthetic pruned failures are reachability-collapse flukes that restart scaling escapes,
+not structural traps constructions repair. This reinforces R28 and sharpens the boundary with
+R30: **the failure MODE decides, consistently across 2D / 3D / real systems** — synthetic
+pruned chains (R28, R31) are flukes where the trap holds; the hardened real systems (R30) are
+genuine structural-branch traps where derived constructions bite. Negative, and a real one:
+the selection-on-noise caution survives a full dimension lift. (PROVENANCE R31.)
