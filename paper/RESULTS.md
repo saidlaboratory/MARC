@@ -419,20 +419,33 @@ model (0.233) sat far *below* its own marginal ceiling there, a separate small-n
 The boundary reads: marginals help at trivially low n and are measurably insufficient from n=3
 on, exactly where the law needs them to be.
 
-## R28 · Geometry construction repair — a bounded negative, and the trap that produced it
+## R28 · Geometry construction repair — a closed negative, with the mechanism identified
 The relocation thesis, tested on 2D pruned distance-geometry chains (DDGP discrete-branch
-setting; `marc/structure/geo_repair.py`, protocol scale n=250/80/120 per k, train k={10,12},
-transfer k=14).  **The population definition decides the answer.**  Single-stream failure
-selection makes constructions look decisive (pilot ceiling 0.63–0.74 vs 0.09–0.27 matched
-restarts); two-stream hardening removes the margin: enumeration ceiling **0.603** trained /
-**0.600** transfer (N=63/60), while plain restart scaling reaches **0.54 at +16** and
-**0.73 at +32** restarts — budget-equivalent or better.  Learned selection does not separate
-from random (ranker 0.238 = restart_control 0.238; random 0.19–0.22; 2 opt seeds, McNemar
-p=0.61) — single-stream labels flip on ~half of fresh streams.  The live thread: the
-1-restart-per-candidate **probe (0.667 at ~20 restarts) beats every equal-budget restart
-point**, so the selection information exists; GEO_REPAIR_VERSION 3 (majority-vote labels
-over 3 streams, 5x data, recipe head) is the registered second attempt, running.
-Reported as a selection-on-noise methods finding: construction-style interventions invite
-exactly this trap, and our own pilot fell into it.
-`scripts/run_geo_repair.py`, `results/p_geo_repair/geo_repair_s{29,47}.json`, `analysis.json`
-(PROVENANCE R28).
+setting; `marc/structure/geo_repair.py`).  **The population definition decides the answer.**
+Single-stream failure selection makes constructions look decisive (pilot ceiling 0.63–0.74
+vs 0.09–0.27 matched restarts); two-stream hardening removes the margin.  At v3 scale
+(GEO_REPAIR_VERSION 3: majority-vote labels over 3 streams, 5x data — 782/269/698 failures,
+n=1250/400/600 per k, train k={10,12}, transfer k=14, seeds 11/29/47, N=367/331 test
+failures): enumeration ceiling **0.692 at 72.7 restarts** (transfer 0.616), restart scaling
+**0.572 at +16 / 0.725 at +32** — budget-equivalent or better.  Learning followed the label
+noise: single-stream labels (v2, flip ~half on fresh streams) → ranker never separates from
+random (0.238, p=0.61); stream-stable labels (v3) → it does (**0.246 ± 0.016 vs
+0.185 ± 0.019**, McNemar 35/8, **Holm p=1.3e-4**; transfer 24/8, p=0.021) — but ties
+recipe_only (0.249 ± 0.005) and best_fixed (0.259) and **loses to restart_control (0.270)**:
+the signal is the population prior; the graph adds nothing.  The probe (1 restart per
+candidate, own stream) still reads **0.698 at 19.5 restarts**, above enumeration — but the
+**probe-concentration control closes the gap**: screen every candidate on 2 fresh streams,
+grade the argmax at K_REF on a held-out stream → **0.199 [0.161,0.243]** trained / 0.169
+[0.133,0.213] transfer — *below* the restart control, so ~50 restarts of per-instance
+measurement select worse than the prior and no selector at this budget (learned or oracle)
+can reach the probe.  Accept probability is diffuse (11% of candidates ever pass a screen):
+the probe is a cheap portfolio sweep over augmented systems, not selection information.
+Distillation corroborates: ranker trained on raw probe outcomes (1-restart labels, 3,874
+train failures, 5x supervision at ~0.4x label compute) reaches [P3-SLOT] at the reference
+budget, as the ceiling predicts.  The same control prices the trap in one pair: grade the
+pick on the screens that chose it → 0.762; on a fresh stream → 0.199.
+`scripts/run_geo_repair.py`, `scripts/probe_concentration.py`,
+`results/p_geo_repair/geo_repair_v3_s{11,29,47}.json`, `analysis_v3.json`,
+`probe_concentration.json`, `geo_repair_p3_s{11,29,47}.json`, `analysis_p3.json`
+(PROVENANCE R28/R28b/R28c).  v2 protocol-scale runs (superseded, kept as the label-noise
+data point): `geo_repair_s{11,29,47}.json`, `analysis.json`.

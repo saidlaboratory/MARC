@@ -1,9 +1,9 @@
 # AAAI-26 abstract submission (deadline July 27; full paper ~7 days later)
 
 Paste-ready text for the submission form. Source of truth: `paper/tex/marc_aaai.tex`
-(the abstract below is the de-TeX'd copy; update BOTH if either changes). One slot
-is reserved for the R28 geometry construction-repair sentence — add it before
-"Every negative result..." once `results/p_geo_repair/` lands, then refresh this file.
+(the abstract below is the de-TeX'd copy; update BOTH if either changes). The R28
+geometry sentence is in (the trap + cross-fitted ceiling clause, second-to-last
+sentence), backed by `results/p_geo_repair/` R28b/R28c artifacts.
 
 ## Title
 
@@ -31,7 +31,10 @@ classical solvers lack is discrete choice: which structural augmentation renders
 unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms
 random on certificate-grade menus (0.997 vs 0.236 balanced nonlinear menu accuracy;
 p < 10^-70; 0.982 +/- 0.006 across seeds), and beats a budget-matched per-candidate
-probe on accuracy and cost. We delineate the regimes where learned proposals improve
+probe on accuracy and cost. A closing geometry study prices the trap such claims invite:
+failures selected on a single stochastic stream make repairs look decisive; two-stream
+selection and a cross-fitted ceiling show the residual probe advantage there is portfolio
+diversity, not learnable signal. We delineate the regimes where learned proposals improve
 solvers, and show that learning can succeed where no classical algorithm applies.
 
 ## Keywords

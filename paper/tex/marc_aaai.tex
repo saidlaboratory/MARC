@@ -51,7 +51,10 @@ classical solvers lack is discrete choice: which structural augmentation renders
 unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms
 random on certificate-grade menus (0.997 vs 0.236 balanced nonlinear menu accuracy;
 $p<10^{-70}$; $0.982\pm0.006$ across seeds), and beats a budget-matched per-candidate
-probe on accuracy and cost. We delineate the regimes where learned proposals improve
+probe on accuracy and cost. A closing geometry study prices the trap such claims invite:
+failures selected on a single stochastic stream make repairs look decisive; two-stream
+selection and a cross-fitted ceiling show the residual probe advantage there is portfolio
+diversity, not learnable signal. We delineate the regimes where learned proposals improve
 solvers, and show that learning can succeed where no classical algorithm applies.
 \end{abstract}
 
@@ -268,7 +271,10 @@ discipline: (i) admit an instance only if the direct solve fails on two independ
 streams; (ii) measure intervention labels on a third stream, majority-voted over
 independent streams whenever the labels train a model; (iii) grade all arms end-to-end on a
 fourth stream, common across arms; (iv) always field a matched-budget restart control
-beside the interventions. On our geometry population the difference is not subtle:
+beside the interventions; (v) before positing a learnable selection target, measure its
+ceiling cross-fitted --- screen every candidate on fresh streams, grade the argmax on a
+held-out stream --- because if that oracle cannot beat the restart control, there is
+nothing left to learn at that budget. On our geometry population the difference is not subtle:
 single-stream selection put the construction-repair ceiling at $0.63$--$0.74$ against
 $0.09$--$0.27$ for matched restarts, and two-stream selection collapsed the margin
 (\S\ref{sec:repair}).
@@ -600,24 +606,38 @@ synthetic factor graphs; ``exactly one solvable option'' is an exact certificate
 linear menus (rank) and $99\%$ of nonlinear test menus (CAS real-root nonexistence), with the
 remainder carrying a disclosed budget-relative probe certificate.
 
-\paragraph{Geometry as construction repair: a bounded negative.}
+\paragraph{Geometry as construction repair: a closed negative.}
 We took the relocation thesis to the pruned point chains of the factorization-law section ---
 the discrete-branch setting of distance geometry --- asking whether choosing one derived
 auxiliary construction (reflection-branch pins, mirror gauges, law-of-cosines lifts, all
 computed from the given distances) repairs instances the reference pipeline fails. The
 population definition decides the answer. With failures selected on a single restart stream,
 constructions look decisive (repair ceiling $0.63$--$0.74$ against $0.09$--$0.27$ for
-matched restarts); selecting failures on two independent streams removes that margin: the
-enumeration ceiling is $0.603$ ($0.600$ on held-out longer chains; $N{=}63/60$), while plain
-restart scaling reaches $0.54$ at $+16$ and $0.73$ at $+32$ restarts --- budget-equivalent or
-better. A ranker over candidate constructions does not separate from random at this data
-scale ($0.238$ versus $0.222$, three optimization seeds, exact McNemar $p{=}0.61$), with
-single-stream labels flipping on roughly half of fresh streams. We report this as a
-selection-on-noise trap that construction-style interventions invite --- our own pilot fell
-into it --- and as an open problem: a 1-restart-per-candidate probe still beats every
-equal-budget restart point ($0.667$ at ${\sim}20$ restarts), so the selection information
-exists in the instance; whether a graph-conditioned model can recover it at a fraction of
-the cost is the registered next experiment.
+matched restarts); selecting failures on two independent streams removes that margin
+($N{=}367$ trained-$k$, $331$ held-out-$k$ failures, three optimization seeds): the
+enumeration ceiling is $0.692$ at $72.7$ restarts per instance, while plain restart scaling
+reaches $0.572$ at $+16$ and $0.725$ at $+32$ --- budget-equivalent or better. Learning
+followed the labels' noise: with single-stream labels (flipping on half of fresh streams) a
+ranker never separated from random; with majority-vote labels over three streams and
+five-fold data it does ($0.246 \pm 0.016$ versus $0.185 \pm 0.019$; exact McNemar $35/8$,
+Holm $p{=}1.3{\times}10^{-4}$) --- but it ties the recipe-only control ($0.249$) and the
+best fixed construction ($0.259$), and loses to the matched-budget restart control
+($0.270$): real signal, and it is the population prior, with the problem graph
+contributing nothing. What kept the question open was the probe: one restart per candidate
+on its own stream solves $0.698$ at $19.5$ restarts, above the full-grade enumeration
+ceiling. A cross-fitted control closes it: screening every candidate on two fresh streams
+and grading the argmax at the reference budget on a held-out stream yields $0.199$
+$[0.161, 0.243]$ ($0.169$ held-out-$k$) --- below the restart control, so even
+${\sim}50$ restarts of per-instance measurement select worse than the prior, and no
+selector at this budget, learned or oracle, can reach the probe. Accept probability is
+diffuse ($11\%$ of candidates ever pass a screen): the probe's edge is a cheap portfolio
+sweep over augmented systems, not selection information. Distillation corroborates ---
+training the ranker on raw probe outcomes, five-fold cheaper labels and $3{,}874$ training
+failures, reaches [P3-SLOT] at the reference budget, as the ceiling predicts. The same
+control also prices the trap: grading the pick on the screens that chose it reads $0.762$;
+on a fresh stream, $0.199$. The verdict is a closed negative with the mechanism identified:
+on two-stream-hard chains, constructions help only as a portfolio tried cheaply, and
+``which construction'' carries no signal worth learning at the reference budget.
 
 \section{Limitations}
 \label{sec:limitations}
