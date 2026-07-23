@@ -68,6 +68,10 @@ paper/tex/*.pdf
 !results/p_real/real_systems.json
 !results/p_scaling/scaling_3seed.json
 !results/p_geometry/oracle_marginal_pointchain.json
+!results/p_geo_repair3d/
+results/p_geo_repair3d/*
+!results/p_geo_repair3d/pilot.json
+!results/p_geo_repair3d/pilot_clique_large.json
 !results/p_geo_repair/
 !results/p_geo_repair/geo_repair_s11.json
 !results/p_geo_repair/geo_repair_s29.json

@@ -1,0 +1,61 @@
+{
+  "experiment": "geo_repair3d_pilot",
+  "issue": 123,
+  "design": "anchor",
+  "design_note": "sphere-anchor: 3 fixed anchors, each point sphere^3 -> reflection across anchor plane",
+  "reference_solver": {
+    "name": "lm",
+    "k_refine": 4
+  },
+  "rows": [
+    {
+      "k": 8,
+      "n": 30,
+      "n_extra": 4,
+      "two_stream_failures": 5,
+      "failure_rate": 0.167,
+      "restart_control_rescued": 3,
+      "restart_plus16_rescued": 4,
+      "genuine_hard_survive_plus32_all_streams": 0,
+      "genuine_hard_rate": 0.0
+    },
+    {
+      "k": 10,
+      "n": 30,
+      "n_extra": 5,
+      "two_stream_failures": 8,
+      "failure_rate": 0.267,
+      "restart_control_rescued": 2,
+      "restart_plus16_rescued": 7,
+      "genuine_hard_survive_plus32_all_streams": 0,
+      "genuine_hard_rate": 0.0
+    },
+    {
+      "k": 12,
+      "n": 30,
+      "n_extra": 6,
+      "two_stream_failures": 13,
+      "failure_rate": 0.433,
+      "restart_control_rescued": 1,
+      "restart_plus16_rescued": 11,
+      "genuine_hard_survive_plus32_all_streams": 1,
+      "genuine_hard_rate": 0.033
+    },
+    {
+      "k": 14,
+      "n": 30,
+      "n_extra": 7,
+      "two_stream_failures": 17,
+      "failure_rate": 0.567,
+      "restart_control_rescued": 3,
+      "restart_plus16_rescued": 8,
+      "genuine_hard_survive_plus32_all_streams": 2,
+      "genuine_hard_rate": 0.067
+    }
+  ],
+  "total_two_stream_failures": 43,
+  "total_genuine_hard": 3,
+  "genuine_hard_rate": 0.025,
+  "confirm_streams": 3,
+  "verdict": "NO TRAP IN 3D (anchor): two-stream failures occur but are restart-noise -- only 3/120 (2.5%) survive +32 restarts across independent streams, no population. The planar reflection-tree difficulty does not survive in 3D; a bit more restart budget always rescues it. Negative result; no construction claim."
+}

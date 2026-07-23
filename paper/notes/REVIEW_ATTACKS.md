@@ -219,6 +219,20 @@ value denoiser exactly tied random restart (R9 geometry arm) — not that we sol
 molecular DDGP. **Evidence:** `marc/structure/geo_repair.py` docstring (disclosed
 simplifications) · R9 geometry bullet · `results/p_geometry/pointchain_learned.json`.
 
+**Stronger defusal (we tested it, #123):** 3D is no longer merely "named as open" — we
+built the native DMDGP setting in both the sphere-anchor and the canonical
+consecutive-clique (each point pinned to its 3 predecessors) formulations and ran the
+2D pilot's discipline (two-stream failure selection, restart-scaling +16/+32) at k up
+to 20. The planar trap does NOT transfer: two-stream failures rise with k (to ~60–70%
+at k=18–20) but are fully restart-rescuable — genuine-hard instances (surviving +32
+restarts across three independent streams) sit at ~2% noise, and *more* distance
+pruning makes 3D easier, the opposite of 2D. So the 2D difficulty is intrinsic to the
+planar under-constrained reflection tree, not a benchmark artifact, and the reference
+solver simply solves 3D distance-geometry chains — which is why the geometry
+construction study stays 2D. **Evidence:** `scripts/pilot_geo_repair3d.py`,
+`marc/data/geometry.py` (`make_pruned_chain_3d`, `make_clique_chain_3d`),
+`results/p_geo_repair3d/pilot.json` + `pilot_clique_large.json`.
+
 ## If R28 comes back mixed — honest framing (AC do-not-spin rule)
 
 Do not hold the submission for a better R28 outcome, and do not spin the one that
