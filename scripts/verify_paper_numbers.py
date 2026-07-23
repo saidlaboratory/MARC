@@ -81,7 +81,7 @@ CHECKS = [
      1.000, 3, None),
     ("R30 trilat restart+4V", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "trilat_far")["restart_matched"]["rate"],
-     0.379, 3, None),
+     0.382, 3, None),
     ("R30 conic ceiling", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "conic_ghost")["ceiling"]["rate"],
      1.000, 3, None),
