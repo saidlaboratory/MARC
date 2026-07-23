@@ -9,7 +9,11 @@ The five implementation faults fixed before any comparison (the entrapment exper
 received $x_t$; constants were absent from the graph tensors; $t$ did not condition variable
 nodes; guidance magnitudes exploded; and a shape-handling fault in the one-variable case.
 After the fixes, the solve rate on convex linear systems went from 0 to 1.000 in-distribution
-and held out.
+and held out. A sixth, architectural fix is referenced from the Method section: per-round
+LayerNorm washes out the magnitude of constraint constants, so a variable whose value is
+pinned by its own constraint cannot be read off the deep features; a direct linear skip from
+a variable's incident-factor constants to its output restores the path and cut the mean
+absolute root error from 5.4 to 0.9.
 
 Table~\ref{tab:hybrid} is the full mechanism ablation behind the hybrid-recipe study: four non-convex
 families where deterministic descent is fully trapped (best-of-8, 60 held-out instances per
@@ -117,8 +121,8 @@ are per-variable separable; the chained bilinear family fails collapse and ties;
 geometry point chains collapse but are coupled and tie --- the falsifiable cell, and it
 held. The double-well tie inside the win cell is the capacity failure of
 the dimension-scaling study, not a regime failure. The real-systems suite has no learned arm
-and no measured slope (nominal abscissa); R28 (in flight) relocates learning to the
-structural decision on the same pruned chains.}
+and no measured slope (nominal abscissa); the construction-repair study took relocation to
+the same pruned chains and closed it as a selection-on-noise negative (main text).}
 \label{fig:regime}
 \end{figure}
 
