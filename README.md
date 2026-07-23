@@ -11,7 +11,8 @@
 [![Status](https://img.shields.io/badge/status%20v0.3-structural%20repair-blue?style=for-the-badge)](https://github.com/saidlaboratory/MARC)
 [![Phase](https://img.shields.io/badge/phase-structure%20invention%20ladder-blue?style=for-the-badge)](#the-invention-ladder)
 [![Domain](https://img.shields.io/badge/domain-mathematical%20reasoning-6366f1?style=for-the-badge)](#motivation)
-[![License](https://img.shields.io/badge/license-TBD-888?style=for-the-badge)](#)
+[![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)](LICENSE)
+[![CI](https://github.com/saidlaboratory/MARC/actions/workflows/ci.yml/badge.svg)](https://github.com/saidlaboratory/MARC/actions/workflows/ci.yml)
 
 <br />
 
