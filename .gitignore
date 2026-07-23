@@ -31,6 +31,7 @@ results/p_repair/*
 !results/p_repair/linear_K8_e2e.json
 !results/p_repair/linear_K16_e2e.json
 !results/p_repair/linear_K16_trained.json
+!results/p_repair/third_family_feasibility.json
 checkpoints/
 
 # Virtual environments & IDE
@@ -81,3 +82,9 @@ paper/tex/*.pdf
 !results/p_geo_repair/probe_concentration.json
 results/p_geo_repair/cache/
 Blood-RNA-ML-benchmark/
+!results/p_repair/transfer/
+results/p_repair/transfer/*
+!results/p_repair/transfer/transfer_train_vieta.json
+!results/p_repair/transfer/transfer_train_quad_link.json
+!results/p_repair/transfer/transfer_train_sq_sum_xy.json
+!results/p_repair/transfer/transfer_matrix.json

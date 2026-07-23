@@ -39,3 +39,12 @@ show learning succeeding where no classical algorithm applies.
 
 constraint solving; diffusion models; graph neural networks; neuro-symbolic;
 amortized inference; algorithm selection; distance geometry
+
+---
+
+## AAAI 150-word form version (147 words)
+
+Short version for the submission form's 150-word abstract field (the full-length abstract
+above is the paper/PDF version).
+
+Learned diffusion proposals for constraint solving are rarely evaluated against the control that matters: random multi-start under the same refinement budget. We run that control on our own system and our headline claim shrinks. MARC encodes algebraic constraint systems as factor graphs, proposes assignments with a graph-neural diffusion denoiser, polishes them on exact computer-algebra energies, and accepts only symbolically verified solutions. The learned proposal helps only narrowly: it ties random restart on trapped low-dimensional families, wins in high dimension where random search fails, and loses once variables couple. One measured constant reproduces the full restart curve with no free parameters (mean absolute error 0.012); across eight real systems, classical multi-start solves all eight, none in the learning-favorable regime. Learning wins where classical solvers have no baseline: choosing the structural augmentation that makes an unsolvable system solvable, where a repair ranker scores 0.997 versus 0.236 random ($p<10^{-70}$, seed-robust).
