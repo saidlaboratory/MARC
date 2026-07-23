@@ -13,7 +13,7 @@ Usage:
     python3 scripts/run_overnight.py --only env_check
     python3 scripts/run_overnight.py --skip tests --force
 
-Stdlib only. See RUNBOOK_SPARSH.md.
+Stdlib only. See RUNBOOK_OVERNIGHT.md.
 """
 from __future__ import annotations
 

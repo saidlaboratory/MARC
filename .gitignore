@@ -31,6 +31,7 @@ results/p_repair/*
 !results/p_repair/linear_K8_e2e.json
 !results/p_repair/linear_K16_e2e.json
 !results/p_repair/linear_K16_trained.json
+!results/p_repair/third_family_feasibility.json
 checkpoints/
 
 # Virtual environments & IDE
@@ -67,3 +68,31 @@ paper/tex/*.pdf
 !results/p_real/real_systems.json
 !results/p_scaling/scaling_3seed.json
 !results/p_geometry/oracle_marginal_pointchain.json
+!results/p_geo_repair/
+!results/p_geo_repair/geo_repair_s11.json
+!results/p_geo_repair/geo_repair_s29.json
+!results/p_geo_repair/geo_repair_s47.json
+!results/p_geo_repair/analysis.json
+!results/p_geo_repair/geo_repair_v3_s11.json
+!results/p_geo_repair/geo_repair_v3_s29.json
+!results/p_geo_repair/geo_repair_v3_s47.json
+!results/p_geo_repair/analysis_v3.json
+!results/p_geo_repair/geo_repair_p3_s11.json
+!results/p_geo_repair/geo_repair_p3_s29.json
+!results/p_geo_repair/geo_repair_p3_s47.json
+!results/p_geo_repair/analysis_p3.json
+!results/p_geo_repair/probe_concentration.json
+results/p_geo_repair/cache/
+Blood-RNA-ML-benchmark/
+!results/p_repair/transfer/
+results/p_repair/transfer/*
+!results/p_repair/transfer/transfer_train_vieta.json
+!results/p_repair/transfer/transfer_train_quad_link.json
+!results/p_repair/transfer/transfer_train_sq_sum_xy.json
+!results/p_repair/transfer/transfer_matrix.json
+
+# experiment run logs (keep RUN_*.md, drop raw logs)
+run_logs/*.log
+!results/p_real_repair/
+results/p_real_repair/*
+!results/p_real_repair/real_repair.json
