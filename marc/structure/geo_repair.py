@@ -55,8 +55,10 @@ from marc.graph.graph import FactorGraph
 from marc.graph.schema import Edge, FactorNode, VariableNode
 from marc.structure.invention_data import REFERENCE_SOLVER
 
-#: bump whenever identical seeds generate different instances/vocabularies
-GEO_REPAIR_VERSION: int = 2
+#: bump whenever identical seeds generate different instances/vocabularies.
+#: v3: labels are majority votes over label_streams independent restart streams
+#: (single-stream labels were noisy enough that the ranker could not learn).
+GEO_REPAIR_VERSION: int = 3
 
 #: stream separation for every solver purpose; larger than any split-base
 #: spacing so purpose streams can never collide across splits
@@ -162,15 +164,48 @@ def givens_hash(givens: Dict) -> str:
 
 
 def label_instance(graph: FactorGraph, constructions: Sequence[Construction],
-                   *, solve_seed: int) -> List[bool]:
-    """Measured labels under common random numbers: every construction is graded
-    with the same restart stream, so label differences come from the
-    construction alone."""
-    return [solve_graph(c.apply(graph), seed=solve_seed) for c in constructions]
+                   *, solve_seed: int, streams: int = 1,
+                   k_restarts: Optional[int] = None) -> List[bool]:
+    """Measured labels under common random numbers: within a stream every
+    construction is graded with the same restarts, so differences come from
+    the construction alone. With ``streams`` > 1 a construction's label is the
+    majority vote across independent streams — stream-stable repairs, which
+    denoises the training target (a single stream flips ~half its verdicts on
+    a fresh stream). ``k_restarts`` grades each construction at a cheaper
+    budget than the reference solve — ``k_restarts=1`` is the probe outcome
+    (a noisy Bernoulli draw of the per-restart accept probability, ~12x
+    cheaper than a 3-stream reference-budget label)."""
+    votes = [
+        [solve_graph(c.apply(graph), seed=solve_seed + 97 * j, k_restarts=k_restarts)
+         for c in constructions]
+        for j in range(streams)
+    ]
+    need = streams // 2 + 1
+    return [sum(v[i] for v in votes) >= need for i in range(len(constructions))]
+
+
+def _build_one(args) -> Optional[GeoRepairInstance]:
+    k, inst_seed, n_extra, label_streams, label_restarts = args
+    graph, sol, givens = make_pruned_chain(k, random.Random(inst_seed),
+                                           n_extra=n_extra)
+    if (solve_graph(graph, seed=inst_seed)
+            or solve_graph(graph, seed=inst_seed + STREAM_SALT)):
+        return None  # direct solve succeeded on either stream -> not hard
+    vocab = construction_vocabulary(k, givens)
+    worked = label_instance(graph, vocab, solve_seed=inst_seed + 2 * STREAM_SALT,
+                            streams=label_streams, k_restarts=label_restarts)
+    return GeoRepairInstance(
+        id=f"pruned_chain_k{k}_s{inst_seed}",
+        seed=inst_seed, k=k, graph=graph, givens=givens,
+        constructions=vocab, worked=worked, solution=sol,
+    )
 
 
 def make_dataset(n_per_k: int, seed: int, ks: Sequence[int] = (6, 8),
-                 n_extra: Optional[int] = None) -> List[GeoRepairInstance]:
+                 n_extra: Optional[int] = None, label_streams: int = 1,
+                 cache_dir: Optional[str] = "results/p_geo_repair/cache",
+                 label_restarts: Optional[int] = None,
+                 workers: int = 0) -> List[GeoRepairInstance]:
     """Generate chains, keep the HARD reference-solver failures, label their menus.
 
     An instance is a failure only if the direct solve fails under two
@@ -179,24 +214,36 @@ def make_dataset(n_per_k: int, seed: int, ks: Sequence[int] = (6, 8),
     stream, which would inflate every downstream arm). Deterministic per
     (n_per_k, seed, ks, n_extra). Purpose streams are STREAM_SALT-separated:
     failure tests at +0/+1 salt, labels at +2, evaluation at +3 and up.
+    ``label_restarts`` overrides the per-solve label budget (probe labels at
+    1); ``workers`` fans the per-chain work over processes — every chain is
+    keyed by its own inst_seed, so the result is identical to the serial
+    build (asserted in tests/test_geo_repair.py).
     """
-    out: List[GeoRepairInstance] = []
-    for k in ks:
-        for t in range(n_per_k):
-            inst_seed = seed + 1000 * k + t
-            graph, sol, givens = make_pruned_chain(k, random.Random(inst_seed),
-                                                   n_extra=n_extra)
-            if (solve_graph(graph, seed=inst_seed)
-                    or solve_graph(graph, seed=inst_seed + STREAM_SALT)):
-                continue  # direct solve succeeded on either stream -> not hard
-            vocab = construction_vocabulary(k, givens)
-            worked = label_instance(graph, vocab,
-                                    solve_seed=inst_seed + 2 * STREAM_SALT)
-            out.append(GeoRepairInstance(
-                id=f"pruned_chain_k{k}_s{inst_seed}",
-                seed=inst_seed, k=k, graph=graph, givens=givens,
-                constructions=vocab, worked=worked, solution=sol,
-            ))
+    cache_path = None
+    if cache_dir is not None:
+        import pickle
+        from pathlib import Path
+        key = f"v{GEO_REPAIR_VERSION}_n{n_per_k}_s{seed}_k{'-'.join(map(str, ks))}_e{n_extra}_ls{label_streams}"
+        if label_restarts is not None:
+            key += f"_lr{label_restarts}"
+        cache_path = Path(cache_dir) / f"{key}.pkl"
+        if cache_path.exists():
+            with open(cache_path, "rb") as fh:
+                return pickle.load(fh)
+    jobs = [(k, seed + 1000 * k + t, n_extra, label_streams, label_restarts)
+            for k in ks for t in range(n_per_k)]
+    if workers > 1:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=workers) as ex:
+            built = list(ex.map(_build_one, jobs, chunksize=4))
+    else:
+        built = [_build_one(j) for j in jobs]
+    out = [b for b in built if b is not None]
+    if cache_path is not None:
+        import pickle
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_path, "wb") as fh:
+            pickle.dump(out, fh)
     return out
 
 

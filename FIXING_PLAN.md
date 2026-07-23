@@ -114,7 +114,7 @@ Every flaw below has: evidence (file refs), why it matters, the fix, effort, and
 ## B. Scope & infrastructure gaps (be honest, don't fix by July 27)
 
 ### B1 · No GPU-scale training ‖ P2 — **DONE**
-`roadmap.md` calls the D=512/L=8 full Stage-A+B plan (`results/p4_scale/scaling_notes.md`) "the single highest-leverage next step." Status: **done** — the overnight harness (`scripts/run_overnight.py`, RUNBOOK_SPARSH.md) drives GPU Stage-A/B training at D512/L8 with resume, and the training phases have run on GPU.
+`roadmap.md` calls the D=512/L=8 full Stage-A+B plan (`results/p4_scale/scaling_notes.md`) "the single highest-leverage next step." Status: **done** — the overnight harness (`scripts/run_overnight.py`, RUNBOOK_OVERNIGHT.md) drives GPU Stage-A/B training at D512/L8 with resume, and the training phases have run on GPU.
 
 ### B2 · NL parser covers 3 sentence templates ‖ P2
 `marc/nl/parser.py` is real but closed-vocabulary. Paper must say "template-based formalization for three problem shapes; general autoformalization out of scope (CONCEPT.md defers it by design)." Do not demo NL input without that caveat.

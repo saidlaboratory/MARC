@@ -1,0 +1,24 @@
+{
+  "issue": 126,
+  "experiment": "nonlinear_transfer_matrix_3x3",
+  "scale": "n_train 240 / n_val 100 / n_test 300, epochs 120, lr 8e-4, seed 20260722",
+  "note": "train each single family (exclude other two), eval on all three; full-model top-1.",
+  "cells": {
+    "vieta->vieta": 0.98,
+    "vieta->quad_link": 0.27,
+    "vieta->sq_sum_xy": 0.52,
+    "quad_link->vieta": 0.2,
+    "quad_link->quad_link": 0.97,
+    "quad_link->sq_sum_xy": 0.39,
+    "sq_sum_xy->vieta": 0.23,
+    "sq_sum_xy->quad_link": 0.91,
+    "sq_sum_xy->sq_sum_xy": 0.99
+  },
+  "in_family_diagonal_mean": 0.98,
+  "transfer_offdiagonal_mean": 0.42,
+  "seed_hygiene_overlap": {
+    "vieta": 0,
+    "quad_link": 0,
+    "sq_sum_xy": 0
+  }
+}

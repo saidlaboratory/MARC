@@ -1,0 +1,35 @@
+{
+  "issue": 126,
+  "purpose": "CAS rootless-availability gate for a third nonlinear relation family (R10 transfer breadth), run BEFORE committing to transfer-matrix runs.",
+  "bar": "menu-fillability: build_menu (K=4) needs >=3 CAS-certified-unsolvable distractors per gold, drawn from the family support; theorem-grade = cas_no_real_roots. Calibrated against shipped families vieta/quad_link on the identical measurement.",
+  "probe_script": "scripts/feasibility_third_nonlinear.py",
+  "n_attempts_per_family": 120,
+  "shipped_calibration": {
+    "vieta":     {"aux_required": 120, "mean_cas_rootless_per_gold": 11.54, "fillable_fraction_K4": 1.00, "both_sides_fraction": 0.66},
+    "quad_link": {"aux_required": 120, "mean_cas_rootless_per_gold": 4.42,  "fillable_fraction_K4": 1.00, "both_sides_fraction": 0.56}
+  },
+  "candidates": {
+    "sq_sum_xy": {
+      "defining": "u - a*(x+y)**2 - d",
+      "form": "perfect square (one-sided)",
+      "aux_required": 120,
+      "mean_cas_rootless_per_gold": 9.72,
+      "fillable_fraction_K4": 1.00,
+      "both_sides_fraction": 0.42,
+      "verdict": "CLEARS",
+      "note": "richer certified-distractor pool than shipped quad_link; menu-fillable at the shipped 100% floor."
+    },
+    "hyperbolic": {
+      "defining": "u - a*(x**2 - y**2) - d",
+      "form": "indefinite quadratic",
+      "aux_required": 120,
+      "mean_cas_rootless_per_gold": 4.33,
+      "fillable_fraction_K4": 0.62,
+      "both_sides_fraction": 0.18,
+      "solvable_distractors_of_2040": 1520,
+      "verdict": "FAILS",
+      "note": "indefinite form does not force rootlessness (hyperbola has real points for any RHS) - same failure mode as the rejected linear defining relation; only 62% of golds fill a K=4 menu."
+    }
+  },
+  "conclusion": "sq_sum_xy (perfect-square, one-sided) is the viable third family and is the one to carry into the 6-cell transfer matrix. hyperbolic (indefinite) is confirmed infeasible, reinforcing the module's 'one-sided quadratic forms only' rationale."
+}
