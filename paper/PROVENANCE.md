@@ -75,3 +75,41 @@ regenerated first:
 ## Metric definitions (source of truth)
 `marc/eval/metrics.py` — `solve_rate`, `generalization_gap`, `entrapment_rate`,
 `perturbation_robustness`, `pass_at_k`. Cite these, not prose descriptions.
+
+## Wall-clock receipts (one machine, per-instance)
+
+R28 geometry repair — every arm graded in one pass (`analysis_v3.json`), so the restarts and wall time are directly comparable:
+
+| arm | restarts/instance | wall ms/instance | vs ranker |
+|---|---:|---:|---:|
+| ranker | 4.0 | 696 | 1.00x |
+| recipe_only | 4.0 | 568 | 0.82x |
+| restart_control | 4.0 | 548 | 0.79x |
+| restart_plus16 | 16.0 | 1346 | 1.93x |
+| restart_plus32 | 32.0 | 2125 | 3.05x |
+| probe | 19.5 | 4023 | 5.78x |
+| enumeration | 72.7 | 10696 | 15.37x |
+
+This prices the arms: a single augmented solve (696 ms) is 5.8x cheaper than the probe and 15x cheaper than enumeration. On R28 that buys nothing — the ranker's pick ties the prior and loses to the matched-budget restart control on accuracy (a negative). The cost win is R10:
+
+R10 nonlinear repair — the learned selection is a single forward pass of 0.27 ms/instance over the candidate graphs (deterministic featurization cached) plus one reference solve, matching the enumeration ceiling at a fraction of its 2.62 solves per instance — cost win and accuracy at once (R10).
+
+Regenerate: `python3 scripts/wall_clock_table.py` (reads committed JSONs).
+
+## Checkpoint manifest (SHA-256)
+
+The `.pt` files are gitignored (regenerable from the training rows above). This
+manifest pins the citable checkpoints so the uploaded artifact tarball is verifiable;
+regenerate/verify with `scripts/checkpoint_manifest.sh` (`--tar` writes
+`dist/marc_checkpoints.tar.gz` for upload per lab convention).
+
+```
+# SHA-256 checkpoint manifest
+6f96d329886920190af7bb9b884cbee1e15ec34516857e72f4211b41142a24a2  checkpoints/repair_nonlinear_balanced_full.pt
+6c6ad84777e96dcef382b9912ce637d0747eea42efbbcb5ae45d0d2f05b7f109  checkpoints/repair_random_support_holdout.pt
+7c3dc80710077fdb324c6cab6edb5fe67d9930c951ad6f53abfec70522b325fe  checkpoints/repair_nonlinear_holdout_vieta.pt
+c942225e8444e1eed94a7be2b32073826192169e3210b2d250b9d0b072540deb  checkpoints/repair_nonlinear_holdout_quad.pt
+6c112aaa72367c764e144f76eb8c48698bfff43ac2f8105c1be96625a30103b7  checkpoints/geo_repair_v3_s11.pt
+aa89c837c562413a443bcea1a6962de10c2c59355f119572f23310a7836f3742  checkpoints/geo_repair_v3_s29.pt
+5360a97cac3151a2a56a0e14aaad9fedd584a306171435744dcf6256baf8d052  checkpoints/geo_repair_v3_s47.pt
+```
