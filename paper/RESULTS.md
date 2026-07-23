@@ -401,6 +401,22 @@ product-of-marginals proposal, a ceiling for *any* factorized learner. The recom
 column reproduces R7 digit-for-digit at every n. Best-of-8, 60 test/n.
 `scripts/run_oracle_marginal.py` (`results/p_scaling/oracle_marginal.json`).
 
+**Second coupled family (geometry point chains, R25).** The same control on the
+`make_point_chain` family: oracle marginals pooled from disjoint training-side chains, same
+best-of-8 geometry polish + 6-decimal snap + Checker gate and restart seeds as R25's random
+arm (which recomputes digit-for-digit here, `random_reproduces_r25: true` at every k). Oracle
+marginals **tie random at every chain length** (0.700 vs 0.625 at k=1, not significant p=0.24;
+identical at k=2/3/4), **0/4 significant wins** — so on geometry too the tie is coupling, not a
+denoiser-capacity failure, and the law's causal mechanism now covers **both** coupled families.
+`scripts/run_oracle_marginal_pointchain.py` (`results/p_geometry/oracle_marginal_pointchain.json`).
+
+| k (n=2k) | random restart | **oracle marginal** | learned (R25) | oracle > random? |
+|---|---|---|---|---|
+| 1 (n=2) | 0.625 | 0.700 | 0.625 | no (p=0.24) |
+| 2 (n=4) | 0.175 | 0.175 | 0.175 | no (tie) |
+| 3 (n=6) | 0.025 | 0.025 | 0.025 | no (tie) |
+| 4 (n=8) | 0.000 | 0.000 | 0.000 | no (tie) |
+
 | n | random restart | **oracle marginal** | learned (R7) | oracle > random? |
 |---|---|---|---|---|
 | 2 | 0.483 | **0.733** | 0.233 | **yes** (p=0.0025) |
