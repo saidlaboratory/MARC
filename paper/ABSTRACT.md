@@ -12,30 +12,28 @@ Exact Constraint Solving
 
 ## Abstract
 
-Evaluations of diffusion-based proposal models for constraint solving rarely include one
-key control: random multi-start under the same refinement budget. When applied to our
-system, this control sharply curtails our headline claim. MARC turns a continuous
+Evaluations of diffusion proposal models for constraint solving rarely include the one
+decisive control: random multi-start at the same refinement budget. Applied to our own
+system, it sharply curtails our headline claim. MARC turns a continuous
 algebraic constraint system into a factor graph, over which a graph-neural diffusion
 denoiser proposes assignments, descent on an exact computer-algebra energy polishes them,
-and an exact symbolic checker certifies solutions. Does the learned proposal improve on
-random multi-start at choosing satisfying assignments? Only narrowly, in a predictable
-regime. Across trapped low-dimensional families it ties with random restart, but dominates
-in high dimension, where random search fails. Once variables couple, the advantage is
-gone. Since all methods share the same polishing and checker, best-of-K random
+and an exact symbolic checker certifies solutions. Does the learned proposal beat random
+multi-start at choosing values? Only narrowly, in a predictable regime. It ties random restart on trapped low-dimensional families, dominates in high dimension
+where random search fails, and loses the advantage once variables couple. Since all
+methods share one polish and checker, best-of-K random
 multi-start succeeds with probability exactly 1-(1-q(n))^K, where q(n) is single-start
-reachability; a single measured constant, with no free parameters, reproduces the entire
-curve (mean absolute error 0.012). The narrow favorable regime is not specific to our
-synthetic families: across eight real-world systems, from robotics to algebra, classical
-multi-start solved all eight, but none were in the learning-favorable regime. What
+reachability; one measured constant reproduces the entire curve with no free parameters
+(mean absolute error 0.012). Nor is the regime an artifact of our synthetic families: classical multi-start solves
+all eight real systems we encode, and none falls in the learning-favorable regime. What
 classical solvers lack is discrete choice: which structural augmentation renders an
-unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms
-random on certificate-grade menus (0.997 vs 0.236 balanced nonlinear menu accuracy;
-p < 10^-70; 0.982 +/- 0.006 across seeds), and beats a budget-matched per-candidate
-probe on accuracy and cost. A closing geometry study prices the trap such claims invite:
-failures selected on a single stochastic stream make repairs look decisive; two-stream
-selection and a cross-fitted ceiling show the residual probe advantage there is portfolio
-diversity, not learnable signal. We delineate the regimes where learned proposals improve
-solvers, and show that learning can succeed where no classical algorithm applies.
+unsolvable system solvable. There a candidate-conditioned repair ranker beats random
+on certificate-grade menus (0.997 vs 0.236 balanced nonlinear accuracy;
+p < 10^-70; 0.982 +/- 0.006 across seeds) and a budget-matched per-candidate probe
+on accuracy and cost. A closing geometry study prices the trap such claims invite:
+single-stream failure selection makes repairs look decisive; two-stream selection and a
+cross-fitted ceiling show the residual probe advantage is portfolio diversity, not
+learnable signal. We delineate where learned proposals improve solvers, and
+show learning succeeding where no classical algorithm applies.
 
 ## Keywords
 

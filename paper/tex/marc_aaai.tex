@@ -32,30 +32,31 @@ A Controlled Characterization of Learning in Exact Constraint Solving}
 \maketitle
 
 \begin{abstract}
-Evaluations of diffusion-based proposal models for constraint solving rarely include one
-key control: random multi-start under the same refinement budget. When applied to our
-system, this control sharply curtails our headline claim. MARC turns a continuous
+Evaluations of diffusion proposal models for constraint solving rarely include the one
+decisive control: random multi-start at the same refinement budget. Applied to our own
+system, it sharply curtails our headline claim. MARC turns a continuous
 algebraic constraint system into a factor graph, over which a graph-neural diffusion
 denoiser proposes assignments, descent on an exact computer-algebra energy polishes them,
-and an exact symbolic checker certifies solutions. Does the learned proposal improve on
-random multi-start at choosing satisfying assignments? Only narrowly, in a predictable
-regime. Across trapped low-dimensional families it ties with random restart, but dominates
-in high dimension, where random search fails. Once variables couple, the advantage is
-gone. Since all methods share the same polishing and checker, best-of-$K$ random
+and an exact symbolic checker certifies solutions. Does the learned proposal beat random
+multi-start at choosing values? Only narrowly, in a predictable regime. It ties or loses to
+random restart on trapped low-dimensional families and wins in a crossover window where
+dimension collapses random search, but the advantage is gone once variables couple. Since all
+methods share one polish and checker, best-of-$K$ random
 multi-start succeeds with probability exactly $1-(1-q(n))^K$, where $q(n)$ is single-start
-reachability; a single measured constant, with no free parameters, reproduces the entire
-curve (mean absolute error 0.012). The narrow favorable regime is not specific to our
-synthetic families: across eight real-world systems, from robotics to algebra, classical
-multi-start solved all eight, but none were in the learning-favorable regime. What
-classical solvers lack is discrete choice: which structural augmentation renders an
-unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms
-random on certificate-grade menus (0.997 vs 0.236 balanced nonlinear menu accuracy;
-$p<10^{-70}$; $0.982\pm0.006$ across seeds), and beats a budget-matched per-candidate
-probe on accuracy and cost. A closing geometry study prices the trap such claims invite:
-failures selected on a single stochastic stream make repairs look decisive; two-stream
-selection and a cross-fitted ceiling show the residual probe advantage there is portfolio
-diversity, not learnable signal. We delineate the regimes where learned proposals improve
-solvers, and show that learning can succeed where no classical algorithm applies.
+reachability; on the separable family one measured constant reproduces the entire best-of-8
+curve with no free parameters (mean absolute error 0.012). Nor is the favorable regime an
+artifact of our synthetic families: classical multi-start solves all eight standard test
+systems we encode, and none falls in it. What
+classical solvers make only by enumeration is the discrete choice --- which structural
+augmentation renders an unsolvable system solvable. There a candidate-conditioned repair
+ranker matches the exhaustive-enumeration ceiling at a fraction of the solver calls, beating
+random and a stronger per-candidate probe on accuracy and cost (0.997 vs 0.236 balanced
+nonlinear accuracy; $p<10^{-70}$; $0.982\pm0.006$ across seeds). A closing geometry study
+prices the trap such claims invite: single-stream failure selection makes repairs look
+decisive; two-stream selection and a budget-matched screen show the residual probe advantage
+is portfolio breadth, not learnable signal. We delineate where learned proposals improve on
+classical search, and where the residual win is one of cost over an exhaustive classical
+recourse, not reach beyond it.
 \end{abstract}
 
 \section{Introduction}
@@ -65,8 +66,8 @@ Solving a system of algebraic constraints involves two different kinds of decisi
 continuous decision asks which values satisfy the equations; it is smooth, gradient-rich, and
 has been owned by numerical analysis for sixty years. The discrete decision asks which
 representation makes the problem tractable at all: which auxiliary variable, substitution, or
-defining relation to introduce. Classical solvers have nothing to say about the second
-decision, and for the first they are very hard to beat. This paper measures, under controlled
+defining relation to introduce. Classical numerical solvers take the representation as given
+and make this choice only by enumeration, and for the value decision they are very hard to beat. This paper measures, under controlled
 conditions, whether a learned diffusion model helps with the value decision on continuous
 algebraic constraint systems. The short answer is: only in a narrow regime, and we can say
 exactly which one.
@@ -93,13 +94,14 @@ controls that produced it as the contribution. First, the missing control shrink
 random multi-start with identical polish and budget erases most of the learned proposal's
 apparent advantage, leaving the crossover regime of the dimension-scaling study
 (\S\ref{sec:scaling}). Second, the shrunken claim compresses into a law: a parameter-free
-factorization in the measured single-start reachability $q(n)$ reproduces the entire
-best-of-$K$ curve and predicts where the favorable regime can occur at all
+factorization in the measured single-start reachability $q(n)$ reproduces the separable
+family's best-of-$K$ curve and predicts where the favorable regime can occur at all
 (\S\ref{sec:law}). Third, the learned component relocates: moved off the value decision onto
-the discrete structural decision, a candidate-conditioned repair ranker clears every matched
-control on certificate-grade menus (\S\ref{sec:repair}). Fourth, the same discipline turned
+the discrete structural decision, a candidate-conditioned repair ranker clears its matched
+controls on certificate-grade nonlinear menus, matching the enumeration ceiling at a
+fraction of the calls (\S\ref{sec:repair}). Fourth, the same discipline turned
 on our own pilot exposes a trap: defining ``failure'' on a single stochastic stream
-manufactures repair effects that two-stream selection removes, and we state the protocol in
+manufactures repair effects that two-stream selection and a budget-held screen dissolve, and we state the protocol in
 reusable form (\S\ref{sec:entrapment}). Alongside the arc we contribute the substrate
 itself, a pre-registered entrapment result, a partial cross-family transfer result, and a
 scope measurement on the MATH benchmark showing that autoformalization, not solving, is the
@@ -188,9 +190,11 @@ E(x) \;=\; \tfrac{1}{2} \sum_{j=1}^{m} r_j(x)^2 .
 Residuals, energy, and $\nabla E$ are computed exactly by a CAS (SymPy) and compiled once per
 graph. Acceptance is a two-stage gate: a numeric stage rejects fast if any factor's violation
 exceeds a tolerance, and a symbolic stage snaps the candidate to nearby exact rationals and
-re-checks every constraint exactly. The symbolic stage is authoritative, catching false
-accepts a numeric tolerance admits; the checker is the only acceptance criterion in every
-experiment and the only reward source in training.
+re-checks every constraint exactly. On the synthetic families the symbolic stage is
+authoritative, catching false accepts a numeric tolerance admits; on the real systems, whose
+roots are irrational, no exact rational exists to snap to and the numeric stage stands alone.
+This gate is the only acceptance criterion in every experiment and the only reward source in
+training.
 
 \paragraph{The learned proposal.}
 The forward process is standard Gaussian diffusion over variable values with a cosine noise
@@ -258,13 +262,15 @@ discipline: (i) admit an instance only if the direct solve fails on two independ
 streams; (ii) measure intervention labels on a third stream, majority-voted over
 independent streams whenever the labels train a model; (iii) grade all arms end-to-end on a
 fourth stream, common across arms; (iv) always field a matched-budget restart control
-beside the interventions; (v) before positing a learnable selection target, measure its
-ceiling cross-fitted --- screen every candidate on fresh streams, grade the argmax on a
-held-out stream --- because if that oracle cannot beat the restart control, there is
-nothing left to learn at that budget. On our geometry population the difference is not subtle:
+beside the interventions; (v) before crediting a learnable selection target, run the cheap
+diagnostic --- screen each candidate at the target budget on fresh streams and grade the
+argmax on a held-out one --- because if that per-instance measurement cannot beat the
+matched-budget control, the intervention's advantage is portfolio breadth, not selection a
+model could amortize. On our geometry population the difference is not subtle:
 single-stream selection put the construction-repair ceiling at $0.63$--$0.74$ against
-$0.09$--$0.27$ for matched restarts, and two-stream selection collapsed the margin
-(\S\ref{sec:repair}).
+$0.09$--$0.27$ for matched restarts, and two-stream selection with a common grading stream
+collapsed the margin --- most of it the control, graded off the stream that had defined
+failure, coming back to its true rate (\S\ref{sec:repair}).
 
 \subsection{The hybrid recipe: a good proposal plus polish beats cold-start refinement}
 \label{sec:hybrid}
@@ -391,9 +397,11 @@ former, while on the latter random search never collapses and a learned proposal
 nothing to amortize. An oracle control
 closes the mechanism: sampling each variable from its \emph{true} per-variable marginal
 (pooled from disjoint instances) and polishing identically also ties random restart at every
-$n \ge 3$ on the coupled family (0/4 significant wins), so the coupled null is a
-representational ceiling of any marginal proposal --- no better-trained denoiser could cross
-it. We do not claim a
+$n \ge 3$ on the coupled family (0/4 significant wins). This oracle samples coordinates
+independently, so it bounds only product-of-marginals proposals, not a joint sampler in
+principle; what it shows is that the population-marginal information is already exhausted on
+the coupled family, and our trained denoiser behaves like a marginal sampler there rather than
+recovering the instance-conditional joint. We do not claim a
 sharp crossover at a particular $n$; the robust, predicted quantity is the geometric collapse
 of the restart cost against the learned ceiling, and the coupled negative that follows is the
 law's other prediction.
@@ -423,12 +431,14 @@ The negative is the informative result, because it separates two conditions the 
 family had conflated. Reachability collapse (condition one, read off the slope) determines
 whether random search fails; it does here. Separability (condition two) determines whether the
 denoiser has per-variable marginals to amortize; geometry fails it, because each point's
-coordinates are pinned only jointly through the chain. The corrected law needs both: a learned
-proposal beats classical search iff reachability collapses \emph{and} the solution is
-per-variable separable. The separable traps have both and learning wins; the coupled
-bilinear family fails the first and learning ties; geometry has the first, fails the second,
-and ties --- collapse is necessary but not sufficient. Appendix Figure~\ref{fig:regime} places
-every measured family on the two axes of the law; the win cell contains exactly the families
+coordinates are pinned only jointly through the chain. Both conditions are necessary: a
+learned proposal beats classical search only where reachability collapses \emph{and} the
+solution is per-variable separable, and given those it wins when the denoiser has the
+capacity to fit the marginals. The separable traps have both and learning wins (except the
+two-well family, where the small denoiser did not fit the harder marginals and tied); the
+coupled bilinear family fails the first and learning ties; geometry has the first, fails the
+second, and ties --- collapse is necessary but not sufficient. Appendix Figure~\ref{fig:regime} places
+every measured family on the two axes of the law; the win cell contains the families
 where learning beats both classical arms.
 
 \subsection{Coupling removes the advantage}
@@ -596,20 +606,22 @@ five-fold data it does ($0.246 \pm 0.016$ versus $0.185 \pm 0.019$; exact McNema
 Holm $p{=}1.3{\times}10^{-4}$) --- but ties the recipe-only control ($0.249$) and best
 fixed construction ($0.259$) and loses to the matched-budget restart control ($0.270$):
 real signal, but it is the population prior; the graph contributes nothing. What kept the question open was the probe: one restart per candidate
-on its own stream solves $0.698$ at $19.5$ restarts, above the full-grade enumeration
-ceiling. A cross-fitted control closes it: screening every candidate on two fresh streams
-and grading the argmax at the reference budget on a held-out stream yields $0.199$
-$[0.161, 0.243]$ ($0.169$ held-out-$k$) --- below the restart control: ${\sim}50$ restarts of
-per-instance measurement select worse than the prior, and no selector at this budget,
-learned or oracle, reaches the probe. Accept probability is
-diffuse ($11\%$ of candidates ever pass a screen): the probe's edge is a cheap portfolio
-sweep over augmented systems, not selection information. Distillation corroborates: a
-ranker trained on raw probe outcomes ($3{,}874$ training failures at five-fold cheaper
-labels) reaches $0.256 \pm 0.004$, converging on the prior as the ceiling predicts. The same
-control also prices the trap: grading the pick on the screens that chose it reads $0.762$;
-on a fresh stream, $0.199$. The verdict: on two-stream-hard chains, constructions help only as a portfolio tried
-cheaply, and ``which construction'' carries no signal worth learning at the reference
-budget.
+on its own stream solves $0.698$ at $19.5$ restarts, matching the full-grade enumeration
+ceiling ($0.692$; the two are within noise). The probe is not a selector, though --- it
+spends the whole menu's budget, and its per-candidate accept probability is diffuse ($11\%$
+of candidates ever pass a screen), so it works as a cheap portfolio sweep over augmented
+systems, not by identifying which construction to add. A per-instance screen held to the
+reference budget confirms this: screening every candidate on two fresh streams and grading
+the argmax on a held-out stream scores $0.199$ $[0.161, 0.243]$ ($0.169$ held-out-$k$),
+below the restart control --- ${\sim}50$ restarts of per-instance measurement select worse
+than the prior does. The learned arms landing on the prior are then the expected outcome,
+not a training failure: distilling the probe's own labels into the ranker ($3{,}874$
+training failures at five-fold cheaper labels) also converges there ($0.256 \pm 0.004$),
+tightening around the prior rather than beating it. The gap between the honest screen
+($0.199$) and the same screen scored on the streams that chose it ($0.762$) is the
+selection-on-noise trap measured directly. The verdict: on two-stream-hard chains,
+constructions help only as a portfolio tried cheaply, and ``which construction'' carries no
+signal a selector can exploit at the reference budget.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -655,14 +667,16 @@ scope) --- the binding constraint is autoformalization, not the solver.
 We set out to test whether a learned diffusion proposal helps solve continuous algebraic
 constraint systems, and we ran the control that decides the question; the outcome is a
 characterization. The learned proposal earns its place only where search is independent
-across variables and dimension defeats random restart --- a regime exhibited at $n \ge 3$ --- and the advantage disappears under coupling; the factorization law compresses the
-characterization into one measured quantity and reproduces the random-restart curve without a
-fitted parameter, closing the route from learned value proposals to a general claim over
-classical search here. What survives is the substrate (exact symbolic residuals, energy
-guidance, an exact checker around any proposer) and the division of labor it supports: the
-decision classical solvers cannot make is not which values to try but which structure to
-add, and there the certificate-grade repair ranker clears every control, on menus where
-``exactly one solvable option'' is a theorem, not a budget-relative claim. The lesson we generalize is about evaluation itself: each of the four
+across variables and dimension defeats random restart --- a crossover the unified protocol
+places by $n=3$ --- and the advantage disappears under coupling; the factorization law
+compresses the characterization into one measured quantity and reproduces the separable
+family's random-restart curve without a fitted parameter, closing the route from learned
+value proposals to a general claim over classical search here. What survives is the substrate
+(exact symbolic residuals, energy guidance, an exact checker around any proposer) and the
+division of labor it supports: the decision classical solvers make only by enumeration is not
+which values to try but which structure to add, and there the certificate-grade repair ranker
+clears its controls on the nonlinear menus, matching the enumeration ceiling at a fraction of
+the calls, where ``exactly one solvable option'' is a theorem, not a budget-relative claim. The lesson we generalize is about evaluation itself: each of the four
 contributions is a control that changed the answer; the last caught our own pilot. Populations defined by stochastic failure are artifacts of the draw unless the
 protocol makes them stable --- the discipline of \S\ref{sec:entrapment} costs one extra
 solve per instance, and results that omit it read as upper bounds.
