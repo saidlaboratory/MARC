@@ -91,3 +91,6 @@ results/p_repair/transfer/*
 
 # experiment run logs (keep RUN_*.md, drop raw logs)
 run_logs/*.log
+!results/p_real_repair/
+results/p_real_repair/*
+!results/p_real_repair/real_repair.json
