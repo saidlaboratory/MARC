@@ -441,8 +441,7 @@ measurement select worse than the prior and no selector at this budget (learned 
 can reach the probe.  Accept probability is diffuse (11% of candidates ever pass a screen):
 the probe is a cheap portfolio sweep over augmented systems, not selection information.
 Distillation corroborates: ranker trained on raw probe outcomes (1-restart labels, 3,874
-train failures, 5x supervision at ~0.4x label compute) reaches [P3-SLOT] at the reference
-budget, as the ceiling predicts.  The same control prices the trap in one pair: grade the
+train failures, 5x supervision at ~0.4x label compute) reaches **0.256 ± 0.004** trained / 0.182 ± 0.001 transfer at the reference budget — converged onto the prior (W/L vs best_fixed 6/6; vs restart_control 8/12, Holm p=1.0), with the seed spread collapsed from ±0.016 to ±0.004: more supervision made the ranker more certain of the prior, not better than it.  The same control prices the trap in one pair: grade the
 pick on the screens that chose it → 0.762; on a fresh stream → 0.199.
 `scripts/run_geo_repair.py`, `scripts/probe_concentration.py`,
 `results/p_geo_repair/geo_repair_v3_s{11,29,47}.json`, `analysis_v3.json`,
