@@ -88,3 +88,6 @@ results/p_repair/transfer/*
 !results/p_repair/transfer/transfer_train_quad_link.json
 !results/p_repair/transfer/transfer_train_sq_sum_xy.json
 !results/p_repair/transfer/transfer_matrix.json
+
+# experiment run logs (keep RUN_*.md, drop raw logs)
+run_logs/*.log

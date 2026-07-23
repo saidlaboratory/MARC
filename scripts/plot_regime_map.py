@@ -128,8 +128,8 @@ def main():
                 fontsize=7, ha="right", va="center", color="#111827", zorder=6)
 
     # R28: the structural-decision counterpart of the geometry tie
-    ax.annotate("TODO R28 (in flight): same pruned chains,\nlearning relocated to the "
-                "structural decision",
+    ax.annotate("R28: repair on the same chains closes\nnegative (selection is noise;"
+                " portfolio wins)",
                 (core["geometry"], 0.02), textcoords="offset points", xytext=(-30, -52),
                 fontsize=7, ha="center", color="#6b7280",
                 arrowprops=dict(arrowstyle="->", color="#6b7280", lw=0.8, ls=":"))
