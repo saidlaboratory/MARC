@@ -66,6 +66,8 @@ paper/tex/*.pdf
 !results/p_scaling/crossover_families.json
 !results/p_geometry/pointchain_learned_3seed.json
 !results/p_real/real_systems.json
+!results/p_scaling/scaling_3seed.json
+!results/p_geometry/oracle_marginal_pointchain.json
 !results/p_geo_repair3d/
 results/p_geo_repair3d/*
 !results/p_geo_repair3d/pilot.json

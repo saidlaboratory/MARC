@@ -1,0 +1,167 @@
+{
+  "status": "ok",
+  "issue": 125,
+  "method": "oracle-marginal proposal control on the geometry point-chain family (each coordinate drawn independently from the true per-variable marginal, pooled from the learned model's own training slice; identical best-of-K geometry polish + Checker gate and restart seeds as the random arm)",
+  "config": {
+    "K": 8,
+    "pool": 200,
+    "trials": 40,
+    "ks": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "learned_source": "results/p_geometry/pointchain_learned.json"
+  },
+  "seed_hygiene": {
+    "pool_seed0": "100+k",
+    "test_seed0": "90000+k",
+    "note": "pool = learned model's training slice (100+k), test = 90000+k; instance streams disjoint; restart seeds 9000*s+31*j+k shared with the random arm (CRN)"
+  },
+  "rows": [
+    {
+      "k": 1,
+      "n_points": 1,
+      "n_vars": 2,
+      "random": {
+        "k": 25,
+        "n": 40,
+        "rate": 0.625,
+        "ci95": [
+          0.47032160054531913,
+          0.7577722646420829
+        ]
+      },
+      "oracle_marginal": {
+        "k": 28,
+        "n": 40,
+        "rate": 0.7,
+        "ci95": [
+          0.545696893456796,
+          0.8192532908430471
+        ]
+      },
+      "learned_pointchain": {
+        "k": 25,
+        "n": 40,
+        "rate": 0.625,
+        "ci95": [
+          0.47032160054531913,
+          0.7577722646420829
+        ]
+      },
+      "p_oracle_gt_random": 0.23906081886789887,
+      "p_oracle_gt_learned": 0.23906081886789887,
+      "random_reproduces_pointchain": true
+    },
+    {
+      "k": 2,
+      "n_points": 2,
+      "n_vars": 4,
+      "random": {
+        "k": 4,
+        "n": 40,
+        "rate": 0.1,
+        "ci95": [
+          0.03957888759557486,
+          0.23052074380473897
+        ]
+      },
+      "oracle_marginal": {
+        "k": 5,
+        "n": 40,
+        "rate": 0.125,
+        "ci95": [
+          0.05459419773541284,
+          0.26112420670238146
+        ]
+      },
+      "learned_pointchain": {
+        "k": 7,
+        "n": 40,
+        "rate": 0.175,
+        "ci95": [
+          0.08745302996883066,
+          0.3195029205439244
+        ]
+      },
+      "p_oracle_gt_random": 0.361733171511465,
+      "p_oracle_gt_learned": 0.7344160817269929,
+      "random_reproduces_pointchain": false
+    },
+    {
+      "k": 3,
+      "n_points": 3,
+      "n_vars": 6,
+      "random": {
+        "k": 1,
+        "n": 40,
+        "rate": 0.025,
+        "ci95": [
+          0.0044267174077949195,
+          0.1288165948800778
+        ]
+      },
+      "oracle_marginal": {
+        "k": 1,
+        "n": 40,
+        "rate": 0.025,
+        "ci95": [
+          0.0044267174077949195,
+          0.1288165948800778
+        ]
+      },
+      "learned_pointchain": {
+        "k": 1,
+        "n": 40,
+        "rate": 0.025,
+        "ci95": [
+          0.0044267174077949195,
+          0.1288165948800778
+        ]
+      },
+      "p_oracle_gt_random": 0.5,
+      "p_oracle_gt_learned": 0.5,
+      "random_reproduces_pointchain": true
+    },
+    {
+      "k": 4,
+      "n_points": 4,
+      "n_vars": 8,
+      "random": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "oracle_marginal": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "learned_pointchain": {
+        "k": 0,
+        "n": 40,
+        "rate": 0.0,
+        "ci95": [
+          0.0,
+          0.08762453925039232
+        ]
+      },
+      "p_oracle_gt_random": 0.5,
+      "p_oracle_gt_learned": 0.5,
+      "random_reproduces_pointchain": true
+    }
+  ],
+  "random_reproduces_pointchain_all_k": false,
+  "verdict": "oracle marginals tie random on point chains -- marginals are causally insufficient under coupling HERE too; the law's causal control covers BOTH coupled families (coupled chained-bilinear AND geometry point chains)",
+  "wall_s": 146.1264967918396
+}
