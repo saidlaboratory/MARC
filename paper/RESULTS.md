@@ -119,7 +119,7 @@ quantifies scope honestly. `python scripts/run_math_coverage.py`
 - Every solve rate has N + a CI or z-test.
 - Report CircleLine failure and the n=6 dropoff openly.
 - No claim to beat combinatorial-optimization SOTA (DIFUSCO etc.) — different problem class
-  (`paper/notes/related_work.md`).
+  (Related Work section of the paper).
 - MARC targets continuous algebraic constraint solving; it does **not** do general MATH/olympiad
   reasoning.
 
@@ -418,3 +418,33 @@ so marginal information has bite while the joint grid (6^n points) is tiny — a
 model (0.233) sat far *below* its own marginal ceiling there, a separate small-n training miss.
 The boundary reads: marginals help at trivially low n and are measurably insufficient from n=3
 on, exactly where the law needs them to be.
+
+## R28 · Geometry construction repair — a closed negative, with the mechanism identified
+The relocation thesis, tested on 2D pruned distance-geometry chains (DDGP discrete-branch
+setting; `marc/structure/geo_repair.py`).  **The population definition decides the answer.**
+Single-stream failure selection makes constructions look decisive (pilot ceiling 0.63–0.74
+vs 0.09–0.27 matched restarts); two-stream hardening removes the margin.  At v3 scale
+(GEO_REPAIR_VERSION 3: majority-vote labels over 3 streams, 5x data — 782/269/698 failures,
+n=1250/400/600 per k, train k={10,12}, transfer k=14, seeds 11/29/47, N=367/331 test
+failures): enumeration ceiling **0.692 at 72.7 restarts** (transfer 0.616), restart scaling
+**0.572 at +16 / 0.725 at +32** — budget-equivalent or better.  Learning followed the label
+noise: single-stream labels (v2, flip ~half on fresh streams) → ranker never separates from
+random (0.238, p=0.61); stream-stable labels (v3) → it does (**0.246 ± 0.016 vs
+0.185 ± 0.019**, McNemar 35/8, **Holm p=1.3e-4**; transfer 24/8, p=0.021) — but ties
+recipe_only (0.249 ± 0.005) and best_fixed (0.259) and **loses to restart_control (0.270)**:
+the signal is the population prior; the graph adds nothing.  The probe (1 restart per
+candidate, own stream) still reads **0.698 at 19.5 restarts**, above enumeration — but the
+**probe-concentration control closes the gap**: screen every candidate on 2 fresh streams,
+grade the argmax at K_REF on a held-out stream → **0.199 [0.161,0.243]** trained / 0.169
+[0.133,0.213] transfer — *below* the restart control, so ~50 restarts of per-instance
+measurement select worse than the prior and no selector at this budget (learned or oracle)
+can reach the probe.  Accept probability is diffuse (11% of candidates ever pass a screen):
+the probe is a cheap portfolio sweep over augmented systems, not selection information.
+Distillation corroborates: ranker trained on raw probe outcomes (1-restart labels, 3,874
+train failures, 5x supervision at ~0.4x label compute) reaches **0.256 ± 0.004** trained / 0.182 ± 0.001 transfer at the reference budget — converged onto the prior (W/L vs best_fixed 6/6; vs restart_control 8/12, Holm p=1.0), with the seed spread collapsed from ±0.016 to ±0.004: more supervision made the ranker more certain of the prior, not better than it.  The same control prices the trap in one pair: grade the
+pick on the screens that chose it → 0.762; on a fresh stream → 0.199.
+`scripts/run_geo_repair.py`, `scripts/probe_concentration.py`,
+`results/p_geo_repair/geo_repair_v3_s{11,29,47}.json`, `analysis_v3.json`,
+`probe_concentration.json`, `geo_repair_p3_s{11,29,47}.json`, `analysis_p3.json`
+(PROVENANCE R28/R28b/R28c).  v2 protocol-scale runs (superseded, kept as the label-noise
+data point): `geo_repair_s{11,29,47}.json`, `analysis.json`.

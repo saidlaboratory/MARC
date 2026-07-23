@@ -140,7 +140,7 @@ What we measure, per run (`scripts/run_repair_ranker.py`):
 
 Value-solver context rows (never headlines): `refine`, `lm`, `random`, `exact` on the hard/coupled suites, with the entrapment ablation retained as the RQ2 result.
 
-**Reproduce everything:** `python3 scripts/run_overnight.py` (one command, crash-safe, per-phase logs + manifest; see [`RUNBOOK_SPARSH.md`](RUNBOOK_SPARSH.md)).
+**Reproduce everything:** `python3 scripts/run_overnight.py` (one command, crash-safe, per-phase logs + manifest; see [`RUNBOOK_OVERNIGHT.md`](RUNBOOK_OVERNIGHT.md)).
 
 ---
 
@@ -155,7 +155,7 @@ marc/
   structure/   THE CORE BET — padded slots, absorbing-D3PM corruption,
                invention menus + certificates, structure policy + reverse sampler
   refine/      classical Langevin refinement + residual Jacobians
-  model/       GNN encoders, operator-aware repair ranker, structure head
+  model/       GNN encoders, candidate-conditioned repair ranker, structure head
   diffusion/   value-diffusion machinery (retained: hybrid + ablations context)
   train/       Stage-A denoising, Stage-B GRPO (corrected), scale trainer (GPU/MPS),
                structure-policy training (CE + optional solve-reward)

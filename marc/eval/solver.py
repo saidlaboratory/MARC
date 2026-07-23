@@ -10,7 +10,7 @@ with a graceful, *loud* fallback so a green P1 run is never produced by a placeh
 Plugging in the learned solver (P1, Day 3+): ``marc.diffusion.solve.solve`` already
 exists on ``main`` with signature
 ``solve(graph, denoiser, cas_engine, steps, N, guidance_weight, eta, T) -> Tensor``.
-Once Quang's checkpoint lands, run with ``--solver learned`` and
+Once a trained checkpoint lands, run with ``--solver learned`` and
 ``MARC_CKPT=/path/to/denoiser.pt``. The learned path additionally needs
 ``torch_geometric`` installed (the GNN denoiser builds a ``HeteroData``).
 """
@@ -342,7 +342,7 @@ class LearnedSolver:
         elif not checkpoint:
             warnings.warn(
                 "LearnedSolver running with an UNTRAINED denoiser (no checkpoint). "
-                "Results are not meaningful — set MARC_CKPT to Quang's checkpoint.",
+                "Results are not meaningful — set MARC_CKPT to a trained checkpoint.",
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -404,7 +404,7 @@ def load_solver(name: str | None = None, **kwargs: Any) -> Solver:
     """Return a solver by name, honouring env config with a graceful, loud fallback.
 
     Names: ``"refine"`` (default, real gradient solver), ``"dummy"`` (oracle-ish
-    sanity solver), ``"learned"``/``"davin"`` (the diffusion ``solve()`` + a
+    sanity solver), ``"learned"`` (the diffusion ``solve()`` + a
     checkpoint), ``"lm"`` (scipy Levenberg–Marquardt classical baseline),
     ``"exact"`` (exact linear-system solver; no candidates on nonlinear input).
     ``None`` reads ``MARC_SOLVER`` (default ``"refine"``). The learned
@@ -419,7 +419,7 @@ def load_solver(name: str | None = None, **kwargs: Any) -> Solver:
         from marc.eval.runner import DummySolver
 
         return DummySolver(**kwargs)
-    if name in ("learned", "davin"):
+    if name == "learned":
         return LearnedSolver(**kwargs)
     if name == "lm":
         return ScipySolver(**kwargs)
