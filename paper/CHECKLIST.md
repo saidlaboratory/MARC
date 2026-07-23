@@ -1,7 +1,7 @@
 # AAAI-26 Reproducibility Checklist — draft answers
 
-Filled against the actual repo so submission day is copy-paste. Update the two figures
-marked TODO once the final compute settles (#122 freeze).
+Filled against the actual repo so submission day is copy-paste. Update the numbers
+here if the final compute shifts them (#122 freeze).
 
 ## This paper
 
@@ -63,9 +63,11 @@ marked TODO once the final compute settles (#122 freeze).
 Every experiment in the paper runs on a single machine (Apple-silicon MacBook, CPU; PyTorch
 MPS optional). No GPU cluster. Representative wall times (one machine, `--solve-e2e` boundary):
 
-- Repair-ranker training (nonlinear, 3 seeds): TODO minutes/seed — fill from #128 wall-clock table.
+- Repair-ranker training (nonlinear headline, 3 seeds): ~25 min/seed, seeds run in parallel
+  via `run_repair_multiseed.py --jobs 3`; the learned selection at eval is a 0.27 ms/instance
+  forward pass (#128 wall-clock table).
 - R28 geometry v3 (per seed, warm dataset cache): ~7.5 h/seed at protocol scale (n=1250/400/600,
   60 epochs); dataset build parallelized over the process pool.
 - R30 real-systems repair (N=200 × 4 classes): ~1.5 min total.
-- Dimension-scaling law (3 seeds × 5 dimensions): TODO — fill from `scaling_3seed.json`.
+- Dimension-scaling (3 seeds × 5 dimensions, 200 epochs): ~2.75 h total single-machine CPU.
 - Fast test subset (CI): ~2 minutes.

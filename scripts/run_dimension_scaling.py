@@ -195,6 +195,9 @@ def main() -> None:
     ap.add_argument("--ckpt", default=os.environ.get("MARC_CKPT"),
                     help="trained Stage-A checkpoint for the learned arm (DDIM via "
                          "LearnedSolver; default $MARC_CKPT; omit to self-train per rep)")
+    ap.add_argument("--out", default="results/p_scaling/scaling.json",
+                    help="output JSON (point elsewhere for a seed-addendum run so the "
+                         "cited single-seed scaling.json is not overwritten)")
     args = ap.parse_args()
 
     ns = [1, 2] if args.quick else [1, 2, 3, 4, 6]
@@ -214,11 +217,12 @@ def main() -> None:
               f"{r['mean_prior']['rate']:>11.3f} {r['random_restart']['rate']:>8.3f} "
               f"{r['learned_x0']['rate']:>11.3f} {r['p_learned_gt_random']:>10.4f}")
 
-    out_dir = Path("results/p_scaling")
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "scaling.json").write_text(json.dumps(payload, indent=2))
-    print(f"\nwrote {out_dir/'scaling.json'}")
-    _plot(payload["rows"])
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
+    print(f"\nwrote {out}")
+    if out.name == "scaling.json":   # only refresh the cited figure for the canonical run
+        _plot(payload["rows"])
 
 
 def _plot(rows) -> None:

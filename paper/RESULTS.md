@@ -519,3 +519,28 @@ R30: **the failure MODE decides, consistently across 2D / 3D / real systems** �
 pruned chains (R28, R31) are flukes where the trap holds; the hardened real systems (R30) are
 genuine structural-branch traps where derived constructions bite. Negative, and a real one:
 the selection-on-noise caution survives a full dimension lift. (PROVENANCE R31.)
+
+## R15-addendum · Dimension-scaling seed robustness (3 seeds) — the crossover is stable; the n=6 value cell is not
+Three seeds of the unified-v2 dimension-scaling experiment (200 epochs, 40 test/n/seed,
+self-trained x0 per seed; `scripts/run_dimension_scaling.py --seeds 3 --out
+results/p_scaling/scaling_3seed.json`), reported as mean ± SD over seeds — the "single-seed
+value cells" review line, answered.
+
+| n | learned mean ± SD (seeds) | random mean ± SD | learned > random? |
+|---|---|---|---|
+| 1 | 0.867 ± 0.138 [1.0, 0.88, 0.73] | 1.000 ± 0.000 | no (random at ceiling) |
+| 2 | 0.817 ± 0.231 [0.95, 0.95, 0.55] | 0.508 ± 0.189 | yes (but high variance) |
+| 3 | **0.867 ± 0.113** [0.75, 0.88, 0.98] | 0.067 ± 0.038 | **yes, every seed** |
+| 4 | **0.933 ± 0.029** [0.95, 0.90, 0.95] | 0.017 ± 0.029 | **yes, every seed** |
+| 6 | 0.742 ± **0.426** [0.25, 1.0, 0.98] | 0.000 ± 0.000 | yes on mean, but unstable |
+
+**Two findings, one strengthening and one honest caveat.** (1) The crossover — the paper's
+central positive — is **robust across seeds at n=3 and n=4**: learned 0.75–0.98 vs random
+0–0.10 on every seed, so the amortization win is not a single-seed artifact. (2) The **n=6
+learned cell is seed-unstable** (SD 0.426, range 0.25–1.0): the single-seed `scaling.json`
+value of **0.250 is the low outlier**, not the typical value (3-seed mean 0.742). The paper's
+"degrades to 0.250 at n=6" (Limitations) should be read as one seed's outcome, not the
+expected one — **flag for #122**: either cite the 3-seed n=6 as 0.742 ± 0.426 or drop the
+specific 0.250 degradation claim; the crossover claim (n=3,4) stands either way.
+`results/p_scaling/scaling_3seed.json` (PROVENANCE R15b). The cited single-seed
+`scaling.json` is untouched (the run wrote to a separate `--out`).
