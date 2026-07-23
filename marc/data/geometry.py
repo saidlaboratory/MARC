@@ -135,6 +135,80 @@ def make_pruned_chain(k: int, rng, n_extra: int | None = None):
     return graph, sol, givens
 
 
+def build_point_chain_graph_3d(origin_sqs, anchorA_sqs, link_sqs, anchorB_sq0, c):
+    """3D DMDGP-style chain of k points P_0..P_{k-1} (3k variables). Each point is
+    fixed by three squared distances, so three spheres meet in two reflected
+    points — the native 3D discrete branch. P_0 uses the origin O=(0,0,0) and two
+    fixed anchors A=(c,0,0), B=(0,c,0); every later P_i uses O, A, and its
+    predecessor P_{i-1}. The reflection at step i is across the plane of its three
+    reference centers, distinguished by the signed volume of the tetrahedron they
+    span with P_i (a Cayley-Menger determinant of the given squared distances)."""
+    k = len(origin_sqs)
+    vs, fs, es = [], [], []
+    for i in range(k):
+        vs += [VariableNode(f"x{i}"), VariableNode(f"y{i}"), VariableNode(f"z{i}")]
+
+    def sphere(fid, cx, cy, cz, rhs, i):
+        cxs = f" - ({cx})" if cx else ""
+        cys = f" - ({cy})" if cy else ""
+        czs = f" - ({cz})" if cz else ""
+        fs.append(FactorNode(fid, f"(x{i}{cxs})**2 + (y{i}{cys})**2 + (z{i}{czs})**2 - ({rhs})"))
+        es.extend([Edge(f"x{i}", fid, 1), Edge(f"y{i}", fid, 1), Edge(f"z{i}", fid, 1)])
+
+    sphere("eq_origin0", 0, 0, 0, origin_sqs[0], 0)
+    sphere("eq_anchorA0", c, 0, 0, anchorA_sqs[0], 0)
+    sphere("eq_anchorB0", 0, c, 0, anchorB_sq0, 0)
+    for i in range(1, k):
+        sphere(f"eq_origin{i}", 0, 0, 0, origin_sqs[i], i)
+        sphere(f"eq_anchorA{i}", c, 0, 0, anchorA_sqs[i], i)
+        fid = f"eq_link{i}"
+        fs.append(FactorNode(fid, f"(x{i} - x{i-1})**2 + (y{i} - y{i-1})**2 "
+                                  f"+ (z{i} - z{i-1})**2 - ({link_sqs[i-1]})"))
+        es += [Edge(f"x{i-1}", fid, -1), Edge(f"y{i-1}", fid, -1), Edge(f"z{i-1}", fid, -1),
+               Edge(f"x{i}", fid, 1), Edge(f"y{i}", fid, 1), Edge(f"z{i}", fid, 1)]
+    return FactorGraph(variables=vs, factors=fs, edges=es)
+
+
+def make_pruned_chain_3d(k: int, rng, n_extra: int | None = None):
+    """Native-3D analogue of :func:`make_pruned_chain`: k points in Z^3, sphere
+    anchors, and ``n_extra`` long-range squared distances that prune the reflection
+    tree. Returns (graph, solution, givens); ``givens`` = {"c", "origin_sqs",
+    "anchorA_sqs", "link_sqs", "anchorB_sq0", "extra"} — the branch vocabulary in
+    :mod:`marc.structure.geo_repair3d` derives from these alone, never the solution."""
+    if n_extra is None:
+        n_extra = (k + 1) // 2
+    c = rng.randint(3, 5)
+    coord = lambda: rng.choice([v for v in range(-4, 5) if v != 0])
+    pts = [(coord(), coord(), coord()) for _ in range(k)]
+    d2 = lambda p, q: sum((a - b) ** 2 for a, b in zip(p, q))
+    A, B = (c, 0, 0), (0, c, 0)
+    origin_sqs = [d2(p, (0, 0, 0)) for p in pts]
+    anchorA_sqs = [d2(p, A) for p in pts]
+    link_sqs = [d2(pts[i], pts[i - 1]) for i in range(1, k)]
+    anchorB_sq0 = d2(pts[0], B)
+    g = build_point_chain_graph_3d(origin_sqs, anchorA_sqs, link_sqs, anchorB_sq0, c)
+
+    pairs = [(i, j) for i in range(k) for j in range(i + 2, k)]
+    rng.shuffle(pairs)
+    vs, fs, es = list(g.variables), list(g.factors), list(g.edges)
+    extra = []
+    for (i, j) in pairs[:n_extra]:
+        dsq = d2(pts[i], pts[j])
+        fid = f"eq_long{i}_{j}"
+        fs.append(FactorNode(fid, f"(x{i} - x{j})**2 + (y{i} - y{j})**2 "
+                                  f"+ (z{i} - z{j})**2 - ({dsq})"))
+        es += [Edge(f"x{i}", fid, 1), Edge(f"y{i}", fid, 1), Edge(f"z{i}", fid, 1),
+               Edge(f"x{j}", fid, -1), Edge(f"y{j}", fid, -1), Edge(f"z{j}", fid, -1)]
+        extra.append((i, j, dsq))
+    graph = FactorGraph(variables=vs, factors=fs, edges=es)
+    sol = [float(v) for p in pts for v in p]
+    givens = {"c": float(c), "origin_sqs": [float(v) for v in origin_sqs],
+              "anchorA_sqs": [float(v) for v in anchorA_sqs],
+              "link_sqs": [float(v) for v in link_sqs],
+              "anchorB_sq0": float(anchorB_sq0), "extra": extra}
+    return graph, sol, givens
+
+
 @dataclass
 class PointChainTemplate:
     """Point-chain geometry as a generator template: k points, 2k variables.
