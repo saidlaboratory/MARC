@@ -88,8 +88,7 @@ this file if any answer changes before the deadline.
 
 ## Known gaps to close before submission (cross-referenced to open issues)
 
-1. No LICENSE file yet (`README.md` badge reads "license-TBD") — issue #131 item 1, needs a lab
-   decision before a checklist answer of "code is released under license X" is honest.
+1. ~~No LICENSE file~~ — resolved: MIT (`/LICENSE`), README badge updated to match.
 2. No parameter-count or validation-vs-test table yet (see above) — not tracked by an existing
    issue; worth a follow-up if reviewers press on it, but not blocking.
 3. Issues #127 (repro script + CI) and #128 (wall-clock table + checkpoint hashes) are open and
