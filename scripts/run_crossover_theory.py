@@ -50,8 +50,15 @@ What this run does
    rates in results/p_scaling/scaling.json and results/p_coupled/coupled.json.
 4. Predicts the crossover n* from v and the learned ceiling p_L, compares to observed.
 5. Writes results/p_crossover/crossover_theory.json and paper/figures/fig_crossover_theory.pdf.
+6. (--k-sweep) Optionally sweeps the restart budget K to trace the *restart curve* as
+   solve-rate vs wall-clock: at each K the mean wall-clock and restarts a best-of-K run
+   spends (it stops at first success) against the rate it reaches. Writes the curve to the
+   JSON payload and paper/figures/fig_restart_curve.pdf. The single-K measure also now
+   records wall-clock per instance (``random_mean_ms``) so cost is reported alongside rate.
 
 Run:  python scripts/run_crossover_theory.py [--trials 300] [--K 8]
+Restart curve (time vs solve-rate):
+      python scripts/run_crossover_theory.py --k-sweep 1,2,4,8,16,32 [--no-geometry]
 """
 from __future__ import annotations
 
@@ -60,6 +67,7 @@ import json
 import math
 import random
 import statistics
+import time
 from pathlib import Path
 
 from marc.cas.checker import Checker
@@ -169,6 +177,57 @@ def bestofk_random(family: str, n: int, instances: int, K: int, span: float, see
     return ok, instances
 
 
+def bestofk_sweep(family: str, n: int, instances: int, Ks, span: float, seed0: int):
+    """The restart curve: solve-rate vs wall-clock as the restart budget K grows.
+
+    One pass per instance runs up to max(Ks) uniform starts + polish, stopping at the
+    first accept (exactly what a real best-of-K run does), and records both the restart
+    index of first success and the cumulative wall-clock after each restart. From that
+    single pass we read off, for every K in ``Ks``, the solve rate and the mean cost
+    (restarts and wall-clock) a best-of-K run would actually spend — a run that solves at
+    restart i<K pays only i+1 restarts, an unsolved run pays K. Same generators / refine /
+    Checker and same per-instance seeds as ``bestofk_random`` (apples-to-apples with q(n)).
+
+    Returns a list of {K, solve_rate, mean_restarts, mean_wall_ms, solved, instances}.
+    """
+    chk = Checker()
+    Kmax = max(Ks)
+    first_hit = []          # per instance: 0-based restart index of first accept, or None
+    cum_wall = []           # per instance: cumulative wall (s) after each restart taken
+    for j in range(instances):
+        rng = random.Random(seed0 + 4099 * j)
+        g, sol, accept = _gen(family, n, rng)
+        hit, t_acc, cum = None, 0.0, []
+        for i in range(Kmax):
+            x0 = [rng.uniform(-span, span) for _ in range(n)]
+            t0 = time.perf_counter()
+            solved = accept(chk, g, refine(g, x0, noise=False, seed=0).x)
+            t_acc += time.perf_counter() - t0
+            cum.append(t_acc)
+            if solved:                     # a real restart run stops at the first success
+                hit = i
+                break
+        first_hit.append(hit)
+        cum_wall.append(cum)
+
+    rows = []
+    for K in Ks:
+        solved = wall = restarts = 0
+        for hit, cum in zip(first_hit, cum_wall):
+            if hit is not None and hit < K:
+                solved += 1
+                used = hit + 1             # paid up to and including the winning restart
+            else:
+                used = min(K, len(cum))    # unsolved within budget: paid all K starts
+            restarts += used
+            wall += cum[used - 1] if used else 0.0
+        rows.append({"K": K, "solve_rate": solved / instances,
+                     "mean_restarts": restarts / instances,
+                     "mean_wall_ms": 1000 * wall / instances,
+                     "solved": solved, "instances": instances})
+    return rows
+
+
 def _loglin_fit(ns, qs):
     """Least-squares fit of log q ~ a + b n over points with q>0. Returns (a, b, r2, used)."""
     pts = [(n, math.log(q)) for n, q in zip(ns, qs) if q > 0]
@@ -203,13 +262,16 @@ def measure_family(family: str, ns, span: float, trials: int, K: int, seed0: int
     for n in ns:
         k, t = single_start_q(family, n, trials, span, seed0 + 101 * n)
         q = k / t
+        t0 = time.perf_counter()
         bk, bt = bestofk_random(family, n, trials, K, span, seed0 + 202 * n)
+        wall_s = time.perf_counter() - t0
         exp_starts = (1.0 / q) if q > 0 else float("inf")
         rows.append({"n": n, "q": q, "k": k, "trials": t, "ci95": wilson_interval(k, t),
                      "expected_starts": exp_starts,
-                     "P_random_meas": bk / bt, "P_random_meas_ci95": wilson_interval(bk, bt)})
+                     "P_random_meas": bk / bt, "P_random_meas_ci95": wilson_interval(bk, bt),
+                     "random_wall_s": wall_s, "random_mean_ms": 1000 * wall_s / bt})
         print(f"  n={n:>2}  q={q:6.3f} ({k}/{t})  E[starts]={exp_starts:7.1f}  "
-              f"random@{K}={bk/bt:6.3f} ({bk}/{bt})")
+              f"random@{K}={bk/bt:6.3f} ({bk}/{bt})  {1000 * wall_s / bt:6.1f} ms/inst")
     return rows
 
 
@@ -222,6 +284,10 @@ def main() -> None:
                     help="skip the (slower) real-domain geometry validation family")
     ap.add_argument("--geometry-trials", type=int, default=150,
                     help="trials for the geometry family (its polish is ~10x slower)")
+    ap.add_argument("--k-sweep", type=str, default="",
+                    help="comma list of restart budgets K to sweep, e.g. '1,2,4,8,16,32' — "
+                         "traces the restart curve (solve-rate vs wall-clock) into the JSON "
+                         "payload and paper/figures/fig_restart_curve.pdf")
     args = ap.parse_args()
 
     indep = measure_family("indep", NS_INDEP, INDEP_START, args.trials, args.K, args.seed)
@@ -297,6 +363,22 @@ def main() -> None:
     print(f"  predicted crossover n* = {n_star}    observed crossover = {obs_cross}")
     print(f"  parameter-free v^n MAE on random-restart curve = {mae_vn:.3f}" if mae_vn is not None else "")
 
+    # --- restart curve: solve-rate vs wall-clock over a sweep of K -------------------
+    sweep_Ks = [int(x) for x in args.k_sweep.split(",") if x.strip()]
+    sweeps = {}
+    if sweep_Ks:
+        print(f"\n=== restart curve: solve-rate vs wall-clock over K in {sweep_Ks} ===")
+        for fam, ns, span, sd in (("indep", NS_INDEP, INDEP_START, args.seed + 303),
+                                  ("coupled", NS_COUPLED, COUPLED_START, args.seed + 404)):
+            fam_rows = []
+            for n in ns:
+                sw = bestofk_sweep(fam, n, args.trials, sweep_Ks, span, sd + 11 * n)
+                fam_rows.append({"n": n, "sweep": sw})
+                cells = "  ".join(f"K{r['K']}:{r['solve_rate']:.2f}@{r['mean_wall_ms']:.0f}ms"
+                                  for r in sw)
+                print(f"  [{fam:>7}] n={n:>2}  {cells}")
+            sweeps[fam] = fam_rows
+
     payload = {
         "trials": args.trials, "K": args.K,
         "families": {
@@ -316,11 +398,14 @@ def main() -> None:
         "crossover_pred": n_star, "crossover_obs": obs_cross,
         "random_restart_vn_mae": mae_vn,
         "law": "P_random(n;K)=1-(1-q(n))^K ; q_indep(n)=v^n (factorizes) ; q_coupled(n)~const (does not)",
+        **({"restart_curve": {"Ks": sweep_Ks, "families": sweeps}} if sweep_Ks else {}),
     }
     out = Path("results/p_crossover"); out.mkdir(parents=True, exist_ok=True)
     (out / "crossover_theory.json").write_text(json.dumps(payload, indent=2))
     print(f"\nwrote {out/'crossover_theory.json'}")
     _plot(indep, coupled, v_direct, args.K, n_star, learned_indep, geometry)
+    if sweeps:
+        _plot_restart_curve(sweeps, sweep_Ks)
 
 
 def _plot(indep, coupled, v, K, n_star, learned_indep, geometry=None) -> None:
@@ -367,6 +452,36 @@ def _plot(indep, coupled, v, K, n_star, learned_indep, geometry=None) -> None:
     d = Path("paper/figures"); d.mkdir(parents=True, exist_ok=True)
     fig.savefig(d / "fig_crossover_theory.pdf")
     print(f"wrote {d/'fig_crossover_theory.pdf'}")
+
+
+def _plot_restart_curve(sweeps, Ks) -> None:
+    """Restart curve: solve-rate (y) vs mean wall-clock per instance (x, log), one line
+    per dimension n, over the swept restart budget — a panel per family."""
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("matplotlib not available; skipping restart-curve figure")
+        return
+    fams = list(sweeps.keys())
+    fig, ax = plt.subplots(1, len(fams), figsize=(4.6 * len(fams), 3.6), squeeze=False)
+    for col, fam in enumerate(fams):
+        a = ax[0][col]
+        for entry in sweeps[fam]:
+            xs = [r["mean_wall_ms"] for r in entry["sweep"]]
+            ys = [r["solve_rate"] for r in entry["sweep"]]
+            a.plot(xs, ys, "o-", linewidth=1.8, markersize=5, label=f"n={entry['n']}")
+        a.set_xscale("log")
+        a.set_xlabel("mean wall-clock per instance (ms)")
+        a.set_ylabel("solve rate")
+        a.set_ylim(-0.03, 1.05)
+        a.set_title(f"restart curve — {fam}  (K∈[{min(Ks)},{max(Ks)}])")
+        a.legend(fontsize=7)
+    fig.tight_layout()
+    d = Path("paper/figures"); d.mkdir(parents=True, exist_ok=True)
+    fig.savefig(d / "fig_restart_curve.pdf")
+    print(f"wrote {d/'fig_restart_curve.pdf'}")
 
 
 if __name__ == "__main__":
