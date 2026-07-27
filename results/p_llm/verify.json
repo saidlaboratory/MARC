@@ -1,0 +1,59 @@
+{
+  "n": 5,
+  "model": "gemini-flash-lite-latest",
+  "direct_accuracy": 0.8,
+  "formalize_coverage": 1.0,
+  "formalize_accuracy": 0.0,
+  "rows": [
+    {
+      "type": "Algebra",
+      "level": 3,
+      "gold": "6+9i",
+      "direct": "6+9i",
+      "direct_correct": true,
+      "formalized": true,
+      "formalize_answer": null,
+      "formalize_correct": false
+    },
+    {
+      "type": "Intermediate Algebra",
+      "level": 3,
+      "gold": "13535",
+      "direct": "13535",
+      "direct_correct": true,
+      "formalized": true,
+      "formalize_answer": "13536",
+      "formalize_correct": false
+    },
+    {
+      "type": "Algebra",
+      "level": 5,
+      "gold": "5",
+      "direct": "5",
+      "direct_correct": true,
+      "formalized": true,
+      "formalize_answer": "0",
+      "formalize_correct": false
+    },
+    {
+      "type": "Algebra",
+      "level": 5,
+      "gold": "5",
+      "direct": "5",
+      "direct_correct": true,
+      "formalized": true,
+      "formalize_answer": null,
+      "formalize_correct": false
+    },
+    {
+      "type": "Intermediate Algebra",
+      "level": 5,
+      "gold": "1,-2",
+      "direct": "-2, 1",
+      "direct_correct": false,
+      "formalized": true,
+      "formalize_answer": null,
+      "formalize_correct": false
+    }
+  ]
+}
