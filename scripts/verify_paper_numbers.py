@@ -73,9 +73,9 @@ CHECKS = [
     ("R28 cross-fit screen trained", "results/p_geo_repair/probe_concentration.json",
      lambda d: cell(d, "pools", "trained", "crossfit_top1_at_kref", "rate"), 0.199, 3, "0.199"),
 
-    # R30 real-systems repair. token=None: filed in RESULTS/PROVENANCE, not yet in the
-    # 7-page tex (pending #122 integration) — check JSON stability, flip the token on
-    # once the R30 paragraph lands in marc_aaai.tex.
+    # R30 real-systems repair, single citable run. The paragraph cites the three-seed
+    # aggregate below, so these rows guard JSON stability only (their rates also appear
+    # in the multiseed per_seed lists) — no token.
     ("R30 trilat ceiling", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "trilat_far")["ceiling"]["rate"],
      1.000, 3, None),
@@ -85,6 +85,37 @@ CHECKS = [
     ("R30 conic ceiling", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "conic_ghost")["ceiling"]["rate"],
      1.000, 3, None),
+
+    # R30 three-seed aggregate — these are the numbers the external-anchor paragraph cites
+    ("R30 trilat fail mean", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "fail", "mean"), 0.848, 3, "0.848"),
+    ("R30 trilat fail sd", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "fail", "population_sd"), 0.020, 3, "0.020"),
+    ("R30 trilat held-out sel", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "held_out_selection", "mean"), 1.000, 3, "1.000"),
+    ("R30 trilat held-out N", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "held_out_pooled", "n"), 509, 0, "509"),
+    ("R30 trilat restart mean", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "restart_matched", "mean"), 0.433, 3, "0.433"),
+    ("R30 trilat restart sd", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "restart_matched", "population_sd"),
+     0.049, 3, "0.049"),
+    ("R30 conic fail mean", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "fail", "mean"), 0.263, 3, "0.263"),
+    ("R30 conic fail sd", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "fail", "population_sd"), 0.015, 3, "0.015"),
+    ("R30 conic held-out N", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "held_out_pooled", "n"), 158, 0, "158"),
+    ("R30 conic restart mean", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "restart_matched", "mean"), 0.114, 3, "0.114"),
+    ("R30 conic restart sd", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "restart_matched", "population_sd"),
+     0.011, 3, "0.011"),
+    # the anchor's central claim: the selected construction is unanimous across all six
+    # folds, which is what forecloses "the luckiest of V"
+    ("R30 selection unanimous", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: float(all(cell(d, "aggregate", c, "selection_unanimous")
+                         for c in ("trilat_far", "conic_ghost"))), 1.0, 1, None),
 ]
 
 
