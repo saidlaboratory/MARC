@@ -1,5 +1,10 @@
 # Structure invention (③) — feasibility test: negative
 
+> **Status note (2026-07-27).** The measurements below stand. The "Implication for main-track"
+> verdict does not: it was written 2026-07-20, before R30 (real-systems construction repair) and
+> the repair-ranker results that carry the current main-track submission. Read this as a scoped
+> negative on *numeric* solving of augmented systems, not as a verdict on the paper.
+
 **Premise:** a model that *invents auxiliary variables/lemmas* to make hard problems solvable
 would be a novel, main-track contribution. **Prerequisite:** the auxiliary must make the problem
 *easier for the solver*. It does not.

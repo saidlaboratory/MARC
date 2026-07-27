@@ -1,5 +1,10 @@
 # LLM + MARC verified solving (Lever B) — feasibility: negative
 
+> **Status note (2026-07-27).** The measurements below stand and are the basis of the paper's
+> MATH-500 scope claim (autoformalization, not solving, is the binding constraint). The
+> "Honest conclusion" section does not: it was written 2026-07-20, before R30 and the
+> repair-ranker results, and its workshop-only verdict is superseded.
+
 **Hypothesis:** LLM formalizes a problem → MARC/CAS solves it exactly → fixes the LLM's
 computational errors, beating the LLM solving directly. A "verified reasoning" main-track angle.
 

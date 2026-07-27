@@ -85,17 +85,17 @@ annealed Langevin, a mean-prior control, and random multi-start at identical pol
 The answer is a characterization, not a victory, and we present the sequence of
 controls that produced it as the contribution. First, the missing control shrinks the claim:
 random multi-start with identical polish and budget erases most of the learned proposal's
-apparent advantage, leaving the crossover regime of the dimension-scaling study
-(\S\ref{sec:scaling}). Second, the shrunken claim compresses into a law: a parameter-free
+apparent advantage, leaving the crossover regime of the dimension-scaling study.
+Second, the shrunken claim compresses into a law: a parameter-free
 factorization in the measured single-start reachability $q(n)$ reproduces the separable
-family's best-of-$K$ curve and predicts where the favorable regime can occur at all
-(\S\ref{sec:law}). Third, the learned component relocates: moved off the value decision onto
+family's best-of-$K$ curve and predicts where the favorable regime can occur at all.
+Third, the learned component relocates: moved off the value decision onto
 the discrete structural decision, a candidate-conditioned repair ranker clears its matched
 controls on certificate-grade nonlinear menus, matching the enumeration ceiling at a
-fraction of the calls (\S\ref{sec:repair}). Fourth, the same discipline turned
+fraction of the calls. Fourth, the same discipline turned
 on our own pilot exposes a trap: defining ``failure'' on a single stochastic stream
 manufactures repair effects that two-stream selection and a budget-held screen dissolve, and we state the protocol in
-reusable form (\S\ref{sec:entrapment}). Alongside the arc we contribute the substrate itself, a pre-registered entrapment result, a
+reusable form. Alongside the arc we contribute the substrate itself, a pre-registered entrapment result, a
 partial cross-family transfer result, and a MATH-benchmark scope measurement showing
 autoformalization, not solving, is the binding constraint. We make no claim against
 combinatorial solvers such as DIFUSCO; the problem class differs (Related Work). Every rate
@@ -243,7 +243,7 @@ textbook behavior, presented as confirmed premise, not finding.
 
 \paragraph{Two-stream failure selection.}
 One protocol element is stated in reusable form because a later result
-(\S\ref{sec:repair}) lives or dies by it. Repair-style studies build their population from
+(the structural-repair section) lives or dies by it. Repair-style studies build their population from
 instances a stochastic pipeline fails, and conditioning on one bad draw admits instances that
 succeed under fresh randomness and grades any control on a stream correlated with the failure
 criterion --- so every intervention inherits apparent lift. The discipline: (i) admit an
@@ -256,7 +256,7 @@ cannot beat the matched-budget control, the advantage is portfolio breadth, not 
 model could amortize. On our geometry population the difference is not subtle: single-stream
 selection put the construction ceiling at $0.63$--$0.74$ against $0.09$--$0.27$ for matched
 restarts, and two-stream selection with a common grading stream collapsed the margin, most
-of it the control returning to its true rate (\S\ref{sec:repair}).
+of it the control returning to its true rate.
 
 \subsection{The hybrid recipe: a good proposal plus polish beats cold-start refinement}
 \label{sec:hybrid}
@@ -297,7 +297,7 @@ at $n = 4$ --- the flat learned ceiling the law of the factorization-law section
 Langevin and the mean-prior sit at or near zero from $n = 3$. This is the amortized-inference
 result --- a per-instance proposal replacing search whose cost is exponential in dimension ---
 bounded by two caveats: the model degrades at $n = 6$ (0.250), and random restart is at
-ceiling at $n = 1$. The law's larger-sample measurement (\S\ref{sec:law}) reads random lower at low $n$
+ceiling at $n = 1$. The law's larger-sample measurement below reads random lower at low $n$
 (0.902 at $n=1$) and places the crossover earlier, so we report the geometric collapse, not a
 single $n^*$.
 
@@ -582,7 +582,7 @@ of distance geometry --- asking whether one derived auxiliary construction
 distances) repairs instances the reference pipeline fails. The
 population definition decides the answer: single-stream failure selection makes
 constructions look decisive, and two-stream selection removes the margin (the numbers of
-\S\ref{sec:entrapment}; $N{=}367$ trained-$k$, $331$ held-out-$k$ failures, three
+the Protocol section; $N{=}367$ trained-$k$, $331$ held-out-$k$ failures, three
 optimization seeds): the
 enumeration ceiling is $0.692$ at $72.7$ restarts per instance, while plain restart scaling
 reaches $0.572$ at $+16$ and $0.725$ at $+32$ --- budget-equivalent or better. Majority-vote
@@ -661,7 +661,7 @@ repair ranker matches the enumeration ceiling at a fraction of the calls, where 
 solvable option'' is a theorem. The lesson we generalize is about evaluation: each of the four
 contributions is a control that changed the answer, the last on our own pilot. Populations
 defined by stochastic failure are artifacts of the draw unless the protocol makes them stable
---- the discipline of \S\ref{sec:entrapment} costs one extra solve per instance, and results
+--- the discipline of the Protocol section costs one extra solve per instance, and results
 that omit it read as upper bounds.
 
 % aaai2026.sty already sets \bibliographystyle{aaai2026}; a second one breaks bibtex
@@ -673,6 +673,10 @@ that omit it read as upper bounds.
 \clearpage
 \onecolumn
 \appendix
+% aaai2026.sty sets secnumdepth to 0, which leaves \ref{app:*} empty. The main body keeps
+% the kit's unnumbered headings (main-text sections are referenced by name); the appendix
+% is supplementary, so restore lettering here to make "Appendix A" pointers resolve.
+\setcounter{secnumdepth}{1}
 \input{marc_aaai_appendix}
 
 \end{document}
