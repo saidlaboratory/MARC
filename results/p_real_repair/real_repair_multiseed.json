@@ -1,0 +1,923 @@
+{
+  "experiment": "real_systems_construction_repair_multiseed",
+  "issue": 124,
+  "arc": "R30",
+  "reference_solver": {
+    "name": "lm",
+    "k_refine": 4
+  },
+  "tol": 1e-06,
+  "protocol": "independent seed bases (separated by 1e6); within each run the pilot stream hygiene applies (selection=seed, second=seed+SALT, grading=seed+3*SALT) and construction selection is held out by seed parity, so no failure instance is both chooser and score",
+  "config": {
+    "n": 200,
+    "seeds": "20260722,21260722,22260722",
+    "out": "results/p_real_repair/real_repair_multiseed.json"
+  },
+  "seeds": [
+    20260722,
+    21260722,
+    22260722
+  ],
+  "biting_classes": [
+    "trilat_far",
+    "conic_ghost"
+  ],
+  "documented_negatives": [
+    "ik3r_random",
+    "circles_far"
+  ],
+  "aggregate": {
+    "trilat_far": {
+      "n_fail": [
+        173,
+        172,
+        164
+      ],
+      "constructions_selected": [
+        "cross02_m"
+      ],
+      "selection_unanimous": true,
+      "fail": {
+        "per_seed": [
+          0.865,
+          0.86,
+          0.82
+        ],
+        "mean": 0.8483333333333333,
+        "population_sd": 0.02013840995599097
+      },
+      "ceiling": {
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean": 1.0,
+        "population_sd": 0.0
+      },
+      "held_out_selection": {
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean": 1.0,
+        "population_sd": 0.0
+      },
+      "restart4": {
+        "per_seed": [
+          0.0578,
+          0.0988,
+          0.0793
+        ],
+        "mean": 0.07863632339778164,
+        "population_sd": 0.01675791387037109
+      },
+      "restart_matched": {
+        "per_seed": [
+          0.3815,
+          0.4186,
+          0.5
+        ],
+        "mean": 0.43336918044540035,
+        "population_sd": 0.049489963649319776
+      },
+      "held_out_pooled": {
+        "k": 509,
+        "n": 509,
+        "rate": 1.0,
+        "ci95": [
+          0.9925091880221886,
+          1.0
+        ]
+      }
+    },
+    "conic_ghost": {
+      "n_fail": [
+        57,
+        51,
+        50
+      ],
+      "constructions_selected": [
+        "axis_r0"
+      ],
+      "selection_unanimous": true,
+      "fail": {
+        "per_seed": [
+          0.285,
+          0.255,
+          0.25
+        ],
+        "mean": 0.26333333333333336,
+        "population_sd": 0.01545603082582616
+      },
+      "ceiling": {
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean": 1.0,
+        "population_sd": 0.0
+      },
+      "held_out_selection": {
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mean": 1.0,
+        "population_sd": 0.0
+      },
+      "restart4": {
+        "per_seed": [
+          0.0175,
+          0.0392,
+          0.02
+        ],
+        "mean": 0.025586515307877537,
+        "population_sd": 0.00968930277106565
+      },
+      "restart_matched": {
+        "per_seed": [
+          0.1228,
+          0.098,
+          0.12
+        ],
+        "mean": 0.11361541107671137,
+        "population_sd": 0.011073488881217883
+      },
+      "held_out_pooled": {
+        "k": 158,
+        "n": 158,
+        "rate": 1.0,
+        "ci95": [
+          0.9762632104477463,
+          0.9999999999999999
+        ]
+      }
+    }
+  },
+  "runs": [
+    {
+      "seed": 20260722,
+      "classes": {
+        "ik3r_random": {
+          "class": "ik3r_random",
+          "n": 200,
+          "fail": {
+            "k": 0,
+            "n": 200,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.018846005918320894
+            ]
+          },
+          "n_fail": 0,
+          "vocab_size": 0,
+          "per_construction": {},
+          "best_single_name": null,
+          "wall_s": 6.20340895652771
+        },
+        "trilat_far": {
+          "class": "trilat_far",
+          "n": 200,
+          "fail": {
+            "k": 173,
+            "n": 200,
+            "rate": 0.865,
+            "ci95": [
+              0.8107074954488287,
+              0.9055349202307972
+            ]
+          },
+          "n_fail": 173,
+          "vocab_size": 9,
+          "per_construction": {
+            "cos01": {
+              "flips": 10,
+              "tries": 173
+            },
+            "cos02": {
+              "flips": 11,
+              "tries": 173
+            },
+            "cos12": {
+              "flips": 9,
+              "tries": 173
+            },
+            "cross01_m": {
+              "flips": 153,
+              "tries": 173
+            },
+            "cross01_p": {
+              "flips": 0,
+              "tries": 173
+            },
+            "cross02_m": {
+              "flips": 173,
+              "tries": 173
+            },
+            "cross02_p": {
+              "flips": 0,
+              "tries": 173
+            },
+            "cross12_m": {
+              "flips": 156,
+              "tries": 173
+            },
+            "cross12_p": {
+              "flips": 0,
+              "tries": 173
+            }
+          },
+          "best_single_name": "cross02_m",
+          "wall_s": 11.704387664794922,
+          "ceiling": {
+            "k": 173,
+            "n": 173,
+            "rate": 1.0,
+            "ci95": [
+              0.9782766045998228,
+              1.0
+            ]
+          },
+          "best_single": {
+            "k": 173,
+            "n": 173,
+            "rate": 1.0,
+            "ci95": [
+              0.9782766045998228,
+              1.0
+            ]
+          },
+          "restart4": {
+            "k": 10,
+            "n": 173,
+            "rate": 0.057803468208092484,
+            "ci95": [
+              0.03169701651696774,
+              0.1031219401086226
+            ]
+          },
+          "restart_matched": {
+            "k": 66,
+            "n": 173,
+            "rate": 0.3815028901734104,
+            "ci95": [
+              0.31243596740848334,
+              0.45571813207942
+            ]
+          },
+          "mcnemar_ceiling_vs_matched": 6.162975822039155e-33,
+          "mcnemar_best_vs_restart4": 8.552847072295026e-50,
+          "held_out_selection": {
+            "k": 173,
+            "n": 173,
+            "rate": 1.0,
+            "ci95": [
+              0.9782766045998228,
+              1.0
+            ]
+          },
+          "held_out_folds": {
+            "train0_eval1": {
+              "selected": "cross02_m",
+              "hits": 85,
+              "n": 85
+            },
+            "train1_eval0": {
+              "selected": "cross02_m",
+              "hits": 88,
+              "n": 88
+            }
+          }
+        },
+        "circles_far": {
+          "class": "circles_far",
+          "n": 200,
+          "fail": {
+            "k": 0,
+            "n": 200,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.018846005918320894
+            ]
+          },
+          "n_fail": 0,
+          "vocab_size": 0,
+          "per_construction": {},
+          "best_single_name": null,
+          "wall_s": 1.148956298828125
+        },
+        "conic_ghost": {
+          "class": "conic_ghost",
+          "n": 200,
+          "fail": {
+            "k": 57,
+            "n": 200,
+            "rate": 0.285,
+            "ci95": [
+              0.22694905173277297,
+              0.3511547308121051
+            ]
+          },
+          "n_fail": 57,
+          "vocab_size": 5,
+          "per_construction": {
+            "axis_quad": {
+              "flips": 1,
+              "tries": 57
+            },
+            "axis_r0": {
+              "flips": 57,
+              "tries": 57
+            },
+            "axis_r1": {
+              "flips": 0,
+              "tries": 57
+            },
+            "gauge_m": {
+              "flips": 8,
+              "tries": 57
+            },
+            "gauge_p": {
+              "flips": 8,
+              "tries": 57
+            }
+          },
+          "best_single_name": "axis_r0",
+          "wall_s": 10.079455137252808,
+          "ceiling": {
+            "k": 57,
+            "n": 57,
+            "rate": 1.0,
+            "ci95": [
+              0.936858991216536,
+              0.9999999999999999
+            ]
+          },
+          "best_single": {
+            "k": 57,
+            "n": 57,
+            "rate": 1.0,
+            "ci95": [
+              0.936858991216536,
+              0.9999999999999999
+            ]
+          },
+          "restart4": {
+            "k": 1,
+            "n": 57,
+            "rate": 0.017543859649122806,
+            "ci95": [
+              0.003103584706680096,
+              0.09290966938262721
+            ]
+          },
+          "restart_matched": {
+            "k": 7,
+            "n": 57,
+            "rate": 0.12280701754385964,
+            "ci95": [
+              0.060779830035075005,
+              0.2324668958892925
+            ]
+          },
+          "mcnemar_ceiling_vs_matched": 8.881784197001252e-16,
+          "mcnemar_best_vs_restart4": 1.3877787807814457e-17,
+          "held_out_selection": {
+            "k": 57,
+            "n": 57,
+            "rate": 1.0,
+            "ci95": [
+              0.936858991216536,
+              0.9999999999999999
+            ]
+          },
+          "held_out_folds": {
+            "train0_eval1": {
+              "selected": "axis_r0",
+              "hits": 32,
+              "n": 32
+            },
+            "train1_eval0": {
+              "selected": "axis_r0",
+              "hits": 25,
+              "n": 25
+            }
+          }
+        }
+      }
+    },
+    {
+      "seed": 21260722,
+      "classes": {
+        "ik3r_random": {
+          "class": "ik3r_random",
+          "n": 200,
+          "fail": {
+            "k": 0,
+            "n": 200,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.018846005918320894
+            ]
+          },
+          "n_fail": 0,
+          "vocab_size": 0,
+          "per_construction": {},
+          "best_single_name": null,
+          "wall_s": 5.266916036605835
+        },
+        "trilat_far": {
+          "class": "trilat_far",
+          "n": 200,
+          "fail": {
+            "k": 172,
+            "n": 200,
+            "rate": 0.86,
+            "ci95": [
+              0.8051000619915237,
+              0.9013308137472852
+            ]
+          },
+          "n_fail": 172,
+          "vocab_size": 9,
+          "per_construction": {
+            "cos01": {
+              "flips": 16,
+              "tries": 172
+            },
+            "cos02": {
+              "flips": 17,
+              "tries": 172
+            },
+            "cos12": {
+              "flips": 17,
+              "tries": 172
+            },
+            "cross01_m": {
+              "flips": 150,
+              "tries": 172
+            },
+            "cross01_p": {
+              "flips": 0,
+              "tries": 172
+            },
+            "cross02_m": {
+              "flips": 172,
+              "tries": 172
+            },
+            "cross02_p": {
+              "flips": 0,
+              "tries": 172
+            },
+            "cross12_m": {
+              "flips": 151,
+              "tries": 172
+            },
+            "cross12_p": {
+              "flips": 0,
+              "tries": 172
+            }
+          },
+          "best_single_name": "cross02_m",
+          "wall_s": 8.693886995315552,
+          "ceiling": {
+            "k": 172,
+            "n": 172,
+            "rate": 1.0,
+            "ci95": [
+              0.9781530650312552,
+              0.9999999999999999
+            ]
+          },
+          "best_single": {
+            "k": 172,
+            "n": 172,
+            "rate": 1.0,
+            "ci95": [
+              0.9781530650312552,
+              0.9999999999999999
+            ]
+          },
+          "restart4": {
+            "k": 17,
+            "n": 172,
+            "rate": 0.09883720930232558,
+            "ci95": [
+              0.06262714203260492,
+              0.15257563137255062
+            ]
+          },
+          "restart_matched": {
+            "k": 72,
+            "n": 172,
+            "rate": 0.4186046511627907,
+            "ci95": [
+              0.3474434939739834,
+              0.4933222861372076
+            ]
+          },
+          "mcnemar_ceiling_vs_matched": 7.888609052210118e-31,
+          "mcnemar_best_vs_restart4": 2.1895288505075267e-47,
+          "held_out_selection": {
+            "k": 172,
+            "n": 172,
+            "rate": 1.0,
+            "ci95": [
+              0.9781530650312552,
+              0.9999999999999999
+            ]
+          },
+          "held_out_folds": {
+            "train0_eval1": {
+              "selected": "cross02_m",
+              "hits": 89,
+              "n": 89
+            },
+            "train1_eval0": {
+              "selected": "cross02_m",
+              "hits": 83,
+              "n": 83
+            }
+          }
+        },
+        "circles_far": {
+          "class": "circles_far",
+          "n": 200,
+          "fail": {
+            "k": 0,
+            "n": 200,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.018846005918320894
+            ]
+          },
+          "n_fail": 0,
+          "vocab_size": 0,
+          "per_construction": {},
+          "best_single_name": null,
+          "wall_s": 1.08536696434021
+        },
+        "conic_ghost": {
+          "class": "conic_ghost",
+          "n": 200,
+          "fail": {
+            "k": 51,
+            "n": 200,
+            "rate": 0.255,
+            "ci95": [
+              0.19960402982802747,
+              0.3196305130719498
+            ]
+          },
+          "n_fail": 51,
+          "vocab_size": 5,
+          "per_construction": {
+            "axis_quad": {
+              "flips": 2,
+              "tries": 51
+            },
+            "axis_r0": {
+              "flips": 51,
+              "tries": 51
+            },
+            "axis_r1": {
+              "flips": 0,
+              "tries": 51
+            },
+            "gauge_m": {
+              "flips": 8,
+              "tries": 51
+            },
+            "gauge_p": {
+              "flips": 6,
+              "tries": 51
+            }
+          },
+          "best_single_name": "axis_r0",
+          "wall_s": 6.233030080795288,
+          "ceiling": {
+            "k": 51,
+            "n": 51,
+            "rate": 1.0,
+            "ci95": [
+              0.9299509861127319,
+              0.9999999999999999
+            ]
+          },
+          "best_single": {
+            "k": 51,
+            "n": 51,
+            "rate": 1.0,
+            "ci95": [
+              0.9299509861127319,
+              0.9999999999999999
+            ]
+          },
+          "restart4": {
+            "k": 2,
+            "n": 51,
+            "rate": 0.0392156862745098,
+            "ci95": [
+              0.010820856268751206,
+              0.13216548986265267
+            ]
+          },
+          "restart_matched": {
+            "k": 5,
+            "n": 51,
+            "rate": 0.09803921568627451,
+            "ci95": [
+              0.04260744495307697,
+              0.2097848995445307
+            ]
+          },
+          "mcnemar_ceiling_vs_matched": 1.4210854715202004e-14,
+          "mcnemar_best_vs_restart4": 1.7763568394002505e-15,
+          "held_out_selection": {
+            "k": 51,
+            "n": 51,
+            "rate": 1.0,
+            "ci95": [
+              0.9299509861127319,
+              0.9999999999999999
+            ]
+          },
+          "held_out_folds": {
+            "train0_eval1": {
+              "selected": "axis_r0",
+              "hits": 27,
+              "n": 27
+            },
+            "train1_eval0": {
+              "selected": "axis_r0",
+              "hits": 24,
+              "n": 24
+            }
+          }
+        }
+      }
+    },
+    {
+      "seed": 22260722,
+      "classes": {
+        "ik3r_random": {
+          "class": "ik3r_random",
+          "n": 200,
+          "fail": {
+            "k": 0,
+            "n": 200,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.018846005918320894
+            ]
+          },
+          "n_fail": 0,
+          "vocab_size": 0,
+          "per_construction": {},
+          "best_single_name": null,
+          "wall_s": 4.913805961608887
+        },
+        "trilat_far": {
+          "class": "trilat_far",
+          "n": 200,
+          "fail": {
+            "k": 164,
+            "n": 200,
+            "rate": 0.82,
+            "ci95": [
+              0.7608840628376157,
+              0.8670544933746589
+            ]
+          },
+          "n_fail": 164,
+          "vocab_size": 9,
+          "per_construction": {
+            "cos01": {
+              "flips": 13,
+              "tries": 164
+            },
+            "cos02": {
+              "flips": 13,
+              "tries": 164
+            },
+            "cos12": {
+              "flips": 13,
+              "tries": 164
+            },
+            "cross01_m": {
+              "flips": 149,
+              "tries": 164
+            },
+            "cross01_p": {
+              "flips": 0,
+              "tries": 164
+            },
+            "cross02_m": {
+              "flips": 164,
+              "tries": 164
+            },
+            "cross02_p": {
+              "flips": 0,
+              "tries": 164
+            },
+            "cross12_m": {
+              "flips": 155,
+              "tries": 164
+            },
+            "cross12_p": {
+              "flips": 0,
+              "tries": 164
+            }
+          },
+          "best_single_name": "cross02_m",
+          "wall_s": 8.34018087387085,
+          "ceiling": {
+            "k": 164,
+            "n": 164,
+            "rate": 1.0,
+            "ci95": [
+              0.9771117529861488,
+              1.0
+            ]
+          },
+          "best_single": {
+            "k": 164,
+            "n": 164,
+            "rate": 1.0,
+            "ci95": [
+              0.9771117529861488,
+              1.0
+            ]
+          },
+          "restart4": {
+            "k": 13,
+            "n": 164,
+            "rate": 0.07926829268292683,
+            "ci95": [
+              0.04690729430854731,
+              0.13088891354457136
+            ]
+          },
+          "restart_matched": {
+            "k": 82,
+            "n": 164,
+            "rate": 0.5,
+            "ci95": [
+              0.4243556892194609,
+              0.5756443107805391
+            ]
+          },
+          "mcnemar_ceiling_vs_matched": 2.0679515313825692e-25,
+          "mcnemar_best_vs_restart4": 3.503246160812043e-46,
+          "held_out_selection": {
+            "k": 164,
+            "n": 164,
+            "rate": 1.0,
+            "ci95": [
+              0.9771117529861488,
+              1.0
+            ]
+          },
+          "held_out_folds": {
+            "train0_eval1": {
+              "selected": "cross02_m",
+              "hits": 84,
+              "n": 84
+            },
+            "train1_eval0": {
+              "selected": "cross02_m",
+              "hits": 80,
+              "n": 80
+            }
+          }
+        },
+        "circles_far": {
+          "class": "circles_far",
+          "n": 200,
+          "fail": {
+            "k": 0,
+            "n": 200,
+            "rate": 0.0,
+            "ci95": [
+              0.0,
+              0.018846005918320894
+            ]
+          },
+          "n_fail": 0,
+          "vocab_size": 0,
+          "per_construction": {},
+          "best_single_name": null,
+          "wall_s": 1.0294132232666016
+        },
+        "conic_ghost": {
+          "class": "conic_ghost",
+          "n": 200,
+          "fail": {
+            "k": 50,
+            "n": 200,
+            "rate": 0.25,
+            "ci95": [
+              0.19508076816296532,
+              0.3143422347961952
+            ]
+          },
+          "n_fail": 50,
+          "vocab_size": 5,
+          "per_construction": {
+            "axis_quad": {
+              "flips": 1,
+              "tries": 50
+            },
+            "axis_r0": {
+              "flips": 50,
+              "tries": 50
+            },
+            "axis_r1": {
+              "flips": 0,
+              "tries": 50
+            },
+            "gauge_m": {
+              "flips": 9,
+              "tries": 50
+            },
+            "gauge_p": {
+              "flips": 9,
+              "tries": 50
+            }
+          },
+          "best_single_name": "axis_r0",
+          "wall_s": 6.174436092376709,
+          "ceiling": {
+            "k": 50,
+            "n": 50,
+            "rate": 1.0,
+            "ci95": [
+              0.9286499658256813,
+              1.0
+            ]
+          },
+          "best_single": {
+            "k": 50,
+            "n": 50,
+            "rate": 1.0,
+            "ci95": [
+              0.9286499658256813,
+              1.0
+            ]
+          },
+          "restart4": {
+            "k": 1,
+            "n": 50,
+            "rate": 0.02,
+            "ci95": [
+              0.0035391680889764604,
+              0.10495686471836953
+            ]
+          },
+          "restart_matched": {
+            "k": 6,
+            "n": 50,
+            "rate": 0.12,
+            "ci95": [
+              0.05617523710624646,
+              0.23805078886623582
+            ]
+          },
+          "mcnemar_ceiling_vs_matched": 5.684341886080802e-14,
+          "mcnemar_best_vs_restart4": 1.7763568394002505e-15,
+          "held_out_selection": {
+            "k": 50,
+            "n": 50,
+            "rate": 1.0,
+            "ci95": [
+              0.9286499658256813,
+              1.0
+            ]
+          },
+          "held_out_folds": {
+            "train0_eval1": {
+              "selected": "axis_r0",
+              "hits": 23,
+              "n": 23
+            },
+            "train1_eval0": {
+              "selected": "axis_r0",
+              "hits": 27,
+              "n": 27
+            }
+          }
+        }
+      }
+    }
+  ],
+  "wall_clock_s": 70.9
+}
