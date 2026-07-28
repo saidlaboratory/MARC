@@ -21,7 +21,8 @@ cd "$WORK/artifact"
 rm -f MEETING_NOTES.md HANDOFF.md NIGHT_SESSION.md OVERNIGHT_RESULTS.md \
       OUTLINE.md FIXING_PLAN.md AAAI_READINESS.md SUMMARY.md index.html \
       CONCEPT.md TECHNICAL_GUIDE.md RUNBOOK_OVERNIGHT.md RUN_1.md \
-      paper/ABSTRACT.md paper/CHECKLIST.md paper/ANONYMIZATION.md 2>/dev/null || true
+      paper/ABSTRACT.md paper/CHECKLIST.md paper/ANONYMIZATION.md \
+      scripts/make_supplementary.sh 2>/dev/null || true
 rm -f paper/tex/*.fls paper/tex/*.aux paper/tex/*.log paper/tex/*.out \
       paper/tex/*.bbl paper/tex/*.blg paper/tex/*.pdf paper/tex/*.fdb_latexmk 2>/dev/null || true
 rm -rf run_logs 2>/dev/null || true
@@ -60,7 +61,8 @@ grep -rlE "Quang|Sparsh|Davin|Akash" --include="*.py" --include="*.md" --include
     -e "s/(Quang|Sparsh|Davin|Akash)'s/the author's/g" \
     -e "s/(Quang|Sparsh|Davin|Akash)/the author/g"
 # §4 PROVENANCE branch column -> generic placeholder (resolve to SHAs before real upload)
-[ -f paper/PROVENANCE.md ] && sed -i '' -E "s/(sparsh|quang|davin|akash)\/[a-z0-9-]+/<merge-sha>/g" paper/PROVENANCE.md
+grep -rlE "(sparsh|quang|davin|akash)/[a-z0-9-]+" . 2>/dev/null \
+  | xargs -r sed -i '' -E "s/(sparsh|quang|davin|akash)\/[a-z0-9-]+/<merge-sha>/g"
 
 # a one-page quickstart lives inside the artifact
 cat > SUPPLEMENTARY_README.md <<'EOF'
@@ -89,8 +91,9 @@ run "grep -rn '/Users/' ." "local paths"
 run "grep -rnE '@gmail|@outlook|@yahoo' ." "emails"
 
 if [ "$hits" -eq 0 ]; then
-  COPYFILE_DISABLE=1 tar --no-xattrs -czf /tmp/marc_supplementary.tgz -C "$WORK" artifact
-  echo "ARTIFACT CLEAN -> /tmp/marc_supplementary.tgz"
+  mkdir -p "$REPO/dist" && rm -f "$REPO/dist/marc_supplementary.zip"
+  (cd "$WORK" && zip -rqX "$REPO/dist/marc_supplementary.zip" artifact)
+  echo "ARTIFACT CLEAN -> $REPO/dist/marc_supplementary.zip"
 else
   echo "ARTIFACT DIRTY: $hits residual categories above — fix the scrub (or the source) and re-run"
 fi

@@ -1,11 +1,8 @@
 % marc_aaai.tex — AAAI-2026 main-track port of marc.tex (the corrected source of truth).
 %
-% FORMAT PLACEHOLDER: the official aaai2026.sty / aaai2026.bst bundle is not in this repo or
-% the local TeX tree, so this file approximates the AAAI layout (letterpaper, two-column,
-% Times, 9.5pt body approximated at 10pt). Before submission:
-%   1. drop aaai2026.sty and aaai2026.bst into this directory,
-%   2. replace the preamble block below with the author-kit preamble (\usepackage{aaai2026}),
-%   3. switch \bibliographystyle{aaai2026} to aaai2026.
+% Format: official AAAI-26 author kit (aaai2026.sty / aaai2026.bst, in this directory),
+% wired in below via \usepackage[submission]{aaai2026}; the style sets
+% \bibliographystyle{aaai2026} itself. Kit provenance: STYLE_KIT_STATUS.md.
 % Content rule: port + cut of marc.tex — every number identical, all \citep keys kept.
 % The technical appendix (per-family tables, transfer, K-scaling) is marc_aaai_appendix.tex,
 % input after the bibliography; it is intended as supplementary material.
@@ -236,7 +233,7 @@ method and carry no comparative signal; all results below are non-convex.
 A pre-registered check confirmed that stochasticity matters in
 this search space: deterministic energy descent is trapped on
 every one of 200 non-convex instances (rate 1.000), and annealed Langevin cuts entrapment to
-0.475, a reduction of $0.525 \pm 0.086$ whose 95\% interval excludes zero (5 seeds) ---
+0.475, a reduction of $0.525 \pm 0.109$ whose 95\% interval excludes zero (5 seeds) ---
 textbook behavior, presented as confirmed premise, not finding.
 % provenance: RESULTS.md R2 (entrapment table folded into prose; full table was tab:entrapment)
 
@@ -295,8 +292,9 @@ proposal holds essentially flat where random fails: 0.950 at $n = 2$, 0.975 at $
 at $n = 4$ --- the ceiling the law below takes as its input.
 Langevin and the mean-prior sit at or near zero from $n = 3$. This is the amortized-inference
 result --- a per-instance proposal replacing search whose cost is exponential in dimension ---
-bounded by two caveats: the model degrades at $n = 6$ (0.250), and random restart is at
-ceiling at $n = 1$. The law's larger-sample measurement below reads random lower at low $n$
+bounded by two caveats: the learned arm is seed-unstable at intermediate $n$ (single seed
+0.250 at $n = 6$; three seeds read $0.983 \pm 0.014$ there but $0.658 \pm 0.484$ at
+$n = 4$), and random restart is at ceiling at $n = 1$. The law's larger-sample measurement below reads random lower at low $n$
 and places the crossover earlier, so we report the geometric collapse, not a
 single $n^*$.
 
@@ -372,7 +370,7 @@ reproduces the entire best-of-8 random-restart curve with no free parameters: pr
 $n = 1, 2, 3, 4, 6$, a mean absolute error of 0.012
 % provenance: RESULTS.md R9 + crossover_law.md §5 (crossover_theory.json)
 (Figure~\ref{fig:law}; 600 fresh instances, a larger and separately drawn sample than
-Table~\ref{tab:scaling}'s $N = 40$ random arm, which runs a few
+Appendix Table~\ref{tab:scaling}'s $N = 40$ random arm, which runs a few
 points higher at low $n$). The budget-fair
 reading is the expected number of restarts $1/q(n)$: 3.7 to 600 over the separable
 dimensions against 2.0--4.3 on the coupled family --- any fixed budget is exhausted on the
@@ -409,8 +407,29 @@ coordinates are pinned only jointly. Both are necessary --- a learned proposal
 beats classical search only where reachability collapses \emph{and} the solution is
 per-variable separable --- and given those it wins when the denoiser fits the marginals:
 the separable traps have both and learning wins; the coupled bilinear family fails the
-first and ties; geometry has the first, fails the second, and ties. Appendix Figure~\ref{fig:regime} places
-every measured family on the two axes of the law.
+first and ties; geometry has the first, fails the second, and ties. Figure~\ref{fig:regime}
+places every measured family on the two axes of the law.
+
+% provenance: paper/figures/fig_regime_map.pdf (scripts/plot_regime_map.py);
+% slopes from crossover_theory.json (R9), R27 slopes law-inverted from the LM arm of
+% crossover_families.json; outcomes from scaling.json (R15), crossover_families.json (R27),
+% coupled.json (R7), pointchain_learned.json (R25), real_systems.json (R26)
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\columnwidth]{../figures/fig_regime_map.pdf}
+\caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
+(abscissa; the separable and coupled slopes are the fits of Table~\ref{tab:law}, the geometry slope that of Figure~\ref{fig:law}, the R27 slopes are
+inverted from the best-of-8 LM arm through Eq.~\eqref{eq:bestofk}) in its solution-structure
+band (ordinate, categorical), colored by the measured learned-vs-random outcome. The law
+reads off the cells: learning wins only where reachability collapses \emph{and} solutions
+are per-variable separable; the chained bilinear family fails collapse and ties; the
+geometry point chains collapse but are coupled and tie --- the falsifiable cell, and it
+held. The double-well tie inside the win cell is the capacity failure of
+the dimension-scaling study, not a regime failure. The real-systems suite has no learned arm
+and no measured slope (nominal abscissa); the construction-repair study took relocation to
+the same pruned chains and closed it as a selection-on-noise negative (main text).}
+\label{fig:regime}
+\end{figure}
 
 \subsection{Coupling removes the advantage}
 \label{sec:coupled}
@@ -472,7 +491,8 @@ Coupling closes the route where the network predicts values, and the real-system
 confirms classical search owns that game; the one decision classical solvers cannot make
 is discrete and prior to any solve: \emph{which}
 structure-changing augmentation turns an unsolvable graph into a solvable one. We move
-learning there. A candidate-conditioned ranker applies each of $K$ proposed augmentations,
+learning there. A candidate-conditioned ranker applies each of $K$ proposed augmentations (in this
+section $K$ is the menu size, not the restart budget of Eq.~\eqref{eq:bestofk}),
 encodes the resulting polynomial graph with operator-aware node and edge features that expose
 degree, linear/square/cross participation, and constants, and scores the augmented graphs
 listwise; the highest-scoring repair receives one classical solve and the exact checker
@@ -489,7 +509,8 @@ vs.\ $0.339$ linear) --- it lives in constants, magnitudes, and incidence read
 \begin{table}[t]
 \centering
 \caption{Candidate-conditioned repair ranker against a candidate-only control and random
-selection, on three generalization tests (Data Version 8, Wilson 95\% CIs). Nonlinear menus
+selection, on three generalization tests (Data Version 8; significance by exact paired McNemar in
+the text). Nonlinear menus
 carry exact CAS no-real-roots certificates for their distractors; every arm is graded by the
 same reference solver that certified the data.}
 \label{tab:repair}
@@ -566,7 +587,7 @@ the two that bite, one construction chosen on a disjoint half of each failure po
 \emph{every} held-out instance ($1.000 \pm 0.000$ across seeds; pooled Wilson $[0.99, 1.00]$
 and $[0.98, 1.00]$) against $0.433 \pm 0.049$ and $0.114 \pm 0.011$ for a restart control
 matched to the \emph{full enumeration budget} over the vocabulary (McNemar
-$p < 10^{-15}$; the control, not the treatment, carries the sampling variance). The same
+$p < 10^{-13}$; the control, not the treatment, carries the sampling variance). The same
 construction wins in all six folds, foreclosing ``the luckiest of $V$'', and saturation is
 mechanical rather than fortunate --- the selected pins delete the mirror basin and the ghost
 root by construction. No learned model runs: what transfers to systems we did not
@@ -579,7 +600,7 @@ measuring. We took the relocation thesis to the pruned point chains --- the disc
 setting of distance geometry --- asking whether one derived construction repairs instances
 the reference pipeline fails. The
 population definition decides the answer. Under two-stream selection ($N{=}367$
-trained-$k$ failures, three optimization seeds) the
+failures at the training chain lengths, three optimization seeds) the
 enumeration ceiling is $0.692$ at $72.7$ restarts per instance, which plain restart scaling
 matches at $+32$ ($0.725$). Majority-vote
 labels made the target learnable --- the ranker separates from random ($0.246 \pm 0.016$
@@ -611,9 +632,11 @@ menu-based repair over synthetic factor graphs.
 
 On the value side, the learned
 proposal's advantage requires per-variable-separable solutions and a regime where random
-restart collapses; on coupled systems it ties or loses at every dimension
+restart collapses; on coupled systems it never significantly beats random restart at any dimension
 tested. Even on favorable families it gains nothing at $n = 1$ (random restart
-at ceiling) and degrades to 0.250 at $n = 6$, so the useful window is the crossover region,
+at ceiling), and its single-seed run drops to 0.250 at $n = 6$ --- a three-seed rerun
+($N{=}120$ per cell) reads $0.983 \pm 0.014$ there but is seed-unstable at $n = 4$
+($0.658 \pm 0.484$, one seed at $0.100$) --- so the useful window is the crossover region,
 not high dimension per se. Those separable families are also block-decomposable, so a
 classical solver that read off separability would scale linearly there too; our controls use
 joint starts, so the crossover is demonstrated against joint-start search, not block
@@ -624,7 +647,7 @@ random-restart curve, not the learned ceiling, which is measured.
 Several failures are specific and reportable. CircleLine is never solved
 by the learned proposal (0.000 against 0.200 for random restart), transfer succeeds on two of
 four held-out families, and adding CircleLine to the training
-mix collapsed an otherwise recoverable transfer (0.70 to 0.00): a bad training family
+mix collapsed an otherwise recoverable transfer (0.70 in a smoke run to 0.00): a bad training family
 actively hurts. The predecessor
 structure policy never separated from random
 selection; its numbers remain withdrawn (evaluation seeds overlapped checkpoint-selection
@@ -644,7 +667,7 @@ scope) --- the binding constraint is autoformalization, not the solver.
 The decision classical solvers make only by enumeration is not which values to try but which
 structure to add, and that is where learning earns its place: the repair ranker matches the
 enumeration ceiling at a fraction of the calls where ``exactly one solvable option'' is a
-theorem, and on real systems we did not build, one derived construction repairs failures the
+theorem, and on hardened variants of named real systems, one derived construction repairs failures the
 full enumeration budget in restarts does not reach. On the value decision the same protocol
 returns a characterization instead --- the learned proposal pays only where search is
 independent across variables and dimension defeats random restart, and the advantage

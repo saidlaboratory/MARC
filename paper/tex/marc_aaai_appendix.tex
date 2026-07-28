@@ -17,14 +17,14 @@ absolute root error from 5.4 to 0.9.
 
 Table~\ref{tab:hybrid} is the full mechanism ablation behind the hybrid-recipe study: four non-convex
 families where deterministic descent is fully trapped (best-of-8, 60 held-out instances per
-family, 95\% Wilson CIs). The random-init control uses identical polish and budget with no
+family; 95\% Wilson CIs shown on the random-init arm). The random-init control uses identical polish and budget with no
 learning.
 
 % provenance: RESULTS.md R3
 \begin{table}[ht]
 \centering
 \caption{Mechanism ablation on trapped non-convex families (best-of-8, 60 held-out per
-family, 95\% Wilson CIs).}
+family; 95\% Wilson CIs shown on the random-init arm).}
 \label{tab:hybrid}
 \footnotesize
 \begin{tabular}{lccccl}
@@ -82,7 +82,10 @@ Figure~\ref{fig:law} carry the two arms that decide the claim (random restart an
 \centering
 \caption{Dimension scaling on bundled traps with per-instance-varying roots in $\pm[3,8]$
 (best-of-8, unified-v2 protocol: one shared polish and one checker for every arm, $N{=}40$
-per cell). Bold marks the best method per row.}
+per cell; 95\% Wilson half-widths are at most $0.15$). Bold marks the best method per
+row. A three-seed rerun of the same protocol ($N{=}120$ per cell,
+scaling\_3seed.json) reads $0.983 \pm 0.014$ at $n{=}6$ and $0.658 \pm 0.484$ at
+$n{=}4$: single cells are seed-noisy, the crossover is not.}
 \label{tab:scaling}
 \begin{tabular}{cccccc}
 \toprule
@@ -100,31 +103,11 @@ $n$ & deterministic & Langevin & mean-prior & random restart & learned \\
 \section{The Factorization Dichotomy: Regime Map and Table}
 \label{app:law}
 
-Figure~\ref{fig:regime} places every measured family on the two axes of the law of
-the factorization-law section; Table~\ref{tab:law} tabulates the dichotomy plotted in
+The regime map (main text, Figure~\ref{fig:regime}) places every measured family on the
+two axes of the law; Table~\ref{tab:law} tabulates the dichotomy plotted in
 Figure~\ref{fig:law} (600 fresh instances per $n$, Wilson CIs, $K = 8$). Expected restarts
 $1/q(n)$ are listed over the tested dimensions in increasing order.
 
-% provenance: paper/figures/fig_regime_map.pdf (scripts/plot_regime_map.py);
-% slopes from crossover_theory.json (R9), R27 slopes law-inverted from the LM arm of
-% crossover_families.json; outcomes from scaling.json (R15), crossover_families.json (R27),
-% coupled.json (R7), pointchain_learned.json (R25), real_systems.json (R26)
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.75\textwidth]{../figures/fig_regime_map.pdf}
-\caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
-(abscissa; the three core slopes are the fits of Table~\ref{tab:law}, the R27 slopes are
-inverted from the best-of-8 LM arm through Eq.~\eqref{eq:bestofk}) in its solution-structure
-band (ordinate, categorical), colored by the measured learned-vs-random outcome. The law
-reads off the cells: learning wins only where reachability collapses \emph{and} solutions
-are per-variable separable; the chained bilinear family fails collapse and ties; the
-geometry point chains collapse but are coupled and tie --- the falsifiable cell, and it
-held. The double-well tie inside the win cell is the capacity failure of
-the dimension-scaling study, not a regime failure. The real-systems suite has no learned arm
-and no measured slope (nominal abscissa); the construction-repair study took relocation to
-the same pruned chains and closed it as a selection-on-noise negative (main text).}
-\label{fig:regime}
-\end{figure}
 
 % provenance: RESULTS.md R9 + paper/notes/crossover_law.md §5
 \begin{table}[ht]
@@ -148,11 +131,11 @@ $P_{\text{random}}$ MAE, parameter-free & 0.012 & law N/A (not separable) \\
 \section{Repair: Menu-Size Scaling and Cost Accounting}
 \label{app:kscaling}
 
-The $K = 4$ checkpoint transfers to larger linear menus without retraining, but the accuracy
-advantage shrinks with $K$ and is gone by $K = 16$ ($0.300/0.187/0.113$ against random
-$0.227/0.120/0.107$ at $K = 4/8/16$, $N = 300/150/150$); what survives at large $K$ is only
+The $K{=}4$ checkpoint transfers to larger linear menus without retraining, but the accuracy
+advantage shrinks with $K$ and is gone by $K{=}16$ ($0.300/0.187/0.113$ against random
+$0.227/0.120/0.107$ at $K{=}4/8/16$, $N{=}300/150/150$); what survives at large $K$ is only
 the cost gap, as the enumeration it displaces grows to $9.05$ solver calls per instance
-(Figure~\ref{fig:repair}, right). Directly training at $K = 16$ performs at chance, so the
+(Figure~\ref{fig:repair}, right). Directly training at $K{=}16$ performs at chance, so the
 transferred checkpoint is selected and both negatives are kept in the record.
 
 % provenance: paper/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
