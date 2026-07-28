@@ -89,8 +89,9 @@ run "grep -rn '/Users/' ." "local paths"
 run "grep -rnE '@gmail|@outlook|@yahoo' ." "emails"
 
 if [ "$hits" -eq 0 ]; then
-  COPYFILE_DISABLE=1 tar --no-xattrs -czf /tmp/marc_supplementary.tgz -C "$WORK" artifact
-  echo "ARTIFACT CLEAN -> /tmp/marc_supplementary.tgz"
+  mkdir -p "$REPO/dist" && rm -f "$REPO/dist/marc_supplementary.zip"
+  (cd "$WORK" && zip -rqX "$REPO/dist/marc_supplementary.zip" artifact)
+  echo "ARTIFACT CLEAN -> $REPO/dist/marc_supplementary.zip"
 else
   echo "ARTIFACT DIRTY: $hits residual categories above — fix the scrub (or the source) and re-run"
 fi

@@ -1,7 +1,6 @@
 # AAAI-26 Reproducibility Checklist — draft answers
 
-Filled against the actual repo so submission day is copy-paste. Update the two figures
-marked TODO once the final compute settles (#122 freeze).
+Filled against the actual repo so submission day is copy-paste.
 
 ## This paper
 
@@ -45,7 +44,8 @@ marked TODO once the final compute settles (#122 freeze).
   matplotlib 3.10.3, pytest 9.1.0, PyYAML 6.0.2). Python 3.10+.
 - **Reported results can be reproduced** — Yes. `scripts/repro_all.sh verify` recomputes every
   cited table from the committed JSONs and diffs against the paper; `rerun` documents the full
-  compute path. CI runs the fast test subset plus verify on every push.
+  compute path. CI runs the full pytest suite (431 tests, ~2 min) plus verify on pushes to
+main and on every PR.
 - **Number of algorithm runs / seeds** — Reported per result. Headline nonlinear repair and
   dimension-scaling law use 3 optimization seeds (11/29/47) with independent per-seed eval draws;
   entrapment uses 5 seeds; R28 geometry uses 3 seeds; R30 real-systems repair is measured on
@@ -63,9 +63,12 @@ marked TODO once the final compute settles (#122 freeze).
 Every experiment in the paper runs on a single machine (Apple-silicon MacBook, CPU; PyTorch
 MPS optional). No GPU cluster. Representative wall times (one machine, `--solve-e2e` boundary):
 
-- Repair-ranker training (nonlinear, 3 seeds): TODO minutes/seed — fill from #128 wall-clock table.
+- Repair-ranker training (nonlinear, 3 seeds): ~5 min wall for the full 3-seed run (train +
+  eval, seeds in parallel via `--jobs 3`; measured `wall_s` = 296 s in
+  `results/p_repair/nonlinear_multiseed.json`).
 - R28 geometry v3 (per seed, warm dataset cache): ~7.5 h/seed at protocol scale (n=1250/400/600,
   60 epochs); dataset build parallelized over the process pool.
 - R30 real-systems repair (N=200 × 4 classes): ~1.5 min total.
-- Dimension-scaling law (3 seeds × 5 dimensions): TODO — fill from `scaling_3seed.json`.
-- Fast test subset (CI): ~2 minutes.
+- Dimension-scaling law (3 seeds × 5 dimensions): not separately wall-clocked;
+  single-machine CPU run, no GPU.
+- Full test suite (CI): ~2 minutes.

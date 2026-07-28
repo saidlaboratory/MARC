@@ -29,7 +29,7 @@ from *diverging (≈1e4, 0% solve)* to **solve_rate 1.000** on convex linear sys
 
 ## R2 · Entrapment — noise escapes where deterministic descent cannot (RQ2)
 On 200 non-convex problems, deterministic energy descent is **100% trapped**; annealed-noise
-(Langevin) descent cuts entrapment to **0.475**. Reduction **0.525 ± 0.086** (95% CI excludes
+(Langevin) descent cuts entrapment to **0.475**. Reduction **0.525 ± 0.109** (95% CI excludes
 0), N=200, 5 seeds. A pre-registered, falsifiable RQ answered with CIs.
 `python -m marc.eval.ablations.noise_ablation --graphs 200`
 
@@ -448,3 +448,19 @@ pick on the screens that chose it → 0.762; on a fresh stream → 0.199.
 `probe_concentration.json`, `geo_repair_p3_s{11,29,47}.json`, `analysis_p3.json`
 (PROVENANCE R28/R28b/R28c).  v2 protocol-scale runs (superseded, kept as the label-noise
 data point): `geo_repair_s{11,29,47}.json`, `analysis.json`.
+
+## R30 · Real-systems construction repair — the external anchor (systems we did not build)
+
+Four named real-system classes hardened into parameterized variants; derived constructions
+(law-of-cosines lifts, signed Cayley–Menger cross-product pins, axis pins) against the LM
+reference (K=4, tol 1e-6). Two classes bite: **trilat_far** fails **0.848 ± 0.020** (two-stream
+selection, 3 independent seed bases, N=509 pooled failures) and **conic_ghost** **0.263 ± 0.015**
+(N=158); ik3r_random and circles_far never fail (0/200 in every seed) — documented negatives, not
+averaged in as zeros.  One construction chosen on a disjoint half of each failure pool
+(cross02_m / axis_r0, unanimous across all six folds) repairs **1.000 ± 0.000** of held-out
+failures (pooled Wilson [0.99, 1.00] and [0.98, 1.00]) vs **0.433 ± 0.049** and **0.114 ± 0.011**
+for restart matched to the full enumeration budget (per-seed McNemar ceiling-vs-matched at worst
+2.1e-25 trilat / 5.7e-14 conic; significant in all six seed-class runs). No learned model runs.
+`PYTHONPATH=. python3 scripts/pilot_real_repair.py --n 200` + `scripts/run_real_repair_multiseed.py`
+(seed bases 20260722/21260722/22260722); `results/p_real_repair/real_repair.json`,
+`real_repair_multiseed.json`.

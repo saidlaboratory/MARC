@@ -82,6 +82,16 @@ CHECKS = [
     ("R30 trilat restart+4V", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "trilat_far")["restart_matched"]["rate"],
      0.382, 3, None),
+    # 3-seed dimension-scaling addendum (cited in Limitations + scaling caption)
+    ("R15b learned n=6 3-seed mean", "results/p_scaling/scaling_3seed.json",
+     lambda d: next(r for r in d["rows"] if r["n"] == 6)["learned_x0"]["seed_mean"],
+     0.983, 3, "0.983"),
+    ("R15b learned n=4 3-seed mean", "results/p_scaling/scaling_3seed.json",
+     lambda d: next(r for r in d["rows"] if r["n"] == 4)["learned_x0"]["seed_mean"],
+     0.658, 3, "0.658"),
+    # entrapment 95% CI half-width (was mis-stated 0.086 until Jul 29)
+    ("R5 entrapment ci95", "results/p1_entrapment/summary.json",
+     lambda d: d["entrapment_reduction_ci95"], 0.109, 3, "0.109"),
     ("R30 conic ceiling", "results/p_real_repair/real_repair.json",
      lambda d: next(c for c in d["classes"] if c["class"] == "conic_ghost")["ceiling"]["rate"],
      1.000, 3, None),

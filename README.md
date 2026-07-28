@@ -47,12 +47,12 @@ MARC v0.1 bet on **value diffusion**: a learned denoiser iteratively refining no
 
 | Finding | Result | Consequence |
 |---|---|---|
-| **Noise reduces entrapment** (RQ2) | Deterministic descent traps 100% vs. 47.5% with Langevin noise; reduction 0.525 ± 0.086, N=200, CI excludes 0 | Real — but it argues for *stochasticity in search*, not for a learned denoiser |
+| **Noise reduces entrapment** (RQ2) | Deterministic descent traps 100% vs. 47.5% with Langevin noise; reduction 0.525 ± 0.109, N=200, CI excludes 0 | Real — but it argues for *stochasticity in search*, not for a learned denoiser |
 | **Learned value proposals vs. random restart** (coupled families, R7) | Learned **ties or loses at every dimension** once solutions are coupled; the earlier high-dim win was a separability artifact | The "learned proposal beats classical search" route is **closed** |
 | **Classical baseline strength** | Levenberg–Marquardt with restarts saturates the hard nonlinear families at 1.000 | Raw solve rate can never be MARC's claim |
 | **GNN numerical capacity** | The denoiser could not overfit `Ax = b` on four fixed systems from raw coefficients | Propagating precise numbers through message passing is a structural limitation, not a tuning problem |
 | **Slot-based structure policy (v0.2)** | 0.410 vs 0.200 random in-pattern, but 0.234 vs 0.238 on an unseen pattern | Established the direction, but failed structural transfer |
-| **Candidate-conditioned repair (v0.3)** | **Held-out linear pattern 0.565 vs 0.343 candidate-only / 0.283 random; balanced nonlinear 0.889 vs 0.422 / 0.253** | Operator-aware repair scoring replaces slot classification; nonlinear result is stable across three seeds (SD 0.006) |
+| **Candidate-conditioned repair (v0.3)** | **Balanced nonlinear 0.997 vs 0.333 candidate-only / 0.236 random; held-out linear 0.380 vs 0.195 / 0.287 (Data v8)** | Operator-aware repair scoring replaces slot classification; nonlinear result is stable across three seeds (SD 0.006) |
 
 Full evidence ledger: [`paper/RESULTS.md`](paper/RESULTS.md) · selected v0.3 evidence and invalidated pilots: [`results/p_repair/README.md`](results/p_repair/README.md) · every number's command/seed/commit: [`paper/PROVENANCE.md`](paper/PROVENANCE.md) · standing review-attack checklist: [`paper/notes/REVIEW_ATTACKS.md`](paper/notes/REVIEW_ATTACKS.md).
 
@@ -103,7 +103,7 @@ We climb from selection toward generation, one falsifiable rung at a time. Each 
 
 | Rung | What the policy does | Status |
 |:---:|---|---|
-| **1 · Menu selection** | Pick the correct augmentation from K procedurally generated candidates (exactly one certified/reachable repair under the stated protocol) | **Supported**: 0.565 on an unseen linear pattern and 0.889 on balanced nonlinear menus |
+| **1 · Menu selection** | Pick the correct augmentation from K procedurally generated candidates (exactly one certified/reachable repair under the stated protocol) | **Supported**: 0.997 on balanced nonlinear menus and 0.380 on a held-out linear pattern (Data v8) |
 | **2 · Predicted defining value** | The policy's value head supplies the defining constant itself — the candidate space becomes continuous; the menu only provides insertion structure | **Built** (`predicted_pin`); evaluated as the `policy_value` arm |
 | **3 · Compositional / multi-aux** | Choose insertion set and defining relation independently; multiple simultaneous auxiliaries (the padded-slot schema already supports >1 active slot) | Designed, not built |
 | **4 · Free-form generation** | Emit the defining expression itself — invention proper | The prize; out of scope until rungs 1–3 hold |
@@ -184,7 +184,7 @@ paper/         RESULTS.md, PROVENANCE.md, notes/ (working notes), figures
 
 ## Success criteria
 
-**Supported** if the repair ranker, under the clean seed/data protocol, (a) beats random and candidate-only controls with paired significance on nonlinear aux-required families, (b) holds on cross-pattern holdout, and (c) approaches the enumeration ceiling at a measured fraction of its cost—with the cost gap widening as K grows. Data Version 6 supports all three within the stated menu-based scope.
+**Supported** if the repair ranker, under the clean seed/data protocol, (a) beats random and candidate-only controls with paired significance on nonlinear aux-required families, (b) holds on cross-pattern holdout, and (c) approaches the enumeration ceiling at a measured fraction of its cost—with the cost gap widening as K grows. Data Version 8 supports all three within the stated menu-based scope.
 
 **Falsified** if the no-context ablation matches the full policy (the model isn't reading the graph), or cross-pattern transfer collapses to chance (it memorizes family signatures), or the amortization advantage disappears at realistic K.
 
