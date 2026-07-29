@@ -646,7 +646,8 @@ variants chosen to expose a failure mode, and two of the four produce no failure
 graphs.
 
 On the value side, the learned proposal's advantage requires per-variable-separable
-solutions and a regime where random restart collapses. It gains nothing at $n = 1$ (random restart at ceiling), and single cells are seed-noisy, so
+solutions and a regime where random restart collapses; on coupled systems it never
+significantly beats random restart at any dimension tested. It gains nothing at $n = 1$ (random restart at ceiling), and single cells are seed-noisy, so
 the useful window is the crossover region, not high dimension per se. Those families are also
 block-decomposable: a solver that read off separability would scale linearly there too, so
 the crossover is demonstrated against joint-start search, not block decomposition. Eq.~\eqref{eq:bestofk} predicts the random-restart curve, not the learned ceiling, which
@@ -654,14 +655,15 @@ is measured.
 
 Several failures are specific. CircleLine is never solved by the learned proposal, transfer
 succeeds on two of four held-out families, and adding CircleLine to the training mix
-collapsed an otherwise recoverable transfer (0.70 to 0.00). The predecessor structure policy never
+collapsed an otherwise recoverable transfer (0.70 to 0.00): a bad training family actively
+hurts. The predecessor structure policy never
 separated from random selection and its numbers remain withdrawn (evaluation seeds
 overlapped checkpoint-selection validation seeds), as do the earlier v6/v7 ranker numbers
 (a pin-prior leak and probe-artifact certificates, found and fixed). Only the nonlinear headline ($0.982 \pm 0.006$) is optimization-robust.
 Finally, scope against real problem text is quantified: on a 48-problem sample of
-MATH-500 \citep{hendrycks2021math} the template formalizer covers none of them
-(breakdown in the supplement), so the binding constraint is autoformalization, not the
-solver.
+MATH-500 \citep{hendrycks2021math} the template formalizer covers 0 of 48 (20\%
+constraint-shaped, 31\% CAS computation, 48\% reasoning or proof out of
+scope). The binding constraint is autoformalization, not the solver.
 % provenance: RESULTS.md R6 (MATH prose); withdrawal provenance: RESULTS.md R8/R10
 
 \section{Conclusion}
