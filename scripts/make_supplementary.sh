@@ -28,6 +28,8 @@ rm -f paper/tex/*.fls paper/tex/*.aux paper/tex/*.log paper/tex/*.out \
 rm -rf run_logs 2>/dev/null || true
 
 # §3 scrub names / possessives / milestone tags / org URL / author line (BSD sed -i '')
+# staged camera-ready author block in the paper source (names live only at camera-ready)
+[ -f paper/tex/marc_aaai.tex ] && sed -i '' '/% Submission is double-blind/,/affiliations{SAID Laboratory}/d' paper/tex/marc_aaai.tex
 # SPECIFIC substitutions FIRST (full author line, org, paths) — before the bare-name
 # catch-all, which would otherwise mangle "Quang Bui" into "the author Bui".
 [ -f README.md ] && sed -i '' \
