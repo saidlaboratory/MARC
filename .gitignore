@@ -32,6 +32,8 @@ results/p_repair/*
 !results/p_repair/linear_K16_e2e.json
 !results/p_repair/linear_K16_trained.json
 !results/p_repair/third_family_feasibility.json
+!results/p_repair/nonlinear_opmask_ablation.json
+!results/p_repair/linear_opmask_ablation.json
 checkpoints/
 dist/
 

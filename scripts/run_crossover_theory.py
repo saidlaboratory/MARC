@@ -288,7 +288,20 @@ def main() -> None:
                     help="comma list of restart budgets K to sweep, e.g. '1,2,4,8,16,32' — "
                          "traces the restart curve (solve-rate vs wall-clock) into the JSON "
                          "payload and paper/tex/figures/fig_restart_curve.pdf")
+    ap.add_argument("--replot", action="store_true",
+                    help="redraw the figure from the committed crossover_theory.json without "
+                         "re-measuring; use this for presentation-only changes so the cited "
+                         "numbers cannot move under a different sympy/numpy build")
     args = ap.parse_args()
+
+    if args.replot:
+        d = json.loads(Path("results/p_crossover/crossover_theory.json").read_text())
+        fams = d["families"]
+        _plot(fams["indep"]["rows"], fams["coupled"]["rows"], d["v_direct"], d["K"],
+              d["crossover_pred"],
+              load_observed("results/p_scaling/scaling.json", "learned_x0"),
+              fams.get("geometry", {}).get("rows"))
+        return
 
     indep = measure_family("indep", NS_INDEP, INDEP_START, args.trials, args.K, args.seed)
     coupled = measure_family("coupled", NS_COUPLED, COUPLED_START, args.trials, args.K, args.seed + 55555)
@@ -416,7 +429,11 @@ def _plot(indep, coupled, v, K, n_star, learned_indep, geometry=None) -> None:
     except ImportError:
         print("matplotlib not available; skipping figure")
         return
-    fig, ax = plt.subplots(1, 2, figsize=(9, 3.4))
+    # Sized for the paper's two-column figure* slot (\textwidth ~ 7 in) so the figure is
+    # printed at ~1:1 and the tick/label point sizes below are the sizes the reader sees.
+    fig, ax = plt.subplots(1, 2, figsize=(7.0, 2.2))
+    for a in ax:
+        a.tick_params(labelsize=7)
 
     # (a) factorization test: log q vs n
     series = [(indep, "#1f77b4", "o", "independent (sep.), b=-1.03"),
@@ -426,28 +443,28 @@ def _plot(indep, coupled, v, K, n_star, learned_indep, geometry=None) -> None:
     for rows, col, mk, lab in series:
         ns = [r["n"] for r in rows]
         qs = [max(r["q"], 1e-3) for r in rows]
-        ax[0].plot(ns, qs, mk + "-", color=col, label=lab, linewidth=2)
+        ax[0].plot(ns, qs, mk + "-", color=col, label=lab, linewidth=1.6, markersize=4)
     ax[0].set_yscale("log")
-    ax[0].set_xlabel("dimension n")
-    ax[0].set_ylabel("single-start reachability q(n)")
-    ax[0].set_title("(a) reachability decay: steep = learning-favorable")
-    ax[0].legend(fontsize=7.5)
+    ax[0].set_xlabel("dimension n", fontsize=8)
+    ax[0].set_ylabel("single-start reachability q(n)", fontsize=8)
+    ax[0].set_title("(a) reachability decay: steep = learning-favorable", fontsize=8)
+    ax[0].legend(fontsize=6.5, frameon=False)
 
     # (b) predicted vs observed random restart + learned + crossover
     ns = [r["n"] for r in indep]
     ax[1].plot(ns, [r["P_random_pred_vn"] for r in indep], "--", color="#9467bd",
-               label="random: predicted 1-(1-v$^n$)$^K$", linewidth=2)
+               label="random: predicted 1-(1-v$^n$)$^K$", linewidth=1.6)
     ax[1].plot(ns, [r["P_random_meas"] for r in indep], "v", color="#9467bd",
-               label="random: measured", markersize=8)
+               label="random: measured", markersize=5)
     ax[1].plot(ns, [learned_indep.get(n) for n in ns], "D-", color="#1f77b4",
-               label="learned: observed", linewidth=2)
+               label="learned: observed", linewidth=1.6, markersize=4)
     if n_star is not None:
         ax[1].axvline(n_star, color="#888", ls=":", label=f"predicted crossover n*={n_star}")
-    ax[1].set_xlabel("dimension n")
-    ax[1].set_ylabel("solve rate (best-of-K)")
+    ax[1].set_xlabel("dimension n", fontsize=8)
+    ax[1].set_ylabel("solve rate (best-of-K)", fontsize=8)
     ax[1].set_ylim(-0.03, 1.05)
-    ax[1].set_title("(b) parameter-free prediction of the crossover")
-    ax[1].legend(fontsize=7, loc="center right")
+    ax[1].set_title("(b) parameter-free prediction of the crossover", fontsize=8)
+    ax[1].legend(fontsize=6.5, loc="center right", frameon=False)
     fig.tight_layout()
     d = Path("paper/tex/figures"); d.mkdir(parents=True, exist_ok=True)
     fig.savefig(d / "fig_crossover_theory.pdf")

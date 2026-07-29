@@ -293,7 +293,11 @@ offset 0.407, coupled 0.450, shared 0.380, each vs ~0.23–0.29 random (N=400 pe
 cell) — the linear pattern-transfer effect is not specific to one held-out choice.
 
 **Operator-feature ablation (attribution check; `nonlinear_opmask_ablation.json`,
-`linear_opmask_ablation.json`):** masking the operator-identity features (factor
+`linear_opmask_ablation.json`).**  *Regenerated 2026-07-29: nonlinear reproduces at 0.978
+[0.957,0.989] (not bit-stable at fixed seed; 0.978/0.981/0.986 observed).  Linear does NOT
+reproduce -- rerun gives 0.229 [0.206,0.254] vs random 0.249, against the 0.379 below, which
+matches the known linear seed instability.  The paper cites the nonlinear ablation only.*
+Original record: masking the operator-identity features (factor
 degree/has_cross/has_square; edge diag-quadratic/max-exponent/cross) and retraining
 leaves the ranker essentially intact — nonlinear 0.981 [0.960,0.991] vs 0.997, linear
 0.379 [0.352,0.407] vs 0.339.  The v0.2→v0.3 gain is therefore attributed to
