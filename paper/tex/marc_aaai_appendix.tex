@@ -208,3 +208,19 @@ autoformalization from problem text, which the template formalizer does not perf
 binding constraint on applying this substrate to natural problem statements is therefore
 autoformalization, not the solver.
 % provenance: RESULTS.md R6 / PROVENANCE R14 (scripts/run_math_coverage.py)
+
+\section{Compute and Software Environment}
+\label{app:compute}
+
+Every experiment in the paper and this supplement ran on a single laptop: an Apple M1~Pro
+(10-core CPU, 16\,GB unified memory), CPU only --- no GPU or cluster was used anywhere.
+Software: Python~3.12, PyTorch~2.9.1, torch-geometric~2.8.0, SciPy~1.15.2, SymPy~1.13.3,
+NumPy~2.4.6 (exact versions pinned in \texttt{requirements-lock.txt} in the code artifact).
+Representative wall-clock costs: the nonlinear repair-ranker training is ${\sim}5$ minutes
+for the full three-seed run; the geometry construction-repair protocol is the most expensive
+at ${\sim}7.5$ hours per seed (dataset generation parallelized over a process pool); the
+real-systems repair suite runs in under two minutes; per-arm wall-clock receipts for every
+cited cost claim are recomputed from the committed result files by
+\texttt{scripts/wall\_clock\_table.py}, and the continuous-integration entry point
+(\texttt{scripts/repro\_all.sh verify}) checks every number in the paper against those
+files on each commit.
