@@ -42,13 +42,17 @@ A Controlled Study on Continuous Algebraic Systems}
 \maketitle
 
 \begin{abstract}
-Evaluations of diffusion-based proposal models for constraint solving rarely include one key
-control: random multi-start under the same refinement budget. When applied to our system,
-this control sharply curtails our headline claim. MARC turns a continuous algebraic
-constraint system into a factor graph, over which a graph-neural diffusion denoiser proposes
-assignments, descent on an exact computer-algebra energy polishes them, and an exact symbolic
-checker certifies solutions. Does the learned proposal improve on random multi-start at
-choosing satisfying assignments? Only narrowly, in a predictable regime. Across trapped
+What classical solvers lack is discrete choice: which structural augmentation renders an
+unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms random
+(0.997 vs 0.236 balanced nonlinear menu accuracy; $p<10^{-70}$; $0.982\pm0.006$ across
+seeds), and beats a budget-matched per-candidate probe on accuracy and cost. MARC turns a
+continuous algebraic constraint system into a factor graph, over which a graph-neural
+diffusion denoiser proposes assignments, descent on an exact computer-algebra energy polishes
+them, and an exact symbolic checker certifies solutions. Evaluations of diffusion-based
+proposal models for constraint solving rarely include one key control: random multi-start
+under the same refinement budget. When applied to our system, this control sharply curtails
+our headline claim. Does the learned proposal improve on random multi-start at choosing
+satisfying assignments? Only narrowly, in a predictable regime. Across trapped
 low-dimensional families it ties with random restart, but dominates in high dimension, where
 random search fails. Once variables couple, the advantage is gone. Since all methods share
 the same polishing and checker, best-of-$K$ random multi-start succeeds with probability
@@ -56,13 +60,9 @@ exactly $1-(1-q(n))^K$, where $q(n)$ is single-start reachability; a single meas
 with no free parameters, reproduces the entire curve (mean absolute error 0.012). The narrow
 favorable regime is not specific to our synthetic families: across eight real-world systems
 in robotics, positioning, optimization, and algebra, classical multi-start solved all eight,
-but none were in the learning-favorable regime. What classical solvers lack is discrete
-choice: which structural augmentation renders an unsolvable system solvable. There, a
-candidate-conditioned repair ranker outperforms random (0.997 vs 0.236 balanced nonlinear
-menu accuracy; $p<10^{-70}$; $0.982\pm0.006$ across seeds), and beats a budget-matched
-per-candidate probe on accuracy and cost. We delineate the regimes where learned proposals
-improve solvers, and show that learning pays on the discrete decision, where it reaches the
-exhaustive-search ceiling at a fraction of the calls.
+but none were in the learning-favorable regime. We delineate the regimes where learned
+proposals improve solvers, and show that learning pays on the discrete decision, where it
+reaches the exhaustive-search ceiling at a fraction of the calls.
 \end{abstract}
 
 \section{Introduction}
@@ -155,12 +155,11 @@ budget-matched multistart control this study is built around.
 \paragraph{Weak baselines as a known failure mode.}
 Where that failure mode is usually diagnosed after the fact, one polish and one checker make
 Eq.~\eqref{eq:bestofk} the \emph{exact} bound a learned proposal must clear here, and the
-measured $\log q(n)$ slope says in advance which families leave room above it. The failure
-mode is well established, and neither it nor the budget-matching remedy is ours:
-\citet{nath2024maxcutbenchmark} find published learned heuristics for maximum cut that do not
-beat naive greedy, and that replacing one method's GNN with linear regression leaves it
-intact; \citet{nath2023mightiest} report simple Tabu Search beating learned local search; and
-\citet{rodrigues2026budgetmatched} isolate the same pattern outside combinatorial search.
+measured $\log q(n)$ slope says in advance which families leave room above it. Neither the
+failure mode nor the budget-matching remedy is ours: learned heuristics that do not beat
+naive greedy \citep{nath2024maxcutbenchmark}, Tabu Search beating learned local search
+\citep{nath2023mightiest}, and the same pattern outside combinatorial search
+\citep{rodrigues2026budgetmatched}.
 
 \paragraph{Per-instance algorithm selection.}
 The repair ranker is, at bottom, per-instance selection: given an
@@ -169,12 +168,9 @@ The problem is fifty years old \citep{rice1976algorithm}, was made standard prac
 SATzilla \citep{xu2008satzilla}, and is surveyed in \citet{kerschke2019survey}; AlphaGeometry
 \citep{trinh2024alphageometry} is the precedent for learning
 the structural decision itself, and discrete diffusion \citep{austin2021d3pm,
-vignac2023digress} supplied the formalism for our withdrawn predecessor policy. Three things
-here are not in that line: certificate-grade menu semantics (``exactly
-one solvable option'' is a CAS theorem, not a budget-relative claim), candidate conditioning
-(the ranker encodes each candidate-augmented graph, not instance features alone), and
-controls that price the classical recourse, namely budget-matched restarts and a
-per-candidate solver probe, rather than a single default algorithm.
+vignac2023digress} supplied the formalism for our withdrawn predecessor policy. Three things here are not in that line: certificate-grade menu semantics (``exactly one
+solvable option'' is a CAS theorem, not a budget-relative claim), candidate conditioning, and
+controls that price the classical recourse rather than a single default algorithm.
 
 \paragraph{Distance geometry.}
 On the geometric family below we measure under shared machinery what this literature
@@ -274,8 +270,9 @@ rate.
 \label{sec:hybrid}
 
 On four non-convex families where deterministic descent is fully trapped (best-of-8, 60
-held-out instances per family), the learned proposal records no win over random multi-start:
-three ties and one complete failure on CircleLine (0.000 where random reaches 0.200).
+held-out instances per family), the learned proposal records no win over random multi-start.
+It ties on three families (0.550, 0.683 and 0.683, each matching the random arm exactly) and
+fails completely on the fourth, CircleLine, at 0.000 where random reaches 0.200.
 Cold-start refinement solves nothing and Langevin noise helps only somewhat, while both the
 random-init control and the learned hybrid do far better (supplementary Table S1).
 Multi-start Levenberg--Marquardt saturates all four, so the informative contrast is learned
@@ -366,12 +363,12 @@ generators, polish, and checker as those experiments. supplementary Table S4 tab
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig_crossover_theory.pdf}
-\caption{The factorization law, measured. Left: $\log q(n)$ against $n$. The separable
-family is a line (slope $-1.03$, $R^2 = 0.98$), the coupled bilinear family is nearly flat
-($-0.13$), and the geometry family, though syntactically coupled, collapses ($-0.77$,
-$R^2 = 0.999$). Right: the best-of-8 random-restart curve predicted parameter-free from
-$v = 0.27$ via Eq.~\eqref{eq:bestofk} against the measured curve (MAE 0.012), with the
-learned hybrid overlaid; the dotted line is the crossover dimension predicted from $v$.}
+\caption{The factorization law, measured. Left: $\log q(n)$ against $n$; the separable family
+is a line, the coupled bilinear family nearly flat, and the geometry family, though
+syntactically coupled, collapses (slopes and fits in the text). Right: the best-of-8
+random-restart curve predicted parameter-free from $v = 0.27$ via Eq.~\eqref{eq:bestofk}
+against the measured curve (MAE 0.012), with the learned hybrid overlaid; the dotted line is
+the crossover dimension predicted from $v$.}
 \label{fig:law}
 \end{figure*}
 
@@ -483,9 +480,9 @@ recognized test problems encoded once as factor graphs, graded by the numeric st
 checker ($\max_j |r_j(x)| < 10^{-6}$) since their roots are irrational
 (Table~\ref{tab:real}).
 % provenance: RESULTS.md R26 + real_systems.md (results/p_real/real_systems.json)
-Multi-start Levenberg--Marquardt solves all eight; annealed Langevin solves one and random
-restart with the gradient polish solves four. Where the gradient polish fails, always at single-start reachability $0.00$, the stronger
-\emph{classical} polish fixes every case: the bottleneck is the finisher, not the proposal.
+Multi-start Levenberg--Marquardt solves all eight. Where the gradient polish fails, always at
+single-start reachability $0.00$, the stronger \emph{classical} polish fixes every case: the
+bottleneck is the finisher, not the proposal.
 No system falls in the amortization regime, since all eight are low-dimensional and coupled,
 so we do not run the learned component per system.
 
@@ -494,9 +491,8 @@ so we do not run the learned component per system.
 \centering
 \caption{The eight standard systems (best-of-8; numeric acceptance at $10^{-6}$).
 $q$ is single-start reachability under the gradient polish, 200 draws; $\nabla$ marks the
-stationary-point systems. Deterministic descent solves none. Every system the gradient polish misses sits at $q = 0.00$ and is
-solved anyway by multi-start Levenberg--Marquardt: the bottleneck is the finisher, not the
-proposal.}
+stationary-point systems. Deterministic descent solves none, and every system the gradient
+polish misses sits at $q = 0.00$.}
 \label{tab:real}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -527,9 +523,8 @@ ranker applies each of $K$ proposed augmentations (here $K$ is the menu size, no
 budget of Eq.~\eqref{eq:bestofk}), encodes the resulting polynomial graph with operator-aware
 node and edge features (degree, linear/square/cross participation, constants), and scores the
 augmented graphs listwise; the highest-scoring repair receives one classical solve and the
-exact checker remains the acceptance gate. A matched candidate-only control sees the same augmentation
-recipe but no problem graph, and \texttt{random} chooses uniformly among the same $K$
-candidates. The predecessor policy classified menu slots over one fixed graph encoding and fell to
+exact checker remains the acceptance gate. A matched candidate-only control sees the same augmentation recipe but no problem graph;
+\texttt{random} chooses uniformly among the same $K$ candidates. The predecessor policy classified menu slots over one fixed graph encoding and fell to
 chance on an unseen pattern. Candidate conditioning is the change that matters.
 An ablation locates the signal: masking operator-identity features and
 retraining leaves the ranker intact ($0.978$ $[0.957, 0.989]$ against $0.997$ unmasked,
@@ -560,10 +555,10 @@ Linear, unseen pattern  & 400 & \textbf{0.380} & 0.195 & 0.287 \\
 
 Table~\ref{tab:repair} reports the three generalization tests under a deliberately strict
 protocol: one reference solver certifies the data, grades every arm,
-and runs the end-to-end solves; nonlinear ``exactly one solvable option'' is an exact CAS theorem (a distractor proven to
-have no real solution is unsolvable at any budget); gold and distractor parameters share one
-support and one prior, so surviving surface-form signal is capped at the candidate-only
-ceiling and anything above it must come from reading the problem graph. On the balanced nonlinear test that ceiling is $0.333$, above the $0.25$ chance floor and
+and runs the end-to-end solves; ``exactly one solvable option'' is an exact CAS theorem (a
+distractor proven to have no real solution is unsolvable at any budget); gold and distractor
+parameters share one support and one prior, so surviving surface-form signal is capped at the
+candidate-only ceiling and anything above it must come from the problem graph. On the balanced nonlinear test that ceiling is $0.333$, above the $0.25$ chance floor and
 far below the ranker, where exact paired McNemar gives $p = 3.3\times10^{-83}$ against
 random (274 ranker-only correct versus 0) and $p = 1.1\times10^{-72}$ against the
 candidate-only control. Transfer to an unseen nonlinear relation is partial but bidirectional ($0.420$ against
@@ -606,12 +601,11 @@ repair the failures the classical reference cannot (supplementary Table S5 repor
 all four classes). Two produce a two-stream failure population: far-side GPS trilateration ($0.848 \pm 0.020$
 over three seed bases, $N{=}509$ failures) and a ghost-root conic--line intersection
 ($0.263 \pm 0.015$, $N{=}158$). On 3R inverse kinematics and far circles the classical solver
-never fails, which we report as a negative rather than averaging in as a zero. On the two classes that do produce failures, one construction chosen on a disjoint half of
-each pool repairs
-\emph{every} held-out instance ($1.000 \pm 0.000$ across seeds; pooled Wilson $[0.99, 1.00]$
-and $[0.98, 1.00]$) against $0.433 \pm 0.049$ and $0.114 \pm 0.011$ for a restart control
-matched to the \emph{full enumeration budget} over the vocabulary (McNemar
-$p < 10^{-13}$; the control, not the treatment, carries the sampling variance). The same
+never fails, which we report as a negative rather than averaging in as a zero. On the two that do produce failures, one construction chosen on a disjoint half of each pool
+repairs \emph{every} held-out instance ($1.000 \pm 0.000$ across seeds; pooled Wilson
+$[0.99, 1.00]$ and $[0.98, 1.00]$) against $0.433 \pm 0.049$ and $0.114 \pm 0.011$ for a
+restart control matched to the \emph{full enumeration budget} (McNemar $p < 10^{-13}$; the
+control, not the treatment, carries the sampling variance). The same
 construction wins in all six folds, which rules out its being the luckiest of $V$, and
 saturation is
 mechanical rather than fortunate: the selected pins delete the mirror basin and the ghost
@@ -626,8 +620,8 @@ discrete-branch setting of distance geometry, the population definition decides 
 ceiling is $0.692$ at $72.7$ restarts per instance, which plain restart scaling matches at
 $+32$ ($0.725$). Majority-vote labels made the target learnable, and the ranker separates from random
 ($0.246 \pm 0.016$ versus $0.185 \pm 0.019$; Holm $p{=}1.3{\times}10^{-4}$) where
-single-stream labels never did. That is not an edge over the controls: it ties the best
-fixed construction ($0.259$) and loses to matched-budget restarts ($0.270$). The signal is real but reflects the population prior, not the problem graph. The probe initially appeared promising: one restart per candidate solves $0.698$, matching
+single-stream labels never did, but that is no edge over the controls: it ties the best fixed
+construction ($0.259$) and loses to matched-budget restarts ($0.270$). The signal is real but reflects the population prior, not the problem graph. The probe initially appeared promising: one restart per candidate solves $0.698$, matching
 the ceiling. But it spends the whole menu's budget and its accepts are diffuse, so it is a
 portfolio sweep, not a choice of construction. A per-instance screen held to the reference
 budget scores $0.199$ $[0.161, 0.243]$, below the restart control, so ${\sim}50$ restarts of
