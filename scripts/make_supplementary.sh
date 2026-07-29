@@ -28,8 +28,19 @@ rm -f paper/tex/*.fls paper/tex/*.aux paper/tex/*.log paper/tex/*.out \
 rm -rf run_logs 2>/dev/null || true
 
 # §3 scrub names / possessives / milestone tags / org URL / author line (BSD sed -i '')
-# staged camera-ready author block in the paper source (names live only at camera-ready)
-[ -f paper/tex/marc_aaai.tex ] && sed -i '' '/% Submission is double-blind/,/affiliations{SAID Laboratory}/d' paper/tex/marc_aaai.tex
+# staged camera-ready author block in the paper source (names live only at camera-ready).
+# Loop over every tex we ship: the AAAI-27 reshape split marc_aaai.tex into main.tex plus
+# supplement.tex, and the old `[ -f ... ] &&` guard on a single filename would silently
+# no-op after that rename rather than fail, letting the author block back into the artifact.
+for _tex in paper/tex/main.tex paper/tex/supplement.tex paper/tex/marc_aaai.tex; do
+  [ -f "$_tex" ] || continue
+  sed -i '' '/% Submission is double-blind/,/affiliations{SAID Laboratory}/d' "$_tex"
+done
+# fail loudly if no paper source was found at all, rather than shipping an unscrubbed tree
+[ -f paper/tex/main.tex ] || [ -f paper/tex/marc_aaai.tex ] || {
+  echo "make_supplementary: no paper source found in paper/tex/ -- refusing to package" >&2
+  exit 1
+}
 # SPECIFIC substitutions FIRST (full author line, org, paths) — before the bare-name
 # catch-all, which would otherwise mangle "Quang Bui" into "the author Bui".
 [ -f README.md ] && sed -i '' \

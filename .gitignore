@@ -104,3 +104,6 @@ run_logs/*.log
 results/p_real_repair/*
 !results/p_real_repair/real_repair.json
 !results/p_real_repair/real_repair_multiseed.json
+
+# generated Overleaf bundle (scripts/make_overleaf.sh) — regenerate, never edit
+paper/tex/overleaf/

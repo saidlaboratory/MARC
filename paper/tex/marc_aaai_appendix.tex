@@ -80,7 +80,7 @@ CircleLine      & Sys, Prod, Quad    & 0.033 [0.01, 0.11] & 0.000 & fails \\
 \label{app:scaling}
 
 Table~\ref{tab:scaling} is the full five-arm battery behind the dimension-scaling study; the main text and
-Figure~\ref{fig:law} carry the two arms that decide the claim (random restart and learned).
+Figure 1 of the main paper carry the two arms that decide the claim (random restart and learned).
 
 % provenance: RESULTS.md R15 (methodology unified-v2, results/p_scaling/scaling.json)
 \begin{table}[ht]
@@ -108,15 +108,15 @@ $n$ & deterministic & Langevin & mean-prior & random restart & learned \\
 \section{The Factorization Dichotomy: Regime Map and Table}
 \label{app:law}
 
-The regime map (main text, Figure~\ref{fig:regime}) places every measured family on the
+The regime map (Figure 2 of the main paper) places every measured family on the
 two axes of the law; Table~\ref{tab:law} tabulates the dichotomy plotted in
-Figure~\ref{fig:law} (600 fresh instances per $n$, Wilson CIs, $K = 8$). Expected restarts
+Figure 1 of the main paper (600 fresh instances per $n$, Wilson CIs, $K = 8$). Expected restarts
 $1/q(n)$ are listed over the tested dimensions in increasing order.
 
 Slope provenance for the regime map: the separable and coupled abscissae are the fits of
-Table~\ref{tab:law}, the geometry abscissa is the fit of Figure~\ref{fig:law}, and the
+Table~\ref{tab:law}, the geometry abscissa is the fit of Figure 1 of the main paper, and the
 three crossover-replication families are placed at slopes inverted from their best-of-8
-Levenberg--Marquardt arm through Eq.~\eqref{eq:bestofk}. The real-systems suite is plotted
+Levenberg--Marquardt arm through the best-of-$K$ identity of the main paper. The real-systems suite is plotted
 at a nominal abscissa: it has no learned arm and no separately measured $q(n)$.
 
 
@@ -187,10 +187,23 @@ transferred checkpoint is selected and both negatives are kept in the record.
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/fig_repair.pdf}
-\caption{Left: main-text Table~\ref{tab:repair} drawn, the ranker against its
+\caption{Left: Table 3 of the main paper drawn, the ranker against its
 candidate-only and random controls, with $K{=}4$ chance dotted. Right: menu-size scaling.
 The $K{=}4$ checkpoint evaluated zero-shot at larger menus retains an accuracy edge at
 $K{=}8$ that closes by $K{=}16$, while the blind enumeration it displaces grows from $2.5$
 to $9.1$ solver calls per instance.}
 \label{fig:repair}
 \end{figure}
+
+\section{MATH-500 Scope Measurement}
+\label{app:math}
+
+The main text states that the template formalizer covers none of a 48-problem MATH-500
+sample \citep{hendrycks2021math}. The breakdown: roughly $20\%$ of the sample is
+constraint-shaped and in principle in scope, $31\%$ is CAS computation rather than
+constraint solving, and $48\%$ is reasoning or proof that the factor-graph encoding does
+not express. Coverage is $0/48$ because the constraint-shaped fraction still requires
+autoformalization from problem text, which the template formalizer does not perform. The
+binding constraint on applying this substrate to natural problem statements is therefore
+autoformalization, not the solver.
+% provenance: RESULTS.md R6 / PROVENANCE R14 (scripts/run_math_coverage.py)

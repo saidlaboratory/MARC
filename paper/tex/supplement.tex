@@ -1,0 +1,49 @@
+% supplement.tex — technical appendix for "When Do Learned Diffusion Proposals Help
+% Constraint Solving?", submitted as SEPARATE supplementary material.
+%
+% AAAI-27 counts appendices bound into the main PDF against the 7 content pages and
+% requires supplementary material to be uploaded as its own document, so this is no
+% longer \input by main.tex. Floats are numbered S1, S2, ... so the main text can refer
+% to them unambiguously without a cross-document reference.
+
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
+
+\title{Supplementary Material\\
+When Do Learned Diffusion Proposals Help Constraint Solving?\\
+A Controlled Study on Continuous Algebraic Systems}
+\author{Anonymous submission}
+\date{}
+
+\begin{document}
+\maketitle
+
+% S-numbering so the main text can cite "Table S1" with no cross-document reference
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+
+\onecolumn
+\appendix
+\setcounter{secnumdepth}{1}
+
+% single source of truth: the appendix body lives in marc_aaai_appendix.tex
+\input{marc_aaai_appendix}
+
+% the supplement cites MATH-500; give it its own reference list
+\bibliography{refs}
+
+\end{document}
