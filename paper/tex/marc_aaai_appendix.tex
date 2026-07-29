@@ -135,16 +135,16 @@ The $K{=}4$ checkpoint transfers to larger linear menus without retraining, but 
 advantage shrinks with $K$ and is gone by $K{=}16$ ($0.300/0.187/0.113$ against random
 $0.227/0.120/0.107$ at $K{=}4/8/16$, $N{=}300/150/150$); what survives at large $K$ is only
 the cost gap, as the enumeration it displaces grows to $9.05$ solver calls per instance
-(Figure~\ref{fig:repair}, right). Directly training at $K{=}16$ performs at chance, so the
+(Figure~\ref{fig:repair}). Directly training at $K{=}16$ performs at chance, so the
 transferred checkpoint is selected and both negatives are kept in the record.
 
-% provenance: paper/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
+% provenance: paper/figures/fig_repair_kscaling.pdf (scripts/plot_repair.py --panel right), RESULTS.md R10
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.85\textwidth]{../figures/fig_repair.pdf}
-\caption{Structural repair, measured. Left: the operator-aware ranker against its
-candidate-only and random controls on the three generalization tests of Table~\ref{tab:repair}; the dotted line is $K{=}4$ chance. Right: the $K{=}4$ checkpoint evaluated zero-shot at
-larger menus retains an accuracy edge at $K{=}8$ that closes by $K{=}16$, while the blind
-enumeration it displaces grows from $2.5$ to $9.1$ solver calls per instance.}
+\includegraphics[width=0.6\textwidth]{../figures/fig_repair_kscaling.pdf}
+\caption{Menu-size scaling behind main-text Figure~\ref{fig:repair-acc}: the $K{=}4$
+checkpoint evaluated zero-shot at larger menus retains an accuracy edge at $K{=}8$ that
+closes by $K{=}16$, while the blind enumeration it displaces grows from $2.5$ to $9.1$
+solver calls per instance.}
 \label{fig:repair}
 \end{figure}
