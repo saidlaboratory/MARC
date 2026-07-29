@@ -194,3 +194,16 @@ $K{=}8$ that closes by $K{=}16$, while the blind enumeration it displaces grows 
 to $9.1$ solver calls per instance.}
 \label{fig:repair}
 \end{figure}
+
+\section{MATH-500 Scope Measurement}
+\label{app:math}
+
+The main text states that the template formalizer covers none of a 48-problem MATH-500
+sample \citep{hendrycks2021math}. The breakdown: roughly $20\%$ of the sample is
+constraint-shaped and in principle in scope, $31\%$ is CAS computation rather than
+constraint solving, and $48\%$ is reasoning or proof that the factor-graph encoding does
+not express. Coverage is $0/48$ because the constraint-shaped fraction still requires
+autoformalization from problem text, which the template formalizer does not perform. The
+binding constraint on applying this substrate to natural problem statements is therefore
+autoformalization, not the solver.
+% provenance: RESULTS.md R6 / PROVENANCE R14 (scripts/run_math_coverage.py)

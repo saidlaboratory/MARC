@@ -184,10 +184,8 @@ constraints, is a distance geometry problem with known discrete structure: each 
 lies on an intersection of circles, the per-point reflection ambiguity is the discrete branch
 that branch-and-prune enumerates, and the solution set carries a group of partial reflections
 \citep{lavor2012dmdgp, liberti2014distance}. We claim none of that structure. Those branches
-are exactly the ambiguities our reachability measurement counts. What we add is measurement
-under shared machinery: the reachability slope under one fixed polish, a trained proposal
-that ties restart-matched random search there anyway, and selection learned under
-restart-matched controls where learning does enter the branches.
+are exactly the ambiguities our reachability measurement counts. What we add is measurement under shared machinery: the reachability slope under one fixed
+polish, and a trained proposal that ties restart-matched random search there anyway.
 
 \section{Method}
 \label{sec:method}
@@ -352,7 +350,7 @@ P_{\text{random}}(n;K) \;=\; 1 - \big(1 - q(n)\big)^{K} .
 \end{equation}
 The identity is exact for a fixed instance; across a family we use the instance-averaged
 version, and we bound the Jensen gap this opens by validating against a self-measured
-best-of-8 curve rather than assuming it negligible (see Limitations).
+best-of-8 curve rather than assuming it negligible.
 It already implies that a hybrid beating cold-start Langevin has shown nothing. It must beat
 Eq.~\eqref{eq:bestofk} at the same $K$.
 
@@ -647,42 +645,37 @@ and a held-out choice among them, not the learned ranker; its populations are ha
 variants chosen to expose a failure mode, and two of the four produce no failure population. We measure the ranker itself on menu-based repair over synthetic factor
 graphs.
 
-On the value side, the learned
-proposal's advantage requires per-variable-separable solutions and a regime where random
-restart collapses; on coupled systems it never significantly beats random restart at any dimension
-tested. It gains nothing at $n = 1$ (random restart at ceiling), and single cells are seed-noisy, so
+On the value side, the learned proposal's advantage requires per-variable-separable
+solutions and a regime where random restart collapses. It gains nothing at $n = 1$ (random restart at ceiling), and single cells are seed-noisy, so
 the useful window is the crossover region, not high dimension per se. Those families are also
 block-decomposable: a solver that read off separability would scale linearly there too, so
-the crossover is demonstrated against joint-start search, not block decomposition. Eq.~\eqref{eq:bestofk} uses the instance-averaged $q$ (a Jensen-gap
-approximation, validated against a self-measured best-of-$K$ curve) and predicts the
-random-restart curve, not the learned ceiling, which is measured.
+the crossover is demonstrated against joint-start search, not block decomposition. Eq.~\eqref{eq:bestofk} predicts the random-restart curve, not the learned ceiling, which
+is measured.
 
-Several failures are specific and reportable. CircleLine is never solved by the learned
-proposal, transfer succeeds on two of four held-out families, and adding CircleLine to the
-training mix collapsed an otherwise recoverable transfer (0.70 to 0.00): a bad training
-family actively hurts. The predecessor structure policy never
+Several failures are specific. CircleLine is never solved by the learned proposal, transfer
+succeeds on two of four held-out families, and adding CircleLine to the training mix
+collapsed an otherwise recoverable transfer (0.70 to 0.00). The predecessor structure policy never
 separated from random selection and its numbers remain withdrawn (evaluation seeds
 overlapped checkpoint-selection validation seeds), as do the earlier v6/v7 ranker numbers
 (a pin-prior leak and probe-artifact certificates, found and fixed). Only the nonlinear headline ($0.982 \pm 0.006$) is optimization-robust.
 Finally, scope against real problem text is quantified: on a 48-problem sample of
-MATH-500 \citep{hendrycks2021math} the template formalizer covers 0 of 48 (20\%
-constraint-shaped, 31\% CAS computation, 48\% reasoning or proof out of
-scope). The binding constraint is autoformalization, not the solver.
+MATH-500 \citep{hendrycks2021math} the template formalizer covers none of them
+(breakdown in the supplement), so the binding constraint is autoformalization, not the
+solver.
 % provenance: RESULTS.md R6 (MATH prose); withdrawal provenance: RESULTS.md R8/R10
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 The decision classical solvers make only by enumeration is which structure to add, not which
-values to try, and that is where the learned component pays. The repair ranker matches the
+values to try, and that is where the learned component pays: the repair ranker matches the
 enumeration ceiling at a fraction of the calls where ``exactly one solvable option'' is a
 theorem, and on hardened real systems a derived construction repairs failures the full
-restart budget misses. On the value decision the protocol returns a characterization: the
-learned proposal pays only where search is separable and dimension defeats random restart,
-and the advantage disappears under coupling. What survives is the substrate and its division
-of labor. The generalizable lesson is about evaluation. Populations defined by
-stochastic failure are artifacts of the draw unless the protocol stabilizes them, at a cost
-of one extra solve per instance; without it, results read as upper bounds.
+restart budget misses. On the value decision the protocol returns a characterization
+instead. The learned proposal pays only where search is separable and dimension defeats
+random restart, and the advantage disappears under coupling. The generalizable lesson is
+about evaluation: populations defined by stochastic failure are artifacts of the draw unless
+the protocol stabilizes them, at one extra solve per instance.
 
 
 
