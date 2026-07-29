@@ -22,6 +22,11 @@
 
 \title{Learn the Structure, Not the Values:\\
 A Controlled Characterization of Learning in Exact Constraint Solving}
+% Submission is double-blind: keep the anonymous line active until camera-ready.
+% Camera-ready author block (equal contribution), swap in after acceptance:
+%   \author{Quang Bui\equalcontrib, Sparsh Roy\equalcontrib,
+%           Akash Gundimeda\equalcontrib, Davin Yin\equalcontrib}
+%   \affiliations{SAID Laboratory}
 \author{Anonymous submission}
 \date{}
 
@@ -66,14 +71,14 @@ continuous decision asks which values satisfy the equations; it is smooth, gradi
 has been owned by numerical analysis for sixty years. The discrete decision asks which
 representation makes the problem tractable at all: which auxiliary variable, substitution, or
 defining relation to introduce. Classical numerical solvers take the representation as given
-and make this choice only by enumeration, and for the value decision they are very hard to beat. This paper measures both decisions under
-controlled conditions. The short answer is that learning earns its place on the discrete one,
-where enumeration is the classical fallback; on the value decision it helps only in a narrow
-regime, and we can say exactly which one.
+and make this choice only by enumeration; for the value decision they are very hard to
+beat. This paper measures both decisions under controlled conditions: learning earns its
+place on the discrete one, where enumeration is the classical fallback, and helps on the
+value decision only in a narrow regime we can name exactly.
 
-The measurement matters because the usual comparison is the wrong one: a learned proposal
-plus refinement is compared against a cold start and wins, conflating the value of diverse
-initializations with that of the learned model. The control that separates them is random
+The measurement matters because the usual comparison is the wrong one: learned proposal
+plus refinement beats a cold start, conflating the value of diverse initializations with
+that of the learned model. The control that separates them is random
 multi-start at the same polish and budget; adding it shrank our own headline claim, and
 following where the learned component does pay is this paper's subject.
 
@@ -95,14 +100,13 @@ apparent advantage, leaving the crossover regime of the dimension-scaling study,
 shrunken claim compresses into a law --- a parameter-free
 factorization in the measured single-start reachability $q(n)$ reproduces the separable
 family's best-of-$K$ curve and predicts where the favorable regime can occur at all.
-Fourth, the same discipline turned
-on our own pilot exposes a trap: defining ``failure'' on a single stochastic stream
-manufactures repair effects that two-stream selection and a budget-held screen dissolve, and we state the protocol in
-reusable form. Alongside the arc we contribute the substrate itself, a pre-registered
+Fourth, the same discipline turned on our own pilot exposes a trap --- single-stream
+``failure'' selection manufactures repair effects that two-stream selection and a
+budget-held screen dissolve --- and we state the protocol in reusable form. Alongside the arc we contribute the substrate itself, a pre-registered
 entrapment result, a partial cross-family transfer result, and a MATH-benchmark scope
-measurement showing autoformalization, not solving, is the binding constraint. We make no
-claim against combinatorial solvers such as DIFUSCO; the problem class differs. Every rate
-carries $N$ and a 95\% Wilson interval or $z$-test, and negatives are reported in full.
+measurement showing autoformalization, not solving, is the binding constraint. We make no claim against combinatorial solvers such as DIFUSCO; the problem class
+differs. Every rate carries $N$ and a 95\% Wilson interval or $z$-test; negatives are
+reported in full.
 
 \section{Related Work}
 \label{sec:related}
@@ -416,7 +420,7 @@ places every measured family on the two axes of the law.
 % coupled.json (R7), pointchain_learned.json (R25), real_systems.json (R26)
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\columnwidth]{../figures/fig_regime_map.pdf}
+\includegraphics[width=0.88\columnwidth]{../figures/fig_regime_map.pdf}
 \caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
 (abscissa; the separable and coupled slopes are the fits of Table~\ref{tab:law}, the geometry slope that of Figure~\ref{fig:law}, the R27 slopes are
 inverted from the best-of-8 LM arm through Eq.~\eqref{eq:bestofk}) in its solution-structure
@@ -527,9 +531,18 @@ Linear, unseen pattern ($N{=}400$)      & \textbf{0.380} & 0.195 & 0.287 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:repair} reports the three generalization tests.
-The protocol (Data
-Version 8) is deliberately strict: one reference solver certifies the data, grades every arm,
+% provenance: paper/figures/fig_repair_accuracy.pdf (scripts/plot_repair.py --panel left)
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\columnwidth]{../figures/fig_repair_accuracy.pdf}
+\caption{Table~\ref{tab:repair}, drawn: the ranker against its candidate-only and
+random controls; the dotted line is $K{=}4$ chance. Menu-size scaling is in Appendix
+Figure~\ref{fig:repair}.}
+\label{fig:repair-acc}
+\end{figure}
+
+Table~\ref{tab:repair} and Figure~\ref{fig:repair-acc} report the three generalization
+tests under a deliberately strict protocol (Data Version 8): one reference solver certifies the data, grades every arm,
 and runs the end-to-end solves; nonlinear ``exactly one solvable option'' is an exact CAS
 theorem (a distractor proven to have no real solution is unsolvable at any budget); gold and
 distractor parameters share one support and one prior, so whatever surface-form signal
@@ -566,8 +579,7 @@ every candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls per ins
 the ranker's single call solves $0.939$ ($N{=}360$) --- learning beats probing on accuracy
 and cost at once, since provably rootless distractors cannot be solved at any budget while
 short probes miss the gold. On linear menus the probe saturates and enumeration is
-already perfect at $2.5$ calls, so the linear rows are mechanism evidence, not a deployment
-case; the $K = 4$ checkpoint transfers to larger menus without retraining but its advantage is
+already perfect at $2.5$ calls; the $K = 4$ checkpoint transfers to larger menus without retraining but its advantage is
 gone by $K = 16$, and direct $K = 16$ training sits at chance (both negatives kept in
 Appendix~\ref{app:kscaling}). ``Exactly one solvable option'' is an exact certificate for all
 linear menus (rank) and $99\%$ of nonlinear test menus (CAS real-root nonexistence), the
@@ -581,8 +593,8 @@ givens alone, law-of-cosines lifts and signed Cayley--Menger cross-product pins 
 repair the failures the classical reference cannot. Two produce a two-stream failure
 population: far-side GPS trilateration ($0.848 \pm 0.020$ over three independent seed bases,
 $N{=}509$ failures) and a ghost-root conic--line intersection ($0.263 \pm 0.015$, $N{=}158$);
-on 3R inverse kinematics and far circles the classical solver never fails, so both are
-reported as negatives rather than averaged in as zeros. On
+on 3R inverse kinematics and far circles the classical solver never fails --- reported
+as negatives, not averaged in as zeros. On
 the two that bite, one construction chosen on a disjoint half of each failure pool repairs
 \emph{every} held-out instance ($1.000 \pm 0.000$ across seeds; pooled Wilson $[0.99, 1.00]$
 and $[0.98, 1.00]$) against $0.433 \pm 0.049$ and $0.114 \pm 0.011$ for a restart control
@@ -594,11 +606,9 @@ root by construction. No learned model runs: what transfers to systems we did no
 design is the value of the structural decision, not the ranker.
 
 \paragraph{Where the anchor stops: a closed negative.}
-That anchor holds where the failure is a systematic attractor one construction deletes
-outright. Where failures are stochastic instead it does not, and the boundary is worth
-measuring. We took the relocation thesis to the pruned point chains --- the discrete-branch
-setting of distance geometry --- asking whether one derived construction repairs instances
-the reference pipeline fails. The
+The anchor holds where the failure is a systematic attractor one construction deletes
+outright; where failures are stochastic it does not, and the boundary is worth measuring.
+On the pruned point chains --- the discrete-branch setting of distance geometry --- the
 population definition decides the answer. Under two-stream selection ($N{=}367$
 failures at the training chain lengths, three optimization seeds) the
 enumeration ceiling is $0.692$ at $72.7$ restarts per instance, which plain restart scaling
@@ -634,9 +644,9 @@ On the value side, the learned
 proposal's advantage requires per-variable-separable solutions and a regime where random
 restart collapses; on coupled systems it never significantly beats random restart at any dimension
 tested. Even on favorable families it gains nothing at $n = 1$ (random restart
-at ceiling), and its single-seed run drops to 0.250 at $n = 6$ --- a three-seed rerun
-($N{=}120$ per cell) reads $0.983 \pm 0.014$ there but is seed-unstable at $n = 4$
-($0.658 \pm 0.484$, one seed at $0.100$) --- so the useful window is the crossover region,
+at ceiling), and single cells are seed-noisy (one seed reads 0.250 at $n = 6$ where three
+read $0.983 \pm 0.014$; $0.658 \pm 0.484$ at $n = 4$), so the useful window is the
+crossover region,
 not high dimension per se. Those separable families are also block-decomposable, so a
 classical solver that read off separability would scale linearly there too; our controls use
 joint starts, so the crossover is demonstrated against joint-start search, not block
@@ -667,15 +677,14 @@ scope) --- the binding constraint is autoformalization, not the solver.
 The decision classical solvers make only by enumeration is not which values to try but which
 structure to add, and that is where learning earns its place: the repair ranker matches the
 enumeration ceiling at a fraction of the calls where ``exactly one solvable option'' is a
-theorem, and on hardened variants of named real systems, one derived construction repairs failures the
-full enumeration budget in restarts does not reach. On the value decision the same protocol
+theorem, and on hardened variants of named real systems a derived construction repairs
+failures the full restart budget does not reach. On the value decision the same protocol
 returns a characterization instead --- the learned proposal pays only where search is
 independent across variables and dimension defeats random restart, and the advantage
-disappears under coupling. What survives is the substrate and that division of labor. The
-lesson we generalize is about evaluation: populations
-defined by stochastic failure are artifacts of the draw unless the protocol makes them stable
---- the discipline of the Protocol section costs one extra solve per instance, and results
-that omit it read as upper bounds.
+disappears under coupling; what survives is the substrate and that division of labor.
+The generalizable lesson is about evaluation: populations defined by stochastic failure are
+artifacts of the draw unless the protocol makes them stable --- that discipline costs one
+extra solve per instance, and results without it read as upper bounds.
 
 % aaai2026.sty already sets \bibliographystyle{aaai2026}; a second one breaks bibtex
 \bibliography{refs}
