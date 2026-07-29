@@ -222,7 +222,7 @@ where $s_\theta$ is the score implied by the predicted noise ($s_\theta \propto
 -\hat{\varepsilon}$); the exact CAS gradient steers the reverse process toward feasibility.
 One architectural detail proved necessary: a linear skip from incident-factor constants
 to the variable's output, without which per-round LayerNorm washes out pinned values
-(mean absolute root error 5.4 versus 0.9; Appendix~\ref{app:hybrid}).
+(mean absolute root error 5.4 versus 0.9; Appendix A of the supplement).
 
 \paragraph{Propose and polish, and the baseline battery.}
 The system solver is a hybrid: the diffusion model proposes $K$ candidate assignments
@@ -245,7 +245,7 @@ otherwise, solve rates are best-of-8 over $N = 60$ held-out instances per family
 are 95\% Wilson intervals, and comparisons are one-sided two-proportion $z$-tests of
 learned $>$ baseline. Before any comparison we
 verified that the learned solver converges at all: after five implementation faults were found
-and fixed (Appendix~\ref{app:hybrid}), the solve rate on convex linear systems
+and fixed (Appendix A of the supplement), the solve rate on convex linear systems
 went from 0 to 1.000 in-distribution and held out. Convex families are saturated by every
 method and carry no comparative signal. All results below are non-convex.
 
@@ -279,7 +279,7 @@ rate.
 On four non-convex families where deterministic descent is fully trapped (best-of-8, 60
 held-out instances per family), cold-start refinement solves nothing and Langevin noise helps
 only somewhat, while both the random-init control and the learned hybrid do far better (full
-battery in Appendix Table~\ref{tab:hybrid}). What matters is the comparison of learned
+battery in supplementary Table S1). What matters is the comparison of learned
 against random, and there the learned proposal records no win on any of the four families:
 three ties and one complete failure on CircleLine (0.000 where random reaches 0.200).
 Multi-start Levenberg--Marquardt saturates all four, so the informative contrast is learned
@@ -292,7 +292,7 @@ small integers that random restart hits readily and there is nothing to
 amortize. What carries this result is the restart-and-polish recipe, not the denoiser. Cross-family transfer is likewise
 partial. The cross-trained hybrid reaches 0.683 on two of four held-out families
 ($p < 10^{-4}$) and solves nothing on the other two
-(Appendix~\ref{app:transfer}).
+(Appendix A of the supplement).
 
 \subsection{Dimension scaling: where the learned proposal wins}
 \label{sec:scaling}
@@ -301,7 +301,7 @@ Those families give random restart an easy target. To test the amortization argu
 use bundled non-convex traps whose roots vary per instance over a wide signed range
 ($\pm[3,8]$), so neither a fixed prior nor a lucky draw suffices (best-of-8, unified-v2
 protocol: one shared polish and one checker for every arm, $N{=}40$ per cell; the full battery
-is Appendix Table~\ref{tab:scaling}, and Figure~\ref{fig:law} carries the two arms that
+is supplementary Table S3, and Figure~\ref{fig:law} carries the two arms that
 matter).
 % provenance: RESULTS.md R15 (methodology unified-v2, results/p_scaling/scaling.json)
 There is a clean crossover by $n = 3$. At $n = 1$ random restart wins, 1.000 against 0.950.
@@ -363,7 +363,7 @@ with $v := q(1)$: $\log q$ is linear in $n$ and random search needs $\Theta(v^{-
 to hold a fixed success rate. If factors couple, the solution is a joint object and $q(n)$
 need not decay geometrically at all. We measured $q(n)$ directly by single-start polish on 600 fresh
 instances per $n$ (Wilson intervals), using the same generators, polish, and checker as the
-solve-rate experiments. Appendix Table~\ref{tab:law} tabulates the dichotomy.
+solve-rate experiments. supplementary Table S4 tabulates the dichotomy.
 
 % provenance: paper/tex/figures/fig_crossover_theory.pdf, RESULTS.md R9
 \begin{figure*}[t]
@@ -386,7 +386,7 @@ parameters. It predicts 0.919,
 $n = 1, 2, 3, 4, 6$, a mean absolute error of 0.012
 % provenance: RESULTS.md R9 + crossover_law.md §5 (crossover_theory.json)
 (Figure~\ref{fig:law}; 600 fresh instances, a larger and separately drawn sample than
-Appendix Table~\ref{tab:scaling}'s $N = 40$ random arm). A budget-fair
+supplementary Table S3's $N = 40$ random arm). A budget-fair
 reading is the expected number of restarts $1/q(n)$: 3.7 to 600 over the separable
 dimensions against 2.0--4.3 on the coupled family. Any fixed budget is exhausted on the
 former, while on the latter random search never collapses and a learned proposal has
@@ -430,7 +430,7 @@ Figure~\ref{fig:regime} places every measured family on the two axes of the law.
 \includegraphics[width=\columnwidth]{figures/fig_regime_map.pdf}
 \caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
 (abscissa) in its solution-structure band (ordinate, categorical), colored by the measured
-learned-vs-random outcome; slope provenance is in Appendix~\ref{app:law}. The cells give the law
+learned-vs-random outcome; slope provenance is in Appendix C of the supplement. The cells give the law
 directly: learning wins only where reachability collapses \emph{and} solutions are
 per-variable separable. The chained bilinear family fails collapse and ties; the geometry
 point chains collapse but are coupled and tie, which was the falsifiable cell and it held. The
@@ -446,7 +446,7 @@ The law predicts where the crossover must disappear: when acceptance basins do n
 $q(n)$ stays nearly flat, random restart never collapses, and a learned proposal has nothing
 to amortize. The test is the coupled chained-bilinear family, $x_i + x_{i+1} = s_i$ and
 $x_i \cdot x_{i+1} = p_i$, whose solution is a joint object and whose measured reachability
-slope is $-0.13$ (Appendix Table~\ref{tab:law}), so what follows is a prediction checked, not
+slope is $-0.13$ (supplementary Table S4), so what follows is a prediction checked, not
 an unexplained negative. Table~\ref{tab:coupled} reports best-of-8 with 60 test instances per
 $n$.
 
@@ -593,7 +593,7 @@ and cost at once. Provably rootless distractors are unsolvable at any budget, an
 probes miss the gold. On linear menus the probe saturates and enumeration is
 already perfect at $2.5$ calls. The $K = 4$ checkpoint transfers to larger menus without
 retraining, but its advantage is gone by $K = 16$, and direct $K = 16$ training sits at chance (both negatives kept in
-Appendix~\ref{app:kscaling}). ``Exactly one solvable option'' is exact for all linear menus (rank) and $99\%$ of nonlinear
+Appendix E of the supplement). ``Exactly one solvable option'' is exact for all linear menus (rank) and $99\%$ of nonlinear
 test menus (CAS real-root nonexistence); the remainder carry a disclosed budget-relative
 probe certificate.
 
@@ -602,7 +602,7 @@ probe certificate.
 Those menus are ours. We therefore hardened four of the named real-system classes into
 parameterized variants and asked whether \emph{derived} constructions, functions of the
 givens alone such as law-of-cosines lifts and signed Cayley--Menger cross-product pins,
-repair the failures the classical reference cannot (Appendix Table~\ref{tab:anchor} reports
+repair the failures the classical reference cannot (supplementary Table S5 reports
 all four classes). Two produce a two-stream failure population: far-side GPS trilateration ($0.848 \pm 0.020$
 over three seed bases, $N{=}509$ failures) and a ghost-root conic--line intersection
 ($0.263 \pm 0.015$, $N{=}158$). On 3R inverse kinematics and far circles the classical solver
@@ -657,10 +657,10 @@ the crossover is demonstrated against joint-start search, not block decompositio
 approximation, validated against a self-measured best-of-$K$ curve) and predicts the
 random-restart curve, not the learned ceiling, which is measured.
 
-Several failures are specific and reportable. CircleLine is never solved
-by the learned proposal, transfer succeeds on two of four held-out families, and adding
-CircleLine to the training mix collapsed an otherwise recoverable transfer (0.70 in a smoke
-run to 0.00): a bad training family actively hurts. The predecessor structure policy never
+Several failures are specific and reportable. CircleLine is never solved by the learned
+proposal, transfer succeeds on two of four held-out families, and adding CircleLine to the
+training mix collapsed an otherwise recoverable transfer (0.70 to 0.00): a bad training
+family actively hurts. The predecessor structure policy never
 separated from random selection and its numbers remain withdrawn (evaluation seeds
 overlapped checkpoint-selection validation seeds), as do the earlier v6/v7 ranker numbers
 (a pin-prior leak and probe-artifact certificates, found and fixed). Only the nonlinear headline ($0.982 \pm 0.006$) is optimization-robust.
@@ -697,18 +697,8 @@ analysis, and claims are the authors' own; no result, table, or figure was model
 \bibliography{refs}
 
 
-% ---- Supplementary material / technical appendix ----
-% AAAI-27 places supplementary material last, after the references. \clearpage is
-% forbidden by the 2027 kit, so the one-column switch alone starts this block.
-% NOTE: the kit says content appendices count against the page limit while supplementary
-% material is conference-dependent; confirm the AAAI-27 CFP before submitting, and split
-% this into a separate document if supplementary is required to be separate.
-\onecolumn
-\appendix
-% aaai2027.sty sets secnumdepth to 0, which leaves \ref{app:*} empty. The main body keeps
-% the kit's unnumbered headings (main-text sections are referenced by name); the appendix
-% is supplementary, so restore lettering here to make "Appendix A" pointers resolve.
-\setcounter{secnumdepth}{1}
-\input{marc_aaai_appendix}
-
+% The technical appendix ships as a SEPARATE supplementary document,
+% paper/tex/supplement.tex. AAAI-27 counts appendices bound into the main PDF
+% against the 7 content pages and requires supplementary material to be
+% uploaded separately, so it is no longer \input here.
 \end{document}

@@ -2,7 +2,7 @@
 """Recompute every headline number from the committed result JSONs and check it
 still matches the paper. Two-sided: a check fails if the JSON drifts from the
 value we recorded (bad rerun / stale cache) OR if the value no longer appears in
-marc_aaai.tex (paper edited away from the data). This is the guard we lacked
+main.tex (paper edited away from the data). This is the guard we lacked
 every time a number moved across data versions.
 
   python3 scripts/verify_paper_numbers.py        # exits non-zero on any drift
@@ -17,10 +17,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-# Body + technical appendix: cited numbers live in both, and a number moved from one to the
-# other must not read as drift.
+# Body + supplement: cited numbers live in both, and a number moved from one to the other
+# must not read as drift. The main file is main.tex (Overleaf's entry point); the technical
+# appendix ships as a separate supplementary document under AAAI-27 rules.
 TEX = "\n".join((ROOT / p).read_text() for p in
-                ("paper/tex/marc_aaai.tex", "paper/tex/marc_aaai_appendix.tex"))
+                ("paper/tex/main.tex", "paper/tex/marc_aaai_appendix.tex"))
 
 
 def cell(d, *path):
@@ -196,7 +197,7 @@ def main() -> int:
         if abs(got - expected) > 0.5 * 10 ** (-places):
             fails.append(f"{label}: JSON has {got}, recorded {expected} ({path})")
         elif token is not None and token not in TEX:
-            fails.append(f"{label}: {token} absent from marc_aaai.tex (paper drifted from data)")
+            fails.append(f"{label}: {token} absent from main.tex/supplement (paper drifted from data)")
         else:
             print(f"ok   {label:32} {got:.{places}f}")
     print(f"\n{len(CHECKS) - len(fails)}/{len(CHECKS)} checks passed")
