@@ -97,7 +97,7 @@ def main():
     args = ap.parse_args()
     labels, gen = load_generalization()
     ks, full, rand, calls = load_scaling()
-    figs = REPO / "paper" / "figures"
+    figs = REPO / "paper" / "tex" / "figures"
 
     if args.panel == "left":
         fig, ax = plt.subplots(figsize=(4.6, 3.4)); _accuracy(ax, labels, gen)

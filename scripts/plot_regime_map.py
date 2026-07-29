@@ -151,7 +151,7 @@ def main():
               bbox_to_anchor=(0.01, 0.12))
 
     fig.tight_layout()
-    out = REPO / "paper" / "figures" / "fig_regime_map.pdf"
+    out = REPO / "paper" / "tex" / "figures" / "fig_regime_map.pdf"
     fig.savefig(out)
     print(f"wrote {out}")
     for name, slope, y, oc, *_ in pts:

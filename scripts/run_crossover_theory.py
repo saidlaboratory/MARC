@@ -49,11 +49,11 @@ What this run does
 3. Predicts P_random(n;K) = 1-(1-q(n))^K and compares to the observed random-restart
    rates in results/p_scaling/scaling.json and results/p_coupled/coupled.json.
 4. Predicts the crossover n* from v and the learned ceiling p_L, compares to observed.
-5. Writes results/p_crossover/crossover_theory.json and paper/figures/fig_crossover_theory.pdf.
+5. Writes results/p_crossover/crossover_theory.json and paper/tex/figures/fig_crossover_theory.pdf.
 6. (--k-sweep) Optionally sweeps the restart budget K to trace the *restart curve* as
    solve-rate vs wall-clock: at each K the mean wall-clock and restarts a best-of-K run
    spends (it stops at first success) against the rate it reaches. Writes the curve to the
-   JSON payload and paper/figures/fig_restart_curve.pdf. The single-K measure also now
+   JSON payload and paper/tex/figures/fig_restart_curve.pdf. The single-K measure also now
    records wall-clock per instance (``random_mean_ms``) so cost is reported alongside rate.
 
 Run:  python scripts/run_crossover_theory.py [--trials 300] [--K 8]
@@ -287,7 +287,7 @@ def main() -> None:
     ap.add_argument("--k-sweep", type=str, default="",
                     help="comma list of restart budgets K to sweep, e.g. '1,2,4,8,16,32' — "
                          "traces the restart curve (solve-rate vs wall-clock) into the JSON "
-                         "payload and paper/figures/fig_restart_curve.pdf")
+                         "payload and paper/tex/figures/fig_restart_curve.pdf")
     args = ap.parse_args()
 
     indep = measure_family("indep", NS_INDEP, INDEP_START, args.trials, args.K, args.seed)
@@ -449,7 +449,7 @@ def _plot(indep, coupled, v, K, n_star, learned_indep, geometry=None) -> None:
     ax[1].set_title("(b) parameter-free prediction of the crossover")
     ax[1].legend(fontsize=7, loc="center right")
     fig.tight_layout()
-    d = Path("paper/figures"); d.mkdir(parents=True, exist_ok=True)
+    d = Path("paper/tex/figures"); d.mkdir(parents=True, exist_ok=True)
     fig.savefig(d / "fig_crossover_theory.pdf")
     print(f"wrote {d/'fig_crossover_theory.pdf'}")
 
@@ -479,7 +479,7 @@ def _plot_restart_curve(sweeps, Ks) -> None:
         a.set_title(f"restart curve — {fam}  (K∈[{min(Ks)},{max(Ks)}])")
         a.legend(fontsize=7)
     fig.tight_layout()
-    d = Path("paper/figures"); d.mkdir(parents=True, exist_ok=True)
+    d = Path("paper/tex/figures"); d.mkdir(parents=True, exist_ok=True)
     fig.savefig(d / "fig_restart_curve.pdf")
     print(f"wrote {d/'fig_restart_curve.pdf'}")
 

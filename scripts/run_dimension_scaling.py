@@ -30,7 +30,7 @@ solutions of the hard/coupled families snapping via the checker's rational gate.
 rate carries a 95% Wilson CI; learned-vs-baseline comparisons carry two-proportion
 z-test p-values (house rules, paper/RESULTS.md).
 
-Outputs: results/p_scaling/scaling.json and paper/figures/fig_dimension_scaling.pdf.
+Outputs: results/p_scaling/scaling.json and paper/tex/figures/fig_dimension_scaling.pdf.
 Run:  python scripts/run_dimension_scaling.py [--quick] [--seeds N]
 """
 from __future__ import annotations
@@ -249,7 +249,7 @@ def _plot(rows) -> None:
     ax.set_title("Learned inference vs. classical refinement & prior (95% CI)")
     ax.legend(fontsize=8, loc="upper right")
     fig.tight_layout()
-    fig_dir = Path("paper/figures")
+    fig_dir = Path("paper/tex/figures")
     fig_dir.mkdir(parents=True, exist_ok=True)
     fig.savefig(fig_dir / "fig_dimension_scaling.pdf")
     print(f"wrote {fig_dir/'fig_dimension_scaling.pdf'}")
