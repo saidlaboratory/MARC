@@ -227,15 +227,12 @@ to the variable's output, without which per-round LayerNorm washes out pinned va
 \paragraph{Propose and polish, and the baseline battery.}
 The system solver is a hybrid: the diffusion model proposes $K$ candidate assignments
 (best-of-8 throughout); each is polished by deterministic descent on $E$; the first candidate
-to pass the checker is the answer. Each baseline isolates one
-ingredient: deterministic energy descent ($\sigma_k \equiv 0$ in the relaxation
+to pass the checker is the answer. Each baseline isolates one ingredient: deterministic energy descent ($\sigma_k \equiv 0$ in
 $x^{(k+1)} = x^{(k)} - \eta \nabla E(x^{(k)}) + \sigma_k \xi_k$) stalls where
-$\nabla E = 0$ but $E > 0$; annealed Langevin descent ($\sigma_k$ decreasing)
-is the classical stochastic solver; the mean-prior control tests whether the
-model does more than reproduce an average solution. The decisive control is random
-multi-start: $K$ initializations
-drawn uniformly from a family-matched box covering the root range, polished identically,
-same budget, no learning.
+$\nabla E = 0$ but $E > 0$; annealed Langevin ($\sigma_k$ decreasing) is the classical
+stochastic solver; the mean-prior control tests whether the model does more than reproduce
+an average solution. The decisive control is random multi-start: $K$ initializations drawn
+uniformly from a family-matched box, polished identically, same budget, no learning.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -360,13 +357,11 @@ It already implies that a hybrid beating cold-start Langevin has shown nothing. 
 Eq.~\eqref{eq:bestofk} at the same $K$.
 
 How $q(n)$ scales with dimension is decided by whether the acceptance basins factorize across
-variables. If each factor touches one variable, the polish is
-coordinate-decoupled and a start is accepted only when every coordinate independently lands in
-its root basin, so $q(n) = v^n$ with $v := q(1)$: $\log q$ is linear in $n$ and random search
-needs $\Theta(v^{-n})$ starts to hold a fixed success
-rate. If factors couple variables, the solution is a joint
-object, the polish propagates corrections along the chain, and $q(n)$ need not decay
-geometrically at all. We measured $q(n)$ directly by single-start polish on 600 fresh
+variables. If each factor touches one variable, the polish is coordinate-decoupled and a start is
+accepted only when every coordinate independently lands in its root basin, so $q(n) = v^n$
+with $v := q(1)$: $\log q$ is linear in $n$ and random search needs $\Theta(v^{-n})$ starts
+to hold a fixed success rate. If factors couple, the solution is a joint object and $q(n)$
+need not decay geometrically at all. We measured $q(n)$ directly by single-start polish on 600 fresh
 instances per $n$ (Wilson intervals), using the same generators, polish, and checker as the
 solve-rate experiments. Appendix Table~\ref{tab:law} tabulates the dichotomy.
 
@@ -498,13 +493,13 @@ so we do not run the learned component per system.
 \begin{table}[t]
 \centering
 \caption{The eight standard systems (best-of-8; numeric acceptance at $10^{-6}$).
-$q$ is single-start reachability under the gradient polish, 200 draws. Deterministic
-descent solves none. Every system the gradient polish misses sits at $q = 0.00$ and is
+$q$ is single-start reachability under the gradient polish, 200 draws; $\nabla$ marks the
+stationary-point systems. Deterministic descent solves none. Every system the gradient polish misses sits at $q = 0.00$ and is
 solved anyway by multi-start Levenberg--Marquardt: the bottleneck is the finisher, not the
 proposal.}
 \label{tab:real}
 \footnotesize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lccccc}
 \toprule
 System & $n$ & $q$ & Langevin & random & LM \\
@@ -512,8 +507,8 @@ System & $n$ & $q$ & Langevin & random & LM \\
 Circle intersection    & 2 & 1.00 &            & \checkmark & \checkmark \\
 Conic--line            & 2 & 1.00 &            & \checkmark & \checkmark \\
 GPS trilateration      & 2 & 0.00 &            &            & \checkmark \\
-Rosenbrock $\nabla{=}0$  & 2 & 0.00 &          &            & \checkmark \\
-Himmelblau $\nabla{=}0$  & 2 & 0.00 &          &            & \checkmark \\
+Rosenbrock $\nabla$      & 2 & 0.00 &          &            & \checkmark \\
+Himmelblau $\nabla$      & 2 & 0.00 &          &            & \checkmark \\
 2R inverse kinematics  & 4 & 0.98 & \checkmark & \checkmark & \checkmark \\
 3R inverse kinematics  & 6 & 0.00 &            &            & \checkmark \\
 Cyclic-4               & 4 & 0.38 &            & \checkmark & \checkmark \\
@@ -655,11 +650,10 @@ graphs.
 On the value side, the learned
 proposal's advantage requires per-variable-separable solutions and a regime where random
 restart collapses; on coupled systems it never significantly beats random restart at any dimension
-tested. Even on favorable families it gains nothing at $n = 1$ (random restart
-at ceiling), and single cells are seed-noisy, so the useful window is the crossover region,
-not high dimension per se. Those separable families are also block-decomposable: a classical
-solver that read off separability would scale linearly there too, so the crossover is
-demonstrated against joint-start search, not block decomposition. Eq.~\eqref{eq:bestofk} uses the instance-averaged $q$ (a Jensen-gap
+tested. It gains nothing at $n = 1$ (random restart at ceiling), and single cells are seed-noisy, so
+the useful window is the crossover region, not high dimension per se. Those families are also
+block-decomposable: a solver that read off separability would scale linearly there too, so
+the crossover is demonstrated against joint-start search, not block decomposition. Eq.~\eqref{eq:bestofk} uses the instance-averaged $q$ (a Jensen-gap
 approximation, validated against a self-measured best-of-$K$ curve) and predicts the
 random-restart curve, not the learned ceiling, which is measured.
 
@@ -696,9 +690,8 @@ of one extra solve per instance; without it, results read as upper bounds.
 % acknowledgments, references, supplementary material. Unnumbered statements go here,
 % before the bibliography.
 \section*{Use of AI Assistants}
-A large language model assisted with writing and with auditing this paper's numbers and
-citations against the committed result files. All experiments, analysis, and claims are the
-authors' own; no result, table, or figure was model-generated.
+A large language model assisted with the readability of this paper. All experiments,
+analysis, and claims are the authors' own; no result, table, or figure was model-generated.
 
 % aaai2027.sty already sets \bibliographystyle{aaai2027}; a second one breaks bibtex
 \bibliography{refs}

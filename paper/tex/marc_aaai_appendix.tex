@@ -24,20 +24,21 @@ learning.
 \begin{table}[ht]
 \centering
 \caption{Mechanism ablation on trapped non-convex families (best-of-8, 60 held-out per
-family; 95\% Wilson CIs shown on the random-init arm). Values are those of the committed
+family; 95\% Wilson CIs on the random-init arm; columns are cold-start refinement, refinement with Langevin noise, random-init plus polish, multi-start Levenberg--Marquardt, and the learned hybrid). Values are those of the committed
 \texttt{results/p\_hard/hard\_eval.json}. The multi-start Levenberg--Marquardt column is
 reported for completeness: the strong classical solver saturates all four families, which is
 why the learned-versus-random comparison, not the learned-versus-Langevin one, is the
 informative contrast.}
 \label{tab:hybrid}
 \footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccccccl}
 \toprule
-Family & refine cold & refine+Langevin & random-init+polish & multi-start LM & learned hybrid & learned $>$ random? \\
+Family & cold & +Langevin & random-init & LM & learned & learned $>$ random? \\
 \midrule
-BilinearSystem  & 0.000 & 0.300 & 0.550 [0.42, 0.67] & 1.000 & 0.550 & tie ($p = 0.50$) \\
-BilinearProduct & 0.000 & 0.100 & 0.683 [0.56, 0.79] & 1.000 & 0.683 & tie ($p = 0.50$) \\
-QuadraticSystem & 0.000 & 0.300 & 0.683 [0.56, 0.79] & 1.000 & 0.683 & tie ($p = 0.50$) \\
+BilinearSystem  & 0.000 & 0.300 & 0.550 [0.42, 0.67] & 1.000 & 0.550 & tie ($p{=}0.50$) \\
+BilinearProduct & 0.000 & 0.100 & 0.683 [0.56, 0.79] & 1.000 & 0.683 & tie ($p{=}0.50$) \\
+QuadraticSystem & 0.000 & 0.300 & 0.683 [0.56, 0.79] & 1.000 & 0.683 & tie ($p{=}0.50$) \\
 CircleLine      & 0.000 & 0.033 & 0.200 [0.12, 0.32] & 1.000 & 0.000 & no (random wins) \\
 \bottomrule
 \end{tabular}
