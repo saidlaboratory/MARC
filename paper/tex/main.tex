@@ -52,9 +52,8 @@ and beating a budget-matched per-candidate probe on accuracy and cost. MARC turn
 system into a factor graph, over which a graph-neural diffusion denoiser proposes assignments,
 descent on an exact computer-algebra energy polishes them, and an exact symbolic checker
 certifies solutions. Evaluations of diffusion-based proposal models rarely include one key
-control: random multi-start under the same refinement budget. When applied to our system, this
-control sharply curtails what the learned proposal contributes on the value decision. Does it
-improve on random multi-start at choosing satisfying assignments? Only narrowly, in a
+control: random multi-start under the same refinement budget. Applied to our system, this
+control narrows what the learned proposal contributes on the value decision to a single
 predictable regime. Across trapped low-dimensional families it ties with random restart, but
 dominates in high dimension, where random search fails. Once variables couple, the advantage
 is gone. Since all methods share the same polishing and checker, best-of-$K$ random
@@ -81,17 +80,17 @@ This paper reports one clear positive and the sequence of controls that produced
 positive is on the structural decision. A repair ranker that conditions on each
 candidate-augmented graph, rather than on the instance alone, clears its matched controls on
 certificate-grade nonlinear menus and reaches the exhaustive-enumeration ceiling at a small
-fraction of the calls. It also keeps its value away from benchmarks of our own design: on hardened variants of named
+fraction of the calls. Its value also extends beyond benchmarks of our own design: on hardened variants of named
 real systems, a construction derived from the givens and selected on held-out failures repairs
-failures that no budget-matched restart control reaches. The same controls cost us a claim on
-the value decision, where learning pays only inside a regime we characterize precisely.
+failures that no budget-matched restart control reaches. The same controls narrow the
+value-decision claim: learning pays only inside a single regime, which we characterize precisely.
 
 That evaluation is necessary because the common comparison between learned and classical
-solvers conflates two contributions. A learned proposal plus refinement is better than a cold
-start, which rewards the model for the value of diverse initialization. The control that
+solvers conflates two contributions. Showing that a learned proposal plus refinement beats a cold
+start credits the model for the value of diverse initialization alone. The control that
 isolates that effect is random multi-start at equivalent polish and budget. Applied to our own
-system it shrinks our headline claim, and finding where the learned component does pay is this
-paper's subject.
+system it narrows the value-decision claim to a specific regime, and characterizing that
+regime is this paper's subject.
 
 MARC is the instrument we measure with: a diffusion denoiser proposes assignments over a
 factor graph, an exact CAS supplies the residuals and gradients of a residual-based energy,
@@ -132,8 +131,8 @@ entrapment result is confirmation on this substrate rather than a finding.
 
 \paragraph{Learned initialization and amortized optimization.}
 Our value-proposal negative bears directly on this line, whose standard evaluation is learned
-start against cold start: under random multi-start at the same refinement budget, a control it
-does not run, our own advantage survives only where solutions factorize per variable and
+start against cold start: under random multi-start at the same refinement budget, a control this
+line does not run, our advantage holds only where solutions factorize per variable and
 dimension defeats random search. A model mapping an instance to a solver starting point is a
 learned warm start; \citet{amos2023amortized} surveys amortized optimization, learned starts
 accelerate AC optimal power flow \citep{baker2019warmstart}, reinforcement learning tunes QP
@@ -262,9 +261,9 @@ common across arms; (iv) field a matched-budget restart control beside the inter
 (v) before crediting a learnable selection target, screen each candidate at the target budget
 on fresh streams and grade the argmax on a held-out one. If that per-instance measurement
 cannot beat the matched-budget control, the advantage is portfolio breadth, not selection a
-model could amortize. On our geometry population single-stream selection put the construction ceiling at
-$0.63$--$0.74$ against $0.09$--$0.27$ for matched restarts, and two-stream selection with a
-common grading stream collapsed the margin, most of it the control returning to its true
+model could amortize. On our geometry population single-stream selection appeared to put the construction ceiling at
+$0.63$--$0.74$ against $0.09$--$0.27$ for matched restarts; under two-stream selection with a
+common grading stream that margin collapsed, mostly because the control recovered its true
 rate.
 
 \subsection{Diverse starts and polish account for the hybrid's performance}
@@ -358,7 +357,7 @@ with $v := q(1)$: $\log q$ is linear in $n$ and random search needs $\Theta(v^{-
 to hold a fixed success rate. If factors couple, the solution is a joint object and $q(n)$
 need not decay geometrically at all. We measured $q(n)$ directly by single-start polish on 600 fresh instances per $n$, the
 largest sample in the study and drawn separately from every solve-rate cell, using the same
-generators, polish, and checker as those experiments. supplementary Table S4 tabulates the dichotomy.
+generators, polish, and checker as those experiments. Supplementary Table S4 tabulates the dichotomy.
 
 % provenance: paper/tex/figures/fig_crossover_theory.pdf, RESULTS.md R9
 \begin{figure*}[t]
@@ -473,7 +472,7 @@ ties random restart at every $n \ge 3$ here (0/4 wins): a proposal that fit the 
 perfectly would still not beat restarts, because population-marginal information is exhausted
 once the solution is a joint object. The claim therefore bounds
 product-of-marginals proposals, the class our denoiser belongs to; an instance-conditional
-joint sampler is outside what this control tests.
+joint sampler is outside what the marginal control tests.
 
 \paragraph{Standard real systems.}
 Every family above is procedurally generated, so we also ran the solver battery on eight
@@ -491,7 +490,7 @@ No system falls in the amortization regime, since all eight are low-dimensional 
 \centering
 \caption{The eight standard systems (best-of-8; numeric acceptance at $10^{-6}$).
 $q$ is single-start reachability under the gradient polish, 200 draws; $\nabla$ marks the
-stationary-point systems. Deterministic descent solves none, and every system the gradient
+stationary-point systems. Deterministic descent, not shown, solves none, and every system the gradient
 polish misses sits at $q = 0.00$.}
 \label{tab:real}
 \footnotesize
@@ -559,7 +558,7 @@ and runs the end-to-end solves; ``exactly one solvable option'' is an exact CAS 
 distractor proven to have no real solution is unsolvable at any budget); gold and distractor
 parameters share one support and one prior, so surviving surface-form signal is capped at the
 candidate-only ceiling and anything above it must come from the problem graph. On the balanced nonlinear test that ceiling is $0.333$, above the $0.25$ chance floor and
-far below the ranker, where exact paired McNemar gives $p = 3.3\times10^{-83}$ against
+far below the ranker's $0.997$: exact paired McNemar gives $p = 3.3\times10^{-83}$ against
 random (274 ranker-only correct versus 0) and $p = 1.1\times10^{-72}$ against the
 candidate-only control. Transfer to an unseen nonlinear relation is partial but bidirectional ($0.420$ against
 $0.253$ for vieta-trained on quad\_link, $0.393$ against $0.180$ reversed; $N{=}150$ each). On an unseen linear pattern the ranker reaches $0.380$ against $0.287$ ($N{=}400$); holding
@@ -571,9 +570,8 @@ candidate-only control to chance, so what remains is problem-graph reading, mode
 every operator is linear and decisive on certificate-grade nonlinear menus. Both headline rows were retrained across three optimization seeds (11, 29, 47) with
 independent per-seed evaluation draws; nonlinear comes through optimization-robust
 ($0.982 \pm 0.006$).
-The linear edge is not seed-stable ($0.317 \pm 0.069$, one seed at $0.227$ below the random
-arm's $0.248 \pm 0.002$), consistent with reading the linear rows as mechanism evidence
-rather than a deployable margin.
+The linear rows are mechanism evidence, not a deployable margin: the edge is not seed-stable
+($0.317 \pm 0.069$, with one seed at $0.227$ below the random arm's $0.248 \pm 0.002$).
 
 Learning is also cheap here where value diffusion was not: one forward pass per candidate
 rather than a reverse-diffusion rollout. End to end, the nonlinear ranker's single call solves
@@ -666,9 +664,9 @@ The decision classical solvers make only by enumeration is which structure to ad
 values to try, and that is where the learned component pays: the repair ranker matches the
 enumeration ceiling at a fraction of the calls where ``exactly one solvable option'' is a
 theorem, and on hardened real systems a derived construction repairs failures the full
-restart budget misses. On the value decision the protocol returns a characterization
-instead. The learned proposal pays only where search is separable and dimension defeats
-random restart, and the advantage disappears under coupling. The generalizable lesson is
+restart budget misses. On the value decision the protocol returns a characterization: the
+learned proposal pays only where search is separable and dimension defeats random restart,
+and coupling removes the advantage, as those conditions predict. The generalizable lesson is
 about evaluation: populations defined by stochastic failure are artifacts of the draw unless
 the protocol stabilizes them, at one extra solve per instance.
 
