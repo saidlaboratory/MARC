@@ -61,7 +61,7 @@ PHASE_ORDER = [
 ]
 
 # Dirs scanned after each phase to attribute freshly written outputs.
-OUTPUT_DIRS = ["results", "checkpoints", "paper/figures"]
+OUTPUT_DIRS = ["results", "checkpoints", "paper/tex/figures"]
 
 
 # ------------------------------------------------------------------- utilities

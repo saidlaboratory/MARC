@@ -352,10 +352,10 @@ geometrically at all. We measured $q(n)$ directly by single-start polish on 600 
 instances per $n$ (Wilson intervals), with the same generators, polish, and checker as the
 solve-rate experiments; Appendix Table~\ref{tab:law} tabulates the dichotomy.
 
-% provenance: paper/figures/fig_crossover_theory.pdf, RESULTS.md R9
+% provenance: paper/tex/figures/fig_crossover_theory.pdf, RESULTS.md R9
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.62\textwidth]{../figures/fig_crossover_theory.pdf}
+\includegraphics[width=0.62\textwidth]{figures/fig_crossover_theory.pdf}
 \caption{The factorization law, measured. Left: $\log q(n)$ against $n$. The separable family
 is a line (slope $-1.03$, $R^2 = 0.98$), the coupled bilinear family is nearly flat
 ($-0.13$), and the geometry family, though syntactically coupled, collapses ($-0.77$,
@@ -414,13 +414,13 @@ the separable traps have both and learning wins; the coupled bilinear family fai
 first and ties; geometry has the first, fails the second, and ties. Figure~\ref{fig:regime}
 places every measured family on the two axes of the law.
 
-% provenance: paper/figures/fig_regime_map.pdf (scripts/plot_regime_map.py);
+% provenance: paper/tex/figures/fig_regime_map.pdf (scripts/plot_regime_map.py);
 % slopes from crossover_theory.json (R9), R27 slopes law-inverted from the LM arm of
 % crossover_families.json; outcomes from scaling.json (R15), crossover_families.json (R27),
 % coupled.json (R7), pointchain_learned.json (R25), real_systems.json (R26)
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.88\columnwidth]{../figures/fig_regime_map.pdf}
+\includegraphics[width=0.88\columnwidth]{figures/fig_regime_map.pdf}
 \caption{The regime map. Each measured family sits at its measured $\log q(n)$ slope
 (abscissa; the separable and coupled slopes are the fits of Table~\ref{tab:law}, the geometry slope that of Figure~\ref{fig:law}, the R27 slopes are
 inverted from the best-of-8 LM arm through Eq.~\eqref{eq:bestofk}) in its solution-structure
@@ -531,10 +531,10 @@ Linear, unseen pattern ($N{=}400$)      & \textbf{0.380} & 0.195 & 0.287 \\
 \end{tabular}
 \end{table}
 
-% provenance: paper/figures/fig_repair_accuracy.pdf (scripts/plot_repair.py --panel left)
+% provenance: paper/tex/figures/fig_repair_accuracy.pdf (scripts/plot_repair.py --panel left)
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.8\columnwidth]{../figures/fig_repair_accuracy.pdf}
+\includegraphics[width=0.8\columnwidth]{figures/fig_repair_accuracy.pdf}
 \caption{Table~\ref{tab:repair}, drawn: the ranker against its candidate-only and
 random controls; the dotted line is $K{=}4$ chance. Menu-size scaling is in Appendix
 Figure~\ref{fig:repair}.}

@@ -2,7 +2,7 @@
 """Render P2 paper figures + summary table from ``results/p2_main/`` JSON.
 
 Reads the suite/ablation JSON written by ``run_main_eval.py`` and produces, under
-``paper/figures/``:
+``paper/tex/figures/``:
 
   * fig_generalization.pdf        — in-distribution vs. held-out solve rate + gap.
   * fig_perturbation.pdf          — solve rate vs. perturbation magnitude per split.
@@ -14,7 +14,7 @@ rather than crashing, so a partial run still emits whatever it can.
 
 Usage:
     python scripts/plot_results.py
-    python scripts/plot_results.py --results results/p2_main --figures paper/figures
+    python scripts/plot_results.py --results results/p2_main --figures paper/tex/figures
 """
 
 from __future__ import annotations
@@ -209,7 +209,7 @@ def build_summary_table(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render P2 figures + summary table")
     parser.add_argument("--results", default="results/p2_main")
-    parser.add_argument("--figures", default="paper/figures")
+    parser.add_argument("--figures", default="paper/tex/figures")
     args = parser.parse_args()
 
     res = Path(args.results)

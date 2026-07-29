@@ -3,7 +3,7 @@ CIs, from results/p_hard/hard_eval.json (no retraining). The learned hybrid is t
 row; refine variants are labelled classical baselines (fixing-plan A2 house rule).
 
 Run:  python scripts/plot_hard_eval.py
-Writes paper/figures/fig_hard_suite.pdf and paper/figures/hard_suite_table.md.
+Writes paper/tex/figures/fig_hard_suite.pdf and paper/tex/figures/hard_suite_table.md.
 """
 import json
 from pathlib import Path
@@ -11,7 +11,7 @@ from pathlib import Path
 from marc.eval.metrics import two_proportion_z
 
 SRC = Path("results/p_hard/hard_eval.json")
-FIGDIR = Path("paper/figures")
+FIGDIR = Path("paper/tex/figures")
 
 
 def _cell(m):
