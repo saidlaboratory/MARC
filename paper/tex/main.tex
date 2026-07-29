@@ -382,8 +382,9 @@ $n = 1, 2, 3, 4, 6$, a mean absolute error of 0.012
 % provenance: RESULTS.md R9 + crossover_law.md §5 (crossover_theory.json)
 (Figure~\ref{fig:law}; 600 fresh instances, a larger and separately drawn sample than
 supplementary Table S3's $N = 40$ random arm). A budget-fair
-reading is the expected number of restarts $1/q(n)$: 3.7 to 600 over the separable
-dimensions against 2.0--4.3 on the coupled family. Any fixed budget is exhausted on the
+reading is the expected number of restarts from the \emph{measured} $q(n)$ rather than the
+$v^{n}$ extrapolation: $1/q(n)$ runs 3.7 to 600 over the separable dimensions against
+2.0--4.3 on the coupled family. Any fixed budget is exhausted on the
 former, while on the latter random search never collapses and a learned proposal has
 nothing to amortize; an oracle-marginal control, reported with the coupled results below,
 confirms this is a property of the family rather than of our model.
@@ -461,11 +462,10 @@ $n$ & Langevin & random & learned & learned $>$ random? \\
 \end{tabular}
 \end{table}
 
-Across all five dimensions the learned proposal ties or loses, with 0 significant wins. That
-high-dimensional advantage was an independence artifact. It needed per-variable-separable
-solutions the model can memorize as marginals, and a random restart forced to hit all $n$
-basins by chance. Coupling removes both conditions, and the proposal adds nothing over
-random search plus refinement.
+Across all five dimensions the learned proposal records no significant win. That high-dimensional advantage was an independence artifact: it needed
+per-variable-separable solutions the model can memorize as marginals, and a random restart
+forced to hit all $n$ basins by chance. Coupling removes both, and the proposal adds nothing
+over random search plus refinement.
 
 The negative is mechanistic, not a verdict on our denoiser's capacity. Sampling each variable
 from its \emph{true} per-variable marginal (pooled from disjoint instances) and polishing identically also
@@ -484,8 +484,7 @@ checker ($\max_j |r_j(x)| < 10^{-6}$) since their roots are irrational
 Multi-start Levenberg--Marquardt solves all eight. Where the gradient polish fails, always at
 single-start reachability $0.00$, the stronger \emph{classical} polish fixes every case: the
 bottleneck is the finisher, not the proposal.
-No system falls in the amortization regime, since all eight are low-dimensional and coupled,
-so we do not run the learned component per system.
+No system falls in the amortization regime, since all eight are low-dimensional and coupled.
 
 % provenance: RESULTS.md R26; results/p_real/real_systems.json (rows[].q_single_start)
 \begin{table}[t]
@@ -580,9 +579,10 @@ Learning is also cheap here where value diffusion was not: one forward pass per 
 rather than a reverse-diffusion rollout. End to end, the nonlinear ranker's single call solves
 $0.933$, exactly the oracle and enumeration ceiling, where blind enumeration averages $2.62$
 calls ($N{=}60$); linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling
-($N{=}300$). A cheap-probe control bounds the claim from the other side: a short-budget call on
-every candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls per instance, where
-the ranker's single call solves $0.939$ ($N{=}360$). Learning beats probing on accuracy
+($N{=}300$). A cheap-probe control bounds the claim from the other side: a short-budget call on every
+candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls, where
+the ranker's single call solves $0.939$ on that
+larger $N{=}360$ population (the $0.933$ above is the matched $N{=}60$ end-to-end run). Learning beats probing on accuracy
 and cost at once. Provably rootless distractors are unsolvable at any budget, and short
 probes miss the gold. On linear menus the probe saturates and enumeration is already perfect at $2.5$ calls.
 Two negatives bound the menu-size claim: the $K{=}4$ checkpoint transfers to larger menus
