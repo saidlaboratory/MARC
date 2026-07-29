@@ -107,3 +107,6 @@ results/p_real_repair/*
 
 # generated Overleaf bundle (scripts/make_overleaf.sh) — regenerate, never edit
 paper/tex/overleaf/
+
+# generated arXiv bundle (scripts/make_arxiv.sh) — regenerate, never edit
+paper/tex/arxiv/
