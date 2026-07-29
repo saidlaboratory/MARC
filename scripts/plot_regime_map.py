@@ -79,76 +79,72 @@ def main():
     assert r27["baseline"][1] and r27["wide_roots"][1] and not r27["double_well"][1]
 
     # (name, slope, y, outcome, label, label offset (pts), ha)
+    # Labels are short because the figure is placed at \columnwidth: the per-family rates
+    # live in the caption and the main text, not on the canvas.
     pts = [
         ("bundled traps (R15)", core["indep"], 1.08, "win",
-         "bundled traps (R15)\n0.975 vs 0.075 at $n{=}3$", (6, 4), "left"),
-        ("R27 baseline", r27["baseline"][0], 0.70, "win",
-         "R27 baseline\n1.000 vs 0.000 at $n{=}6$", (6, -10), "left"),
-        ("R27 wide roots", r27["wide_roots"][0], 1.35, "win",
-         "R27 wide roots\n0.225 vs 0.000 at $n{=}4$", (4, -24), "left"),
-        ("R27 double well", r27["double_well"][0], 1.60, "tie",
-         "R27 double well: tie\n(denoiser under-fit; capacity, not regime)", (8, -6), "left"),
+         "bundled traps (R15)", (6, 0), "left"),
+        ("R27 baseline", r27["baseline"][0], 0.72, "win",
+         "R27 baseline", (6, 0), "left"),
+        ("R27 wide roots", r27["wide_roots"][0], 1.40, "win",
+         "R27 wide roots", (6, 0), "left"),
+        ("R27 double well", r27["double_well"][0], 1.72, "tie",
+         "R27 double well: tie", (6, 0), "left"),
         ("chained bilinear (R7)", core["coupled"], 0.08, "tie",
-         "chained bilinear (R7)\n0/5 significant wins", (0, 8), "center"),
+         "chained bilinear (R7)", (0, 8), "center"),
         ("point chains (R25)", core["geometry"], 0.08, "tie",
-         "point chains (R25)\nlearned ties random,\ncollapses with it", (8, 8), "left"),
+         "point chains (R25)", (-7, 0), "right"),
     ]
     for name, slope, y, oc, *_ in pts:
         if oc == "win":
             assert slope < DIVIDER and y > SEP_LINE, name
 
-    fig, ax = plt.subplots(figsize=(7.0, 3.9))
-    ax.set_xlim(-1.62, 0.12)
-    ax.set_ylim(-0.78, 1.78)
+    # Sized for a single \columnwidth slot (~3.3 in) so the figure is printed at ~1:1 and
+    # every label keeps its stated point size. Drawing it at two-column width and shrinking
+    # it into a column is what made the annotations unreadable.
+    fig, ax = plt.subplots(figsize=(3.35, 2.75))
+    ax.set_xlim(-1.62, 0.42)
+    ax.set_ylim(-0.78, 2.15)
 
     # quadrant structure
     ax.axvline(DIVIDER, color="#9ca3af", lw=0.8, ls="--")
     ax.axhline(SEP_LINE, color="#9ca3af", lw=0.8, ls="--")
-    ax.fill_between([-1.62, DIVIDER], SEP_LINE, 1.78, color=C_WIN, alpha=0.07, lw=0)
-    cell = dict(fontsize=7.5, style="italic", color="#374151", alpha=0.9)
-    ax.text(-1.59, 1.70, "collapse + separable:\nlearning wins", va="top", **cell)
-    ax.text(-0.41, 1.70, "no collapse:\nrandom survives, nothing to win", va="top", **cell)
-    ax.text(-1.59, -0.70, "collapse + coupled: tie\n(the law's falsifiable cell --- held)",
+    ax.fill_between([-1.62, DIVIDER], SEP_LINE, 2.15, color=C_WIN, alpha=0.07, lw=0)
+    cell = dict(fontsize=6, style="italic", color="#374151", alpha=0.9)
+    ax.text(-1.59, 2.10, "collapse + separable:\nlearning wins", va="top", **cell)
+    ax.text(-0.41, 2.10, "no collapse:\nnothing to win", va="top", **cell)
+    ax.text(-1.59, -0.74, "collapse + coupled: tie\n(falsifiable cell --- held)",
             va="bottom", **cell)
-    ax.text(-0.41, -0.70, "no collapse + coupled:\nnothing to amortize, tie",
-            va="bottom", **cell)
+    ax.text(-0.41, -0.74, "no collapse + coupled:\ntie", va="bottom", **cell)
 
     style = {"win": (C_WIN, "o", True), "tie": (C_TIE, "s", True), "na": (C_NA, "^", False)}
     for name, slope, y, oc, lab, (dx, dy), ha in pts:
         col, mk, filled = style[oc]
         ax.plot([slope], [y], mk, color=col, mfc=col if filled else "white",
-                ms=7, mew=1.4, zorder=5)
+                ms=5, mew=1.2, zorder=5)
         ax.annotate(lab, (slope, y), textcoords="offset points", xytext=(dx, dy),
-                    fontsize=7, ha=ha, color="#111827", zorder=6)
+                    fontsize=6, ha=ha, va="center", color="#111827", zorder=6)
 
     # R26 real systems: classical-arms only, slope not measured -> nominal abscissa
-    ax.plot([-0.06], [-0.35], "^", color=C_NA, mfc="white", ms=7, mew=1.4, zorder=5)
-    ax.annotate("8 real systems (R26)\nLM 8/8; learned n.a.\n(slope not measured)",
-                (-0.06, -0.35), textcoords="offset points", xytext=(-8, 0),
-                fontsize=7, ha="right", va="center", color="#111827", zorder=6)
-
-    # R28: the structural-decision counterpart of the geometry tie
-    ax.annotate("R28: repair on the same chains closes\nnegative (selection is noise;"
-                " portfolio wins)",
-                (core["geometry"], 0.02), textcoords="offset points", xytext=(-30, -52),
-                fontsize=7, ha="center", color="#6b7280",
-                arrowprops=dict(arrowstyle="->", color="#6b7280", lw=0.8, ls=":"))
+    ax.plot([-0.06], [-0.22], "^", color=C_NA, mfc="white", ms=5, mew=1.2, zorder=5)
+    ax.annotate("8 real systems (R26)\nslope not measured", (-0.06, -0.22),
+                textcoords="offset points", xytext=(-7, 0),
+                fontsize=6, ha="right", va="center", color="#111827", zorder=6)
 
     ax.set_xlabel("measured $\\log q(n)$ slope"
-                  "$\\quad(\\leftarrow$ reachability collapses)", fontsize=9)
+                  "$\\quad(\\leftarrow$ reachability collapses)", fontsize=7)
     ax.set_yticks([0.0, 1.1])
-    ax.set_yticklabels(["coupled", "separable"], fontsize=9, rotation=90, va="center")
-    ax.set_ylabel("solution structure", fontsize=9)
-    ax.tick_params(axis="x", labelsize=8)
-    ax.set_title("Learned value proposals win iff reachability collapses "
-                 "and solutions are per-variable separable", fontsize=9)
+    ax.set_yticklabels(["coupled", "separable"], fontsize=7, rotation=90, va="center")
+    ax.set_ylabel("solution structure", fontsize=7)
+    ax.tick_params(axis="x", labelsize=6.5)
+    ax.set_xticks([-1.5, -1.0, -0.5, 0.0])
 
-    handles = [Line2D([], [], marker="o", ls="", color=C_WIN, ms=6, label="learned wins"),
-               Line2D([], [], marker="s", ls="", color=C_TIE, ms=6, label="learned ties random"),
-               Line2D([], [], marker="^", ls="", color=C_NA, mfc="white", ms=6,
-                      label="learned arm n.a.")]
-    ax.legend(handles=handles, fontsize=7.5, frameon=False, loc="lower left",
-              bbox_to_anchor=(0.01, 0.12))
+    handles = [Line2D([], [], marker="o", ls="", color=C_WIN, ms=4.5, label="learned wins"),
+               Line2D([], [], marker="s", ls="", color=C_TIE, ms=4.5, label="ties random"),
+               Line2D([], [], marker="^", ls="", color=C_NA, mfc="white", ms=4.5,
+                      label="no learned arm")]
+    ax.legend(handles=handles, fontsize=6, frameon=False, loc="upper right",
+              bbox_to_anchor=(1.0, 0.80), handletextpad=0.4, labelspacing=0.25)
 
     fig.tight_layout()
     out = REPO / "paper" / "tex" / "figures" / "fig_regime_map.pdf"

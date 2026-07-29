@@ -24,17 +24,21 @@ learning.
 \begin{table}[ht]
 \centering
 \caption{Mechanism ablation on trapped non-convex families (best-of-8, 60 held-out per
-family; 95\% Wilson CIs shown on the random-init arm).}
+family; 95\% Wilson CIs shown on the random-init arm). Values are those of the committed
+\texttt{results/p\_hard/hard\_eval.json}. The multi-start Levenberg--Marquardt column is
+reported for completeness: the strong classical solver saturates all four families, which is
+why the learned-versus-random comparison, not the learned-versus-Langevin one, is the
+informative contrast.}
 \label{tab:hybrid}
 \footnotesize
-\begin{tabular}{lccccl}
+\begin{tabular}{lccccccl}
 \toprule
-Family & refine cold & refine+Langevin & random-init+polish & learned hybrid & learned $>$ random? \\
+Family & refine cold & refine+Langevin & random-init+polish & multi-start LM & learned hybrid & learned $>$ random? \\
 \midrule
-BilinearSystem  & 0.000 & 0.300 & 0.550 [0.42, 0.67] & 0.550 & tie ($p = 0.50$) \\
-BilinearProduct & 0.000 & 0.100 & 0.717 [0.59, 0.81] & 0.683 & no (random wins) \\
-QuadraticSystem & 0.000 & 0.300 & 0.683 [0.56, 0.79] & 0.683 & tie ($p = 0.50$) \\
-CircleLine      & 0.000 & 0.033 & 0.200 [0.12, 0.32] & 0.000 & no (random wins) \\
+BilinearSystem  & 0.000 & 0.300 & 0.550 [0.42, 0.67] & 1.000 & 0.550 & tie ($p = 0.50$) \\
+BilinearProduct & 0.000 & 0.100 & 0.683 [0.56, 0.79] & 1.000 & 0.683 & tie ($p = 0.50$) \\
+QuadraticSystem & 0.000 & 0.300 & 0.683 [0.56, 0.79] & 1.000 & 0.683 & tie ($p = 0.50$) \\
+CircleLine      & 0.000 & 0.033 & 0.200 [0.12, 0.32] & 1.000 & 0.000 & no (random wins) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,7 +53,7 @@ nothing. The BilinearSystem failure is the informative one, because that family 
 in-distribution (0.550 in Table~\ref{tab:hybrid}). A smoke run trained on only the two
 similar families \{Product, Quadratic\} recovered it at 0.70, whereas adding the pathological
 CircleLine family to the training mix collapsed it to 0.00. Dissimilar training families can
-actively disrupt transfer. We read this as transfer across related non-convex structure, not
+degrade transfer. We read this as transfer across related non-convex structure, not
 as a universal solver.
 
 % provenance: RESULTS.md R4
@@ -108,6 +112,12 @@ two axes of the law; Table~\ref{tab:law} tabulates the dichotomy plotted in
 Figure~\ref{fig:law} (600 fresh instances per $n$, Wilson CIs, $K = 8$). Expected restarts
 $1/q(n)$ are listed over the tested dimensions in increasing order.
 
+Slope provenance for the regime map: the separable and coupled abscissae are the fits of
+Table~\ref{tab:law}, the geometry abscissa is the fit of Figure~\ref{fig:law}, and the
+three crossover-replication families are placed at slopes inverted from their best-of-8
+Levenberg--Marquardt arm through Eq.~\eqref{eq:bestofk}. The real-systems suite is plotted
+at a nominal abscissa: it has no learned arm and no separately measured $q(n)$.
+
 
 % provenance: RESULTS.md R9 + paper/notes/crossover_law.md §5
 \begin{table}[ht]
@@ -128,6 +138,40 @@ $P_{\text{random}}$ MAE, parameter-free & 0.012 & law N/A (not separable) \\
 \end{tabular}
 \end{table}
 
+\section{External Anchor: Per-Class Construction Repair}
+\label{app:anchor}
+
+Table~\ref{tab:anchor} is the per-class breakdown behind the external-anchor paragraph.
+Both restart controls rerun the same classical reference solver on the unrepaired system:
+\texttt{restart} at the reference solver's own budget, \texttt{restart}$\times|V|$ at the
+full enumeration budget over the construction vocabulary. The two classes that never fail
+are reported as negatives rather than averaged in as zeros; the own-budget column shows how
+far short a plain retry falls even before the budget is matched.
+
+% provenance: RESULTS.md R30; results/p_real_repair/real_repair_multiseed.json (aggregate)
+\begin{table}[ht]
+\centering
+\caption{Derived-construction repair on hardened variants of named real systems: three
+independent seed bases, $N{=}200$ instances per class per seed, mean $\pm$ population SD.
+``Failures'' is the two-stream failure rate of the classical reference and $N$ the pooled
+failure population it defines; the construction is chosen on a disjoint half of that pool
+and graded on the held-out half.}
+\label{tab:anchor}
+\small
+\begin{tabular}{lrrccc}
+\toprule
+Class & Failures & $N$ & construction (held out) & restart & restart$\times|V|$ \\
+\midrule
+Trilateration, far side & $0.848 \pm 0.020$ & 509 & $\mathbf{1.000 \pm 0.000}$
+  & $0.079 \pm 0.017$ & $0.433 \pm 0.049$ \\
+Conic--line, ghost root & $0.263 \pm 0.015$ & 158 & $\mathbf{1.000 \pm 0.000}$
+  & $0.026 \pm 0.010$ & $0.114 \pm 0.011$ \\
+3R inverse kinematics & $0.000$ & 0 & --- & --- & --- \\
+Circles, far apart & $0.000$ & 0 & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Repair: Menu-Size Scaling and Cost Accounting}
 \label{app:kscaling}
 
@@ -138,13 +182,14 @@ the cost gap, as the enumeration it displaces grows to $9.05$ solver calls per i
 (Figure~\ref{fig:repair}). Directly training at $K{=}16$ performs at chance, so the
 transferred checkpoint is selected and both negatives are kept in the record.
 
-% provenance: paper/tex/figures/fig_repair_kscaling.pdf (scripts/plot_repair.py --panel right), RESULTS.md R10
-\begin{figure}[ht]
+% provenance: paper/tex/figures/fig_repair.pdf (scripts/plot_repair.py), RESULTS.md R10
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.6\textwidth]{figures/fig_repair_kscaling.pdf}
-\caption{Menu-size scaling behind main-text Figure~\ref{fig:repair-acc}: the $K{=}4$
-checkpoint evaluated zero-shot at larger menus retains an accuracy edge at $K{=}8$ that
-closes by $K{=}16$, while the blind enumeration it displaces grows from $2.5$ to $9.1$
-solver calls per instance.}
+\includegraphics[width=0.85\textwidth]{figures/fig_repair.pdf}
+\caption{Left: main-text Table~\ref{tab:repair} drawn, the ranker against its
+candidate-only and random controls, with $K{=}4$ chance dotted. Right: menu-size scaling.
+The $K{=}4$ checkpoint evaluated zero-shot at larger menus retains an accuracy edge at
+$K{=}8$ that closes by $K{=}16$, while the blind enumeration it displaces grows from $2.5$
+to $9.1$ solver calls per instance.}
 \label{fig:repair}
 \end{figure}

@@ -17,7 +17,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TEX = (ROOT / "paper/tex/marc_aaai.tex").read_text()
+# Body + technical appendix: cited numbers live in both, and a number moved from one to the
+# other must not read as drift.
+TEX = "\n".join((ROOT / p).read_text() for p in
+                ("paper/tex/marc_aaai.tex", "paper/tex/marc_aaai_appendix.tex"))
 
 
 def cell(d, *path):
@@ -121,11 +124,64 @@ CHECKS = [
     ("R30 conic restart sd", "results/p_real_repair/real_repair_multiseed.json",
      lambda d: cell(d, "aggregate", "conic_ghost", "restart_matched", "population_sd"),
      0.011, 3, "0.011"),
+    # own-budget restart control (Appendix Table 5): the reference solver rerun on the
+    # unrepaired system at its own K, before the enumeration budget is matched
+    ("R30 trilat restart own mean", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "restart4", "mean"), 0.079, 3, "0.079"),
+    ("R30 trilat restart own sd", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "trilat_far", "restart4", "population_sd"),
+     0.017, 3, "0.017"),
+    ("R30 conic restart own mean", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "restart4", "mean"), 0.026, 3, "0.026"),
+    ("R30 conic restart own sd", "results/p_real_repair/real_repair_multiseed.json",
+     lambda d: cell(d, "aggregate", "conic_ghost", "restart4", "population_sd"),
+     0.010, 3, "0.010"),
     # the anchor's central claim: the selected construction is unanimous across all six
     # folds, which is what forecloses "the luckiest of V"
     ("R30 selection unanimous", "results/p_real_repair/real_repair_multiseed.json",
      lambda d: float(all(cell(d, "aggregate", c, "selection_unanimous")
                          for c in ("trilat_far", "conic_ghost"))), 1.0, 1, None),
+
+    # R23b operator-mask ablation. Regenerated this pass: the artifact was recorded in
+    # RESULTS.md but had never been committed, so nothing could check it.
+    # NB: this arm is not bit-reproducible at fixed seed (0.978/0.981/0.986 observed across
+    # reruns of the identical command), so it is checked to 2 decimals and the paper cites
+    # the Wilson interval rather than the third decimal.
+    ("R23b opmask nonlinear masked", "results/p_repair/nonlinear_opmask_ablation.json",
+     lambda d: cell(d, "result", "full", "invention", "rate"), 0.98, 2, "0.978"),
+
+    # R3 hybrid battery (Appendix Table 4). Added after the paper's BilinearProduct cell
+    # (0.717 / "random wins") was found to disagree with the committed artifact (0.683 / tie);
+    # the table is now generated from this JSON, and these rows keep it that way.
+    ("R3 hybrid random BilinearSystem", "results/p_hard/hard_eval.json",
+     lambda d: d["rows"][0]["random_restart"]["rate"], 0.550, 3, "0.550"),
+    ("R3 hybrid random BilinearProduct", "results/p_hard/hard_eval.json",
+     lambda d: d["rows"][1]["random_restart"]["rate"], 0.683, 3, "0.683"),
+    ("R3 hybrid random QuadraticSystem", "results/p_hard/hard_eval.json",
+     lambda d: d["rows"][2]["random_restart"]["rate"], 0.683, 3, "0.683"),
+    ("R3 hybrid random CircleLine", "results/p_hard/hard_eval.json",
+     lambda d: d["rows"][3]["random_restart"]["rate"], 0.200, 3, "0.200"),
+    ("R3 hybrid learned BilinearProduct", "results/p_hard/hard_eval.json",
+     lambda d: d["rows"][1]["learned_hybrid"]["rate"], 0.683, 3, "0.683"),
+    ("R3 hybrid learned CircleLine", "results/p_hard/hard_eval.json",
+     lambda d: d["rows"][3]["learned_hybrid"]["rate"], 0.000, 3, "0.000"),
+    ("R3 hybrid LM saturates all four", "results/p_hard/hard_eval.json",
+     lambda d: float(all(r["lm"]["rate"] == 1.0 for r in d["rows"])), 1.0, 1, "1.000"),
+
+    # R26 real systems, per-system reachability under the gradient polish (Table 3)
+    ("R26 q 2R inverse kinematics", "results/p_real/real_systems.json",
+     lambda d: next(r for r in d["rows"]
+                    if r["name"] == "inverse_kinematics_2r")["q_single_start"]["rate"],
+     0.98, 2, "0.98"),
+    ("R26 q cyclic-4", "results/p_real/real_systems.json",
+     lambda d: next(r for r in d["rows"] if r["name"] == "cyclic4")["q_single_start"]["rate"],
+     0.38, 2, "0.38"),
+    ("R26 LM solves all eight", "results/p_real/real_systems.json",
+     lambda d: float(cell(d, "solved_counts", "lm")), 8, 0, None),
+    ("R26 random restart solves four", "results/p_real/real_systems.json",
+     lambda d: float(cell(d, "solved_counts", "random_restart")), 4, 0, None),
+    ("R26 Langevin solves one", "results/p_real/real_systems.json",
+     lambda d: float(cell(d, "solved_counts", "langevin")), 1, 0, None),
 ]
 
 

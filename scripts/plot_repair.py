@@ -72,7 +72,10 @@ def _accuracy(ax, labels, gen):
     ax.set_ylabel("invention accuracy", fontsize=FS["label"])
     ax.set_ylim(0, 1.0)
     ax.legend(fontsize=FS["legend"], frameon=False)
-    ax.set_title("Operator-aware repair beats its controls", fontsize=FS["title"])
+    # "candidate-conditioned", not "operator-aware": the paper's ablation shows masking the
+    # operator-identity features leaves the ranker intact, so the operator flags are not
+    # where the signal lives.
+    ax.set_title("Candidate-conditioned repair beats its controls", fontsize=FS["title"])
 
 
 def _kscaling(ax, ks, full, rand, calls):
