@@ -1,4 +1,4 @@
-# AAAI-26 abstract (submitted Jul 23; full paper due ~Jul 30)
+# AAAI-27 abstract (submitted Jul 23; full paper due ~Jul 30)
 
 Paste-ready text for the submission form. Source of truth: `paper/tex/main.tex`
 (the abstract below is the de-TeX'd copy of the Jul 27 re-cut, which leads with the

@@ -1,4 +1,7 @@
-# AAAI-26 Reproducibility Checklist — draft answers
+# AAAI-27 Reproducibility Checklist — rationale behind the filled answers
+
+The official filled checklist is `paper/tex/ReproducibilityChecklist.tex` (compiles standalone
+to the 2-page PDF submitted on OpenReview). This file keeps the per-answer evidence.
 
 Filled against the actual repo so submission day is copy-paste.
 
