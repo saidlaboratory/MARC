@@ -145,8 +145,9 @@ $P_{\text{random}}$ MAE, parameter-free & 0.012 & law N/A (not separable) \\
 Table~\ref{tab:anchor} is the per-class breakdown behind the external-anchor paragraph.
 Both restart controls rerun the same classical reference solver on the unrepaired system:
 \texttt{restart} at the reference solver's own budget, \texttt{restart}$\times|V|$ at the
-full enumeration budget over the construction vocabulary. The two classes that never fail
-are reported as negatives rather than averaged in as zeros; the own-budget column shows how
+full enumeration budget over the construction vocabulary. The two classes where the reference
+never fails define no failure population and are reported as such rather than averaged in as
+zeros; the own-budget column shows how
 far short a plain retry falls even before the budget is matched.
 
 % provenance: RESULTS.md R30; results/p_real_repair/real_repair_multiseed.json (aggregate)
