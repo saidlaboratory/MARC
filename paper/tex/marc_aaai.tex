@@ -1,35 +1,29 @@
-% marc_aaai.tex — AAAI-2026 main-track port of marc.tex (the corrected source of truth).
+% marc_aaai.tex — AAAI-2027 main-track submission (ported from the AAAI-2026 draft).
 %
-% Format: official AAAI-26 author kit (aaai2026.sty / aaai2026.bst, in this directory),
-% wired in below via \usepackage[submission]{aaai2026}; the style sets
-% \bibliographystyle{aaai2026} itself. Kit provenance: STYLE_KIT_STATUS.md.
+% Format: official AAAI-27 author kit (aaai2027.sty / aaai2027.bst, in this directory),
+% wired in below via \usepackage[submission]{aaai2027}; the style sets
+% \bibliographystyle{aaai2027} itself.
 % Content rule: port + cut of marc.tex — every number identical, all \citep keys kept.
 % The technical appendix (per-family tables, transfer, K-scaling) is marc_aaai_appendix.tex,
 % input after the bibliography; it is intended as supplementary material.
 
-\documentclass[letterpaper]{article}
-\usepackage[submission]{aaai2026}
-\usepackage{times}
-\usepackage{helvet}
-\usepackage{courier}
-% Local XeTeX/tectonic preview only. times/helvet/courier are OT1/T1 Type-1 families with
-% no Unicode (TU) shape, so a XeTeX build silently falls back to Latin Modern and
-% repaginates against wider metrics. pdflatex -- the author kit's engine and the Overleaf
-% default -- never takes this branch, so the submission build is unaffected.
-\usepackage{iftex}
-\ifXeTeX
-  \usepackage{fontspec}
-  \IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}}
-  \IfFontExistsTF{Arial}{\setsansfont{Arial}}{\setsansfont{TeX Gyre Heros}}
-  \IfFontExistsTF{Courier New}{\setmonofont{Courier New}}{\setmonofont{TeX Gyre Cursor}}
-\fi
-\usepackage[hyphens]{url}
-\usepackage{graphicx}
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
+% Fonts are loaded by aaai2027.sty (newtxtext, helvet, courier). The 2027 kit forbids
+% adding times/helvet/courier or any other font package, so the 2026 preamble's font
+% block and its XeTeX fontspec shim have been removed.
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
-\usepackage{natbib}
-\usepackage{caption}
-\frenchspacing
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
 
 % Title and abstract track the OpenReview submission record (submission 49650); edits since
 % then are confined to restoring the math the web form dropped and two accuracy fixes noted
@@ -166,10 +160,9 @@ neural combinatorial optimization. \citet{nath2024maxcutbenchmark} find publishe
 heuristics for maximum cut that do not beat naive greedy, and that replacing one method's GNN
 with linear regression leaves it intact; \citet{nath2023mightiest} report simple Tabu Search
 beating learned local search. \citet{rodrigues2026budgetmatched} isolate the same pattern
-outside combinatorial search. We claim neither the observation nor the remedy as new. What we
-add is that the control here is analytically forced rather than merely fairer: one polish and
-one checker make Eq.~\eqref{eq:bestofk} the exact bound a learned proposal must clear, and
-the measured $\log q(n)$ slope says in advance which families leave room above it.
+outside combinatorial search. We claim neither observation nor remedy as new. What we add is that one polish and one
+checker make Eq.~\eqref{eq:bestofk} the exact bound a learned proposal must clear, and the
+measured $\log q(n)$ slope says in advance which families leave room above it.
 
 \paragraph{Per-instance algorithm selection.}
 The repair ranker is, at bottom, per-instance selection: given an
@@ -575,20 +568,18 @@ protocol: one reference solver certifies the data, grades every arm,
 and runs the end-to-end solves; nonlinear ``exactly one solvable option'' is an exact CAS theorem (a distractor proven to
 have no real solution is unsolvable at any budget); gold and distractor parameters share one
 support and one prior, so surviving surface-form signal is capped at the candidate-only
-ceiling and anything above it must come from reading the problem graph. On the balanced nonlinear test that ceiling is $0.333$,
-above the $0.25$ chance floor and far below the ranker,
-where exact paired McNemar gives $p = 3.3\times10^{-83}$ against random (274
-ranker-only correct versus 0) and $p = 1.1\times10^{-72}$ against the candidate-only
-control. Transfer to an unseen nonlinear relation is partial but bidirectional ($0.420$ against
+ceiling and anything above it must come from reading the problem graph. On the balanced nonlinear test that ceiling is $0.333$, above the $0.25$ chance floor and
+far below the ranker, where exact paired McNemar gives $p = 3.3\times10^{-83}$ against
+random (274 ranker-only correct versus 0) and $p = 1.1\times10^{-72}$ against the
+candidate-only control. Transfer to an unseen nonlinear relation is partial but bidirectional ($0.420$ against
 $0.253$ for vieta-trained on quad\_link, $0.393$ against $0.180$ reversed; $N{=}150$ each). On an unseen linear pattern the ranker reaches $0.380$ against $0.287$ ($N{=}400$), and
 holding out each of the other two patterns gives $0.407$ and $0.450$ against $\sim$$0.23$
 random, so the effect is not specific to one holdout. A single model
 tested across all three at once reads $0.339$ against $0.249$ ($N{=}1{,}200$, $p =
-7.8\times10^{-7}$). The
-linear signal is deliberately reported at its post-audit size: closing each discovered
-shortcut lowered it ($0.565 \to 0.445 \to 0.380$ across data versions) while pushing the
-candidate-only control to chance, so what remains is entirely problem-graph reading. It is
-modest where every operator is linear and decisive on certificate-grade nonlinear menus. Both
+7.8\times10^{-7}$). The linear signal is reported at its post-audit size: closing each discovered shortcut
+lowered it ($0.565 \to 0.445 \to 0.380$ across data versions) while pushing the
+candidate-only control to chance, so what remains is problem-graph reading, modest where
+every operator is linear and decisive on certificate-grade nonlinear menus. Both
 headline rows were retrained across three optimization seeds (11, 29, 47) with independent
 per-seed evaluation draws. Nonlinear comes through optimization-robust ($0.982 \pm 0.006$).
 The linear edge is not seed-stable ($0.317 \pm 0.069$, one seed at $0.227$ below the random
@@ -639,22 +630,19 @@ outright. Where failures are stochastic it does not, and the boundary is worth m
 On the pruned point chains, the discrete-branch setting of distance geometry, the
 population definition decides the answer. Under two-stream selection ($N{=}367$ failures, three optimization seeds) the enumeration
 ceiling is $0.692$ at $72.7$ restarts per instance, which plain restart scaling matches at
-$+32$ ($0.725$). Majority-vote
-labels made the target learnable, and the ranker separates from random ($0.246 \pm 0.016$
-versus $0.185 \pm 0.019$; Holm $p{=}1.3{\times}10^{-4}$) where single-stream labels never
-did. That is not an edge over the controls. It ties the best fixed construction
-($0.259$) and loses to the matched-budget restart control ($0.270$). The signal is real but
+$+32$ ($0.725$). Majority-vote labels made the target learnable, and the ranker separates from random
+($0.246 \pm 0.016$ versus $0.185 \pm 0.019$; Holm $p{=}1.3{\times}10^{-4}$) where
+single-stream labels never did. That is not an edge over the controls: it ties the best
+fixed construction ($0.259$) and loses to matched-budget restarts ($0.270$). The signal is real but
 reflects the population prior; the problem graph contributes nothing. The probe initially
 appeared promising: one restart per candidate solves $0.698$, matching the ceiling. But it spends the whole menu's budget and its accepts are diffuse, so it is a portfolio
 sweep, not a choice of construction. A per-instance screen held to the reference budget
 scores $0.199$ $[0.161, 0.243]$, below the restart control: ${\sim}50$ restarts of
-measurement select worse than the prior. That the learned arms land on the prior is expected, not a
-training miss (distilling the probe's labels converges there too), and the gap between that
-honest screen and the same screen scored on the streams that
-chose it ($0.762$) quantifies the selection-on-noise effect. Read against the
-construction result: a construction pays when it removes a named failure mode by construction; where none
-does, constructions help only as a cheap portfolio and ``which construction''
-carries no signal a selector can exploit at the reference budget.
+measurement select worse than the prior. The learned arms landing on the prior is therefore expected. Scoring that same screen on
+the streams that chose it reads $0.762$, which prices the selection-on-noise effect. A
+construction pays when it removes a named failure mode outright; where none does,
+constructions help only as a portfolio and ``which construction'' carries no signal a
+selector can exploit.
 
 \section{Limitations}
 \label{sec:limitations}
@@ -681,8 +669,7 @@ CircleLine to the training mix collapsed an otherwise recoverable transfer (0.70
 run to 0.00): a bad training family actively hurts. The predecessor structure policy never
 separated from random selection and its numbers remain withdrawn (evaluation seeds
 overlapped checkpoint-selection validation seeds), as do the earlier v6/v7 ranker numbers
-(a pin-prior leak and probe-artifact certificates, found and fixed). Only the nonlinear
-headline ($0.982 \pm 0.006$) is optimization-robust; the linear edge is not seed-stable.
+(a pin-prior leak and probe-artifact certificates, found and fixed). Only the nonlinear headline ($0.982 \pm 0.006$) is optimization-robust.
 Finally, scope against real problem text is quantified: on a 48-problem sample of
 MATH-500 \citep{hendrycks2021math} the template formalizer covers 0 of 48 (20\%
 constraint-shaped, 31\% CAS computation, 48\% reasoning or proof out of
@@ -703,23 +690,29 @@ of labor. The generalizable lesson is about evaluation. Populations defined by
 stochastic failure are artifacts of the draw unless the protocol stabilizes them, at a cost
 of one extra solve per instance; without it, results read as upper bounds.
 
-% aaai2026.sty already sets \bibliographystyle{aaai2026}; a second one breaks bibtex
+
+
+% AAAI-27 mandates this order: main content, content appendices, ethical statement,
+% acknowledgments, references, supplementary material. Unnumbered statements go here,
+% before the bibliography.
+\section*{Use of AI Assistants}
+A large language model assisted with writing and with auditing this paper's numbers and
+citations against the committed result files. All experiments, analysis, and claims are the
+authors' own; no result, table, or figure was model-generated.
+
+% aaai2027.sty already sets \bibliographystyle{aaai2027}; a second one breaks bibtex
 \bibliography{refs}
 
-\section*{Use of AI Assistants}
-A large language model assisted with writing: revising prose for clarity and consistent
-terminology, and auditing this paper's numbers and citations against the committed result
-files. Every experiment, protocol, analysis, and claim is the authors' own, and no result,
-table entry, or figure was produced by a model.
 
-
-% ---- Technical appendix (supplementary material under AAAI rules) ----
-% One-column for the wide per-family tables; the appendix ships as supplementary, not
-% against the 7 content pages.
-\clearpage
+% ---- Supplementary material / technical appendix ----
+% AAAI-27 places supplementary material last, after the references. \clearpage is
+% forbidden by the 2027 kit, so the one-column switch alone starts this block.
+% NOTE: the kit says content appendices count against the page limit while supplementary
+% material is conference-dependent; confirm the AAAI-27 CFP before submitting, and split
+% this into a separate document if supplementary is required to be separate.
 \onecolumn
 \appendix
-% aaai2026.sty sets secnumdepth to 0, which leaves \ref{app:*} empty. The main body keeps
+% aaai2027.sty sets secnumdepth to 0, which leaves \ref{app:*} empty. The main body keeps
 % the kit's unnumbered headings (main-text sections are referenced by name); the appendix
 % is supplementary, so restore lettering here to make "Appendix A" pointers resolve.
 \setcounter{secnumdepth}{1}
