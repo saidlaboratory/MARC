@@ -42,27 +42,27 @@ A Controlled Study on Continuous Algebraic Systems}
 \maketitle
 
 \begin{abstract}
-What classical solvers lack is discrete choice: which structural augmentation renders an
-unsolvable system solvable. There, a candidate-conditioned repair ranker outperforms random
-(0.997 vs 0.236 balanced nonlinear menu accuracy; $p<10^{-70}$; $0.982\pm0.006$ across
-seeds), and beats a budget-matched per-candidate probe on accuracy and cost. MARC turns a
-continuous algebraic constraint system into a factor graph, over which a graph-neural
-diffusion denoiser proposes assignments, descent on an exact computer-algebra energy polishes
-them, and an exact symbolic checker certifies solutions. Evaluations of diffusion-based
-proposal models for constraint solving rarely include one key control: random multi-start
-under the same refinement budget. When applied to our system, this control sharply curtails
-our headline claim. Does the learned proposal improve on random multi-start at choosing
-satisfying assignments? Only narrowly, in a predictable regime. Across trapped
-low-dimensional families it ties with random restart, but dominates in high dimension, where
-random search fails. Once variables couple, the advantage is gone. Since all methods share
-the same polishing and checker, best-of-$K$ random multi-start succeeds with probability
-exactly $1-(1-q(n))^K$, where $q(n)$ is single-start reachability; a single measured constant,
-with no free parameters, reproduces the entire curve (mean absolute error 0.012). The narrow
-favorable regime is not specific to our synthetic families: across eight real-world systems
-in robotics, positioning, optimization, and algebra, classical multi-start solved all eight,
-but none were in the learning-favorable regime. We delineate the regimes where learned
-proposals improve solvers, and show that learning pays on the discrete decision, where it
-reaches the exhaustive-search ceiling at a fraction of the calls.
+Solving a continuous algebraic constraint system requires two decisions: which values satisfy
+the constraints, and which structural augmentation renders an unsolvable system solvable.
+Classical solvers answer the first well and the second only by enumeration. On that discrete
+decision, a candidate-conditioned repair ranker choosing among $K$ candidate augmentations
+reaches the exhaustive-search ceiling at a fraction of the calls, outperforming random
+(0.997 vs 0.236 balanced nonlinear menu accuracy; $p<10^{-70}$; $0.982\pm0.006$ across seeds)
+and beating a budget-matched per-candidate probe on accuracy and cost. MARC turns such a
+system into a factor graph, over which a graph-neural diffusion denoiser proposes assignments,
+descent on an exact computer-algebra energy polishes them, and an exact symbolic checker
+certifies solutions. Evaluations of diffusion-based proposal models rarely include one key
+control: random multi-start under the same refinement budget. When applied to our system, this
+control sharply curtails what the learned proposal contributes on the value decision. Does it
+improve on random multi-start at choosing satisfying assignments? Only narrowly, in a
+predictable regime. Across trapped low-dimensional families it ties with random restart, but
+dominates in high dimension, where random search fails. Once variables couple, the advantage
+is gone. Since all methods share the same polishing and checker, best-of-$K$ random
+multi-start succeeds with probability exactly $1-(1-q(n))^K$, where $q(n)$ is single-start
+reachability; a single measured constant, with no free parameters, reproduces the entire curve
+(mean absolute error 0.012). The narrow favorable regime is not specific to our synthetic
+families: across eight real-world systems in robotics, positioning, optimization, and algebra,
+classical multi-start solved all eight, but none were in the learning-favorable regime. We delineate the regimes in which learned proposals improve solvers.
 \end{abstract}
 
 \section{Introduction}
@@ -169,8 +169,9 @@ SATzilla \citep{xu2008satzilla}, and is surveyed in \citet{kerschke2019survey}; 
 \citep{trinh2024alphageometry} is the precedent for learning
 the structural decision itself, and discrete diffusion \citep{austin2021d3pm,
 vignac2023digress} supplied the formalism for our withdrawn predecessor policy. Three things here are not in that line: certificate-grade menu semantics (``exactly one
-solvable option'' is a CAS theorem, not a budget-relative claim), candidate conditioning, and
-controls that price the classical recourse rather than a single default algorithm.
+solvable option'' is a CAS theorem, not a budget-relative claim), candidate conditioning (the ranker encodes each
+candidate-augmented graph), and controls that price the classical recourse rather than a
+single default algorithm.
 
 \paragraph{Distance geometry.}
 On the geometric family below we measure under shared machinery what this literature
@@ -194,9 +195,9 @@ inequalities, so $r_j(x) = 0$ exactly when constraint $j$ holds. The energy is
 E(x) \;=\; \tfrac{1}{2} \sum_{j=1}^{m} r_j(x)^2 .
 \end{equation}
 Residuals, energy, and $\nabla E$ are computed exactly by a CAS (SymPy) and compiled once per
-graph. Acceptance is a two-stage gate: a numeric stage rejects fast if any factor's violation
-exceeds a tolerance, and a symbolic stage snaps the candidate to nearby exact rationals and
-re-checks every constraint exactly. On the synthetic families the symbolic stage is
+graph. Acceptance is a two-stage gate: a numeric stage rejects fast if any factor's violation exceeds
+a tolerance, and a symbolic stage snaps the candidate to nearby exact rationals and re-checks
+every constraint. On the synthetic families the symbolic stage is
 authoritative. On the real systems, whose roots are irrational, no exact rational exists to snap to
 and the numeric stage stands alone. This gate is the only acceptance criterion in every
 experiment and the only reward source in training.
@@ -364,8 +365,8 @@ generators, polish, and checker as those experiments. supplementary Table S4 tab
 \centering
 \includegraphics[width=\textwidth]{figures/fig_crossover_theory.pdf}
 \caption{The factorization law, measured. Left: $\log q(n)$ against $n$; the separable family
-is a line, the coupled bilinear family nearly flat, and the geometry family, though
-syntactically coupled, collapses (slopes and fits in the text). Right: the best-of-8
+is a line (slope $-1.03$, $R^2 = 0.98$), the coupled bilinear family nearly flat ($-0.13$),
+and the geometry family, though syntactically coupled, collapses ($-0.77$). Right: the best-of-8
 random-restart curve predicted parameter-free from $v = 0.27$ via Eq.~\eqref{eq:bestofk}
 against the measured curve (MAE 0.012), with the learned hybrid overlaid; the dotted line is
 the crossover dimension predicted from $v$.}
@@ -467,10 +468,10 @@ basins by chance. Coupling removes both conditions, and the proposal adds nothin
 random search plus refinement.
 
 The negative is mechanistic, not a verdict on our denoiser's capacity. Sampling each variable
-from its \emph{true} per-variable marginal (pooled from disjoint instances) and polishing
-identically also ties random restart at every $n \ge 3$ here (0/4 wins): a proposal that fit
-the marginals perfectly would still not beat restarts, because population-marginal information
-is exhausted once the solution is a joint object. The claim therefore bounds
+from its \emph{true} per-variable marginal (pooled from disjoint instances) and polishing identically also
+ties random restart at every $n \ge 3$ here (0/4 wins): a proposal that fit the marginals
+perfectly would still not beat restarts, because population-marginal information is exhausted
+once the solution is a joint object. The claim therefore bounds
 product-of-marginals proposals, the class our denoiser belongs to; an instance-conditional
 joint sampler is outside what this control tests.
 
@@ -524,8 +525,8 @@ budget of Eq.~\eqref{eq:bestofk}), encodes the resulting polynomial graph with o
 node and edge features (degree, linear/square/cross participation, constants), and scores the
 augmented graphs listwise; the highest-scoring repair receives one classical solve and the
 exact checker remains the acceptance gate. A matched candidate-only control sees the same augmentation recipe but no problem graph;
-\texttt{random} chooses uniformly among the same $K$ candidates. The predecessor policy classified menu slots over one fixed graph encoding and fell to
-chance on an unseen pattern. Candidate conditioning is the change that matters.
+\texttt{random} chooses uniformly among the same $K$ candidates. The predecessor policy classified menu slots over one fixed graph encoding and fell to chance
+on an unseen pattern; candidate conditioning is the change that matters.
 An ablation locates the signal: masking operator-identity features and
 retraining leaves the ranker intact ($0.978$ $[0.957, 0.989]$ against $0.997$ unmasked,
 $N{=}360$; reruns at fixed seed move the third decimal, so we read the interval). The signal lives in constants, magnitudes, and incidence read
@@ -562,25 +563,23 @@ candidate-only ceiling and anything above it must come from the problem graph. O
 far below the ranker, where exact paired McNemar gives $p = 3.3\times10^{-83}$ against
 random (274 ranker-only correct versus 0) and $p = 1.1\times10^{-72}$ against the
 candidate-only control. Transfer to an unseen nonlinear relation is partial but bidirectional ($0.420$ against
-$0.253$ for vieta-trained on quad\_link, $0.393$ against $0.180$ reversed; $N{=}150$ each). On an unseen linear pattern the ranker reaches $0.380$ against $0.287$ ($N{=}400$), and
-holding out each of the other two patterns gives $0.407$ and $0.450$ against $\sim$$0.23$
-random, so the effect is not specific to one holdout. A single model
-tested across all three at once reads $0.339$ against $0.249$ ($N{=}1{,}200$, $p =
-7.8\times10^{-7}$). The linear signal is reported at its post-audit size: closing each discovered shortcut
+$0.253$ for vieta-trained on quad\_link, $0.393$ against $0.180$ reversed; $N{=}150$ each). On an unseen linear pattern the ranker reaches $0.380$ against $0.287$ ($N{=}400$); holding
+out each of the other two patterns gives $0.407$ and $0.450$ against $\sim$$0.23$ random, so
+the effect is not specific to one holdout. A single model tested across all three at once reads $0.339$ against $0.249$
+($N{=}1{,}200$, $p = 7.8\times10^{-7}$). The linear signal is reported at its post-audit size: closing each discovered shortcut
 lowered it ($0.565 \to 0.445 \to 0.380$ across data versions) while pushing the
 candidate-only control to chance, so what remains is problem-graph reading, modest where
-every operator is linear and decisive on certificate-grade nonlinear menus. Both
-headline rows were retrained across three optimization seeds (11, 29, 47) with independent
-per-seed evaluation draws. Nonlinear comes through optimization-robust ($0.982 \pm 0.006$).
+every operator is linear and decisive on certificate-grade nonlinear menus. Both headline rows were retrained across three optimization seeds (11, 29, 47) with
+independent per-seed evaluation draws; nonlinear comes through optimization-robust
+($0.982 \pm 0.006$).
 The linear edge is not seed-stable ($0.317 \pm 0.069$, one seed at $0.227$ below the random
 arm's $0.248 \pm 0.002$), consistent with reading the linear rows as mechanism evidence
 rather than a deployable margin.
 
-Learning is also cheap here where value diffusion was not: one forward pass per
-candidate rather than a reverse-diffusion rollout. End to end, the nonlinear ranker's single
-call solves $0.933$,
-exactly the oracle and enumeration ceiling, where blind enumeration averages $2.62$ calls
-($N{=}60$); linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling
+Learning is also cheap here where value diffusion was not: one forward pass per candidate
+rather than a reverse-diffusion rollout. End to end, the nonlinear ranker's single call solves
+$0.933$, exactly the oracle and enumeration ceiling, where blind enumeration averages $2.62$
+calls ($N{=}60$); linear $K{=}4$ solves $0.300$ against $0.227$ random with a $1.000$ ceiling
 ($N{=}300$). A cheap-probe control bounds the claim from the other side: a short-budget call on
 every candidate solves at most $0.881$ of nonlinear menus at $4.7$ calls per instance, where
 the ranker's single call solves $0.939$ ($N{=}360$). Learning beats probing on accuracy
