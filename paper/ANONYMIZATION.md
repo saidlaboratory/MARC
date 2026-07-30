@@ -58,9 +58,9 @@ sed -i '' "s/\*\*Quang Bui, Sparsh Roy, Akash Gundimeda, Davin Yin\*\* · SAID L
 sed -i '' "s/SAID Laboratory//g" README.md
 sed -i '' "s|/Users/sparsh/Desktop/Research/AAAI/MARC|<repo root>|" results/overnight/SUMMARY.md
 
-# .gitignore: personal filename + tool comment
+# .gitignore: personal filename + agent-worktree dir
 sed -i '' -e "/DAVIN_P2_P3_NOTES.md/d" \
-          -e "s/# Claude Code agent worktrees.*/# agent worktrees (nested repos)/" .gitignore
+          -e "s|^\.claude/|.agent-worktrees/|" .gitignore
 ```
 
 Known hit list the pass above must cover (spot-check after):

@@ -163,7 +163,7 @@ def build_summary_table(
     if noise:
         red = noise.get("entrapment_reduction_mean")
         ci = noise.get("entrapment_reduction_ci95", 0.0)
-        verdict = "noise reduces entrapment" if noise.get("noise_helps") else "⚠ noise did not help"
+        verdict = "noise reduces entrapment" if noise.get("noise_helps") else "noise did not help"
         lines.append(f"| Noise on/off | ok | reduction {_fmt(red)} ± {_fmt(ci)} ({verdict}) |")
     if guid:
         if guid.get("status") == "ok":

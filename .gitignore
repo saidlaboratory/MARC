@@ -46,7 +46,7 @@ DAVIN_P2_P3_NOTES.md
 
 .DS_Store
 
-# Claude Code agent worktrees (nested repos; committed gitlinks break Pages builds)
+# Agent worktrees (nested repos; committed gitlinks break Pages builds)
 .claude/
 
 # LaTeX build artifacts (paper/tex — commit source only)

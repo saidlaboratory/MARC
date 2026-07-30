@@ -127,7 +127,7 @@ learned ceiling. (The $N{=}40$ R5 table reported random $=0.875,0.70$ at $n=1,2$
 the $N{=}600$ re-measurement here, 0.90 then 0.47, is more precise and, if anything,
 moves the crossover *earlier* — it does not change the mechanism.) The coupled
 family has no collapse and hence no crossover, exactly as Eq. (3) predicts when
-$v\to1$. Figure `paper/figures/fig_crossover_theory.pdf`: (a) $\log q$ vs $n$ —
+$v\to1$. Figure `paper/tex/figures/fig_crossover_theory.pdf`: (a) $\log q$ vs $n$ —
 separable is a line ($R^2{=}0.98$), coupled is flat; (b) parameter-free predicted
 vs measured random curve against the flat learned ceiling.
 

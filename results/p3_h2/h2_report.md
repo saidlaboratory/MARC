@@ -1,5 +1,11 @@
 # H2 — Auxiliary Object Usage
 
+> **Superseded (motivation only).** This is the early MVP proxy for H2 (energy-guided
+> best-of-N over structural hypotheses); its solve-rate numbers are withdrawn and must
+> not be cited. The shipped result is menu-based structure selection with the trained
+> repair ranker — see [paper/RESULTS.md](../../paper/RESULTS.md) and
+> [results/p_repair/README.md](../p_repair/README.md).
+
 **Hypothesis (CONCEPT.md H2):** allowing the refinement process to modify graph
 structure (adding nodes/edges) enables the introduction of lemmas and auxiliary
 quantities.

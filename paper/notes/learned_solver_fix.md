@@ -1,5 +1,12 @@
 # Making the learned diffusion solver converge
 
+> **Historical (value-diffusion era).** This note records an early engineering result:
+> the learned *value* diffusion solver was made to converge on the convex suite. That
+> suite later proved saturated (all solvers at ceiling), and controlled comparison
+> showed learned value proposals tie or lose to classical multi-start — which is why
+> MARC reframed to structural repair. Kept as provenance for [paper/RESULTS.md](../RESULTS.md)
+> R1; it is not a current headline result.
+
 ## TL;DR
 The learned solver previously **diverged** (inference produced values ~1e4; solve
 rate 0%). It now **converges to solve rate 1.0** on the in-distribution and

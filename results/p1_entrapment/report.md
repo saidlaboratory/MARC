@@ -1,6 +1,6 @@
 # P1 — Noise On/Off Entrapment Ablation (RQ2)
 
-✅ **Noise reduces entrapment.** Injected noise lowers the entrapment rate by **0.53 ± 0.11** (95% CI excludes 0). The core RQ2 hypothesis holds on this suite.
+**Noise reduces entrapment.** Injected noise lowers the entrapment rate by **0.53 ± 0.11** (95% CI excludes 0). The core RQ2 hypothesis holds on this suite.
 
 ## What this measures
 
@@ -42,6 +42,6 @@ solution on a substantial fraction of graphs, cutting entrapment to 0.47. This i
 the load-bearing evidence for RQ2: **the noise is doing real work.**
 
 This ablation uses the exact energy gradient as a stand-in for the learned denoiser
-`g_theta`. When Davin's learned `solve()` lands it slots into the same `Solver`
-contract (`marc.eval.solver`); re-running this script then measures whether the
-*learned* refinement preserves the noise benefit.
+`g_theta`. The learned `solve()` slots into the same `Solver` contract
+(`marc.eval.solver`); re-running this script then measures whether the *learned*
+refinement preserves the noise benefit.

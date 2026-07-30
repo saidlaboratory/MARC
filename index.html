@@ -150,13 +150,13 @@ footer{border-top:1px solid var(--line);padding:60px 0 70px;margin-top:40px}
 
 <!-- ═══════════ HERO ═══════════ -->
 <header class="hero wrap">
-  <p class="tag">SAID Laboratory · research system · v0.2</p>
+  <p class="tag">SAID Laboratory · research system · v0.3</p>
   <h1><span class="light">MA</span><span class="glow">RC</span></h1>
   <p class="expand">Mathematical AI Reasoning Core</p>
   <p class="thesis">A <span class="s">neural instinct for structure</span>. <span class="v">Classical solvers</span> for values. An <span class="c">exact checker</span> for truth.</p>
   <p class="sub">MARC represents a problem as a <b>constraint graph</b> and learns the one decision classical methods cannot make: <b>what to add to it</b>. The right auxiliary variable, substitution, or defining relation turns an unsolvable graph into a solvable one. Everything downstream is delegated: values to classical solvers, acceptance to an exact symbolic checker.</p>
   <div class="pillrow">
-    <span class="pill p-s"><span class="dot"></span>learned structure policy</span>
+    <span class="pill p-s"><span class="dot"></span>learned structure ranker</span>
     <span class="pill p-v"><span class="dot"></span>classical value solvers</span>
     <span class="pill p-c"><span class="dot"></span>symbolic-exact verification</span>
   </div>
@@ -206,13 +206,13 @@ footer{border-top:1px solid var(--line);padding:60px 0 70px;margin-top:40px}
     </div>
     <div class="ev pos reveal">
       <div class="what">Stochasticity in search · pre-registered RQ</div>
-      <div class="num">Entrapment 1.000 → 0.475 with noise <span class="mono" style="font-size:14px">(−0.525 ± 0.086)</span></div>
+      <div class="num">Entrapment 1.000 → 0.475 with noise <span class="mono" style="font-size:14px">(−0.525 ± 0.109, N=200)</span></div>
       <p>Deterministic descent always traps; Langevin noise escapes. Real and CI-backed, but it argues for noise in search, not for a learned denoiser.</p>
     </div>
     <div class="ev pos reveal">
-      <div class="what">Structure selection · trained policy</div>
-      <div class="num">Beats its controls; clean numbers pending</div>
-      <p>The one learned component that beat random-slot and no-context controls. Regenerating at scale under a contamination-proof seed protocol before any number is cited.</p>
+      <div class="what">Structure selection · repair ranker (Data v8)</div>
+      <div class="num">0.997 vs 0.236 random on balanced nonlinear menus</div>
+      <p>Held-out linear pattern 0.380 and cross-relation transfer 0.420, each above candidate-only and random controls. Stable across three seeds (0.982 ± 0.006).</p>
     </div>
   </div>
   <p class="ledger-note reveal"><b>House law:</b> every rate ships with N and a Wilson interval, every comparison with a corrected significance test, and structure-selection numbers exist only if the run's own artifact proves its seeds were clean. We caught one contaminated result ourselves, withdrew it, and rebuilt the protocol so the eval refuses to repeat the mistake.</p>
@@ -297,7 +297,7 @@ footer{border-top:1px solid var(--line);padding:60px 0 70px;margin-top:40px}
     <div class="rung now reveal">
       <div><h3>Predicted defining value</h3>
       <p>The policy's value head supplies the defining constant itself. The candidate space becomes continuous; the menu only provides insertion structure.</p></div>
-      <span class="badge pending">built · clean numbers pending</span>
+      <span class="badge pending">built · evaluated</span>
     </div>
     <div class="rung reveal">
       <div><h3>Compositional & multi-aux</h3>
@@ -336,11 +336,11 @@ footer{border-top:1px solid var(--line);padding:60px 0 70px;margin-top:40px}
     </div>
     <div class="flinks">
       <a class="btn" href="https://github.com/saidlaboratory/MARC">Repository</a>
-      <a class="btn" href="https://github.com/saidlaboratory/MARC/blob/main/OUTLINE.md">Writing guide</a>
+      <a class="btn" href="https://github.com/saidlaboratory/MARC/blob/main/CONCEPT.md">Concept note</a>
       <a class="btn" href="https://github.com/saidlaboratory/MARC/blob/main/paper/PROVENANCE.md">Provenance</a>
     </div>
   </div>
-  <p class="fnote">v0.2 · the founding value-diffusion framing is preserved in CONCEPT.md · the evidence that forced the reframe is in paper/RESULTS.md</p>
+  <p class="fnote">v0.3 · the founding value-diffusion framing is preserved in CONCEPT.md · the evidence that forced the reframe is in paper/RESULTS.md</p>
 </footer>
 
 <script>
@@ -378,7 +378,7 @@ function resetDemo() {
 function playDemo() {
   resetDemo();
   if (reduced) { finishInstant(); return; }
-  after(600,  () => line('<b class="s1">structure policy</b> · slot flips ABSENT → active: introduce <b>u</b> with defining relation u = 2'));
+  after(600,  () => line('<b class="s1">structure ranker</b> · selects the augmentation: introduce <b>u</b> with defining relation u = 2'));
   after(900,  () => {
     $('aux').setAttribute('opacity', '1');
     $('auxc').removeAttribute('stroke-dasharray');

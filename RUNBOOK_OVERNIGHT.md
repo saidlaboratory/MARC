@@ -59,7 +59,7 @@ python3 -m pytest -q
 ```
 
 Expect all green (~414 tests, a couple of minutes). **If anything is red, don't
-launch the overnight run — ping the team instead.**
+launch the overnight run — stop and investigate first.**
 
 ```bash
 python3 scripts/run_overnight.py --smoke
@@ -217,7 +217,7 @@ checkpoint, but say it anyway.
 | Stage-A projected to blow the night (check `examples_per_sec` early) | Drop to D256/L6 or halve `epochs_A` in `scale.yaml` and relaunch — see §3. |
 | Run paused overnight / laptop slept | The lid was closed or `caffeinate` wasn't used. Relaunch with the §3 command; everything resumes. |
 | `mps available: False` in setup | Reinstall torch from PyPI inside the venv (`pip install --force-reinstall torch`); make sure you're on the arm64 Python, not an x86 one under Rosetta (`python3 -c "import platform; print(platform.machine())"` → `arm64`). |
-| `pytest` red on arrival | Don't run anything — ping the team. |
+| `pytest` red on arrival | Don't run anything — stop and investigate the failure first. |
 | A phase says `skipped: script not present` | The sibling PR with that script isn't merged. Merge open PRs and rerun with `--only <phase>` (plus `figures,summarize`). |
 | `eval_cot` skipped: no API key | Export `GEMINI_API_KEY` (or `OPENAI_API_KEY`) and rerun `--only eval_cot,summarize`, or ignore — it's a baseline, not a blocker. |
 
@@ -258,12 +258,12 @@ PYTHONPATH=. python3 scripts/run_invention_eval.py \
 Then check each output JSON for the `seed_hygiene` block with
 `"overlap_instances": 0`. **Nothing gets cited until that block is present.**
 
-## R28: geometry construction-repair seeds (branch quang/geo-repair, PR #118)
+## R28: geometry construction-repair seeds
 
-Seed 11 is running on Quang's machine. Seeds 29 and 47 are yours; each run
-regenerates the identical dataset deterministically (that is the slow part,
-~30min solo per run on CPU at protocol scale) and then trains + evaluates (~20min). Run them one
-at a time if the box is busy, both in parallel if not:
+The geometry construction-repair study uses three optimization seeds (11, 29, 47).
+Each run regenerates the identical dataset deterministically (the slow part,
+~30min per run on CPU at protocol scale) and then trains + evaluates (~20min). Run them one
+at a time if the box is busy, all three in parallel if not:
 
     OMP_NUM_THREADS=6 python3 scripts/run_geo_repair.py --opt-seed 29 \
         --train-ks 10,12 --transfer-ks 14 --n-train 250 --n-val 80 --n-test 120 --epochs 60 \
@@ -276,9 +276,9 @@ IMPORTANT: these exact flags ARE the protocol — the scale was set to fit the
 submission window and every seed must use it so the multiseed rows are
 comparable. Do not enlarge without regenerating all seeds.
 
-If Quang's seed-11 run dies, the same command with `--opt-seed 11` and the
-matching out/ckpt paths reproduces it exactly (data seed is fixed; opt-seed
-only moves torch init, shuffle, and the random arm).
+Seed 11 uses the same command with `--opt-seed 11` and matching out/ckpt paths.
+Every seed reproduces exactly from its command: the data seed is fixed, and
+opt-seed only moves torch init, shuffle, and the random arm.
 
 When any subset of the three JSONs exists:
 
@@ -287,7 +287,4 @@ When any subset of the three JSONs exists:
 aggregates whatever landed (multiseed mean/SD per arm per pool, Holm over the
 six ranker-vs-baseline McNemars, label-agreement stats) into
 results/p_geo_repair/analysis.json plus paste-ready RESULTS/tex blocks. The
-result JSONs and analysis.json are gitignore-whitelisted — commit them to the
-branch as they land. The paper stub they fill is in marc_aaai.tex (search
-TODO(R28)); framing rules for a mixed outcome are in
-paper/notes/REVIEW_ATTACKS.md ("If R28 comes back mixed").
+result JSONs and analysis.json are gitignore-whitelisted — commit them as they land.

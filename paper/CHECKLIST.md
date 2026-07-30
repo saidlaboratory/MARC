@@ -72,6 +72,7 @@ MPS optional). No GPU cluster. Representative wall times (one machine, `--solve-
 - R28 geometry v3 (per seed, warm dataset cache): ~7.5 h/seed at protocol scale (n=1250/400/600,
   60 epochs); dataset build parallelized over the process pool.
 - R30 real-systems repair (N=200 × 4 classes): ~1.5 min total.
-- Dimension-scaling law (3 seeds × 5 dimensions): not separately wall-clocked;
-  single-machine CPU run, no GPU.
+- Dimension-scaling law (3 seeds × 5 dimensions): ~2.3 h wall for the full run
+  (`scripts/run_dimension_scaling.py --seeds 3`; measured 8230 s on an Apple M1 Pro,
+  CPU, Python 3.12). The self-trained x0 arm dominates the time; no GPU.
 - Full test suite (CI): ~2 minutes.

@@ -1,5 +1,11 @@
 # Roadmap — What Worked, What's Deferred (Post-Submission)
 
+> **Historical (value-diffusion era).** This snapshot predates the v0.3 reframe to
+> structural repair. Statements below about the learned *value* solver — solve rates
+> on the P2 suites, geometry coverage — describe the abandoned value-diffusion path,
+> not what shipped. For current status and results see [README.md](../../README.md)
+> and [paper/RESULTS.md](../../paper/RESULTS.md).
+
 Status snapshot across P0–P4, written alongside the P4 demo + geometry-domain eval.
 See `TECHNICAL_GUIDE.md` §14 for the design philosophy this roadmap follows
 ("build the simplest thing that exhibits the phenomenon first").

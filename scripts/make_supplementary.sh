@@ -53,10 +53,9 @@ grep -rl "saidlaboratory" . 2>/dev/null | xargs -r sed -i '' \
 [ -f results/overnight/SUMMARY.md ] && sed -i '' \
     "s|/Users/sparsh/Desktop/Research/AAAI/MARC|<repo root>|g" results/overnight/SUMMARY.md
 grep -rl "/Users/" . 2>/dev/null | xargs -r sed -i '' -E "s|/Users/[a-z]+/[^ \"']*/MARC|<repo root>|g"
-# .gitignore: personal filename, Claude tool comment, agent-worktree dir
+# .gitignore: personal filename, agent-worktree dir
 [ -f .gitignore ] && sed -i '' \
     -e "/DAVIN_P2_P3_NOTES.md/d" \
-    -e "s|# Claude Code agent worktrees.*|# agent worktrees (nested repos)|" \
     -e "s|^\.claude/|.agent-worktrees/|" .gitignore
 
 # GENERIC name scrub LAST: tagged forms, then a bare catch-all (BSD sed: no \b, but
