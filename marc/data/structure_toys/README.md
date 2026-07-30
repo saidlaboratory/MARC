@@ -77,7 +77,7 @@ eq1: x - 4     eq2: y - 6     eq3: x + y - 6
 Why fixed fails: eq1, eq2 force (x, y) = (4, 6); the leftover eq3 wants the
 sum to be 6, but 4 + 6 = 10. Contradiction. Auxiliary variable: u (shared by
 eq1 and eq2).
-## Baseline result (fill in from the run)
+## Baseline result
 
 `python -m scripts.run_structure_toys` (solver = `refine`, k = 4):
 

@@ -221,7 +221,7 @@ random survives → ties (R7). Geometry satisfies (1) but fails (2) → learning
 collapses with it. The measured slope predicts *random's* collapse; separability predicts
 whether *learning* can exploit it. This corrects the earlier "slope alone is the diagnostic"
 reading. Full derivation + limitations in `paper/notes/crossover_law.md`; figure
-`paper/figures/fig_crossover_theory.pdf`.
+`paper/tex/figures/fig_crossover_theory.pdf`.
 `python3 scripts/run_crossover_theory.py --trials 600 --K 8 --seed 20260721` (PROVENANCE
 R17–R19); `python3 scripts/run_pointchain_learned.py` (geometry learned arm, PROVENANCE R25).
 

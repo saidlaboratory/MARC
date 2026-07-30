@@ -36,8 +36,8 @@ Output: results/p2_main/cot_baseline.json
 Raw solve rate saturates at this problem size/difficulty, so it does not separate
 the two splits — but perturbation_robustness does show a gap, suggesting this suite
 may still be too easy for solve_rate itself to be an informative H1 signal.
-Flagged to Sparsh/Davin: consider a harder suite (e.g. length_extrapolation with
-higher n_vars) if solve_rate saturation persists once MARC's model is compared.
+A harder suite (e.g. length_extrapolation with higher n_vars) would help if
+solve_rate saturation persists once MARC's model is compared.
 
 ## Known limitations
 

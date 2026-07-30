@@ -3,9 +3,18 @@
 **Mathematical AI Reasoning Core**
 **Document type:** deep technical specification + build guide
 **Status:** Draft v0.1 · companion to the research brief
-**Audience:** the MARC engineering/research team (read top-to-bottom before P0)
+**Audience:** engineers and researchers building on or reproducing MARC
 
 ---
+
+> **Reframing note (v0.3).** This guide is the founding engineering spec for the
+> value-diffusion design. That bet was tested with pre-registered controls and did not
+> hold — learned value proposals tie or lose to classical multi-start (see
+> [paper/RESULTS.md](paper/RESULTS.md)) — so MARC relocated the learned component to the
+> one decision classical solvers cannot make: **what structure to add**. The current
+> framing is in [README.md](README.md). The graph substrate, CAS/checker, and evaluation
+> discipline below are unchanged and current; the value-diffusion solver sections are
+> preserved as the historical design record.
 
 ## How to read this document
 

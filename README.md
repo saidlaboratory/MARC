@@ -54,7 +54,7 @@ MARC v0.1 bet on **value diffusion**: a learned denoiser iteratively refining no
 | **Slot-based structure policy (v0.2)** | 0.410 vs 0.200 random in-pattern, but 0.234 vs 0.238 on an unseen pattern | Established the direction, but failed structural transfer |
 | **Candidate-conditioned repair (v0.3)** | **Balanced nonlinear 0.997 vs 0.333 candidate-only / 0.236 random; held-out linear 0.380 vs 0.195 / 0.287 (Data v8)** | Operator-aware repair scoring replaces slot classification; nonlinear result is stable across three seeds (SD 0.006) |
 
-Full evidence ledger: [`paper/RESULTS.md`](paper/RESULTS.md) · selected v0.3 evidence and invalidated pilots: [`results/p_repair/README.md`](results/p_repair/README.md) · every number's command/seed/commit: [`paper/PROVENANCE.md`](paper/PROVENANCE.md) · standing review-attack checklist: [`paper/notes/REVIEW_ATTACKS.md`](paper/notes/REVIEW_ATTACKS.md).
+Full evidence ledger: [`paper/RESULTS.md`](paper/RESULTS.md) · selected v0.3 evidence and invalidated pilots: [`results/p_repair/README.md`](results/p_repair/README.md) · every number's command/seed/commit: [`paper/PROVENANCE.md`](paper/PROVENANCE.md).
 
 **Results integrity rules (house law):** classical solvers (`refine`, `lm`, `exact`) are always labeled baselines; every rate carries N and a Wilson CI; paired comparisons use exact McNemar tests; structure-selection numbers are citable only under an explicit, disjoint seed protocol and current data version. Numbers predating the relevant seed/data-protocol fix are withdrawn and must not be cited.
 

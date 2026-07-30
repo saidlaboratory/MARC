@@ -1,7 +1,7 @@
 """Noise on/off ablation — the key RQ2 experiment (TECHNICAL_GUIDE §11, §15).
 
-> "The noise is the point. If ablating noise does not reduce the entrapment rate,
->  the core hypothesis is in trouble — run that ablation early." (§15)
+Ablating the injected noise tests the RQ2 hypothesis directly: if removing the noise
+does not raise the entrapment rate, then the noise is not doing the work we claim.
 
 We run energy-gradient refinement on a suite of nonconvex problems whose starts sit
 inside a spurious, locally-consistent-but-globally-wrong basin, with the injected
@@ -14,7 +14,7 @@ Outputs (under ``results/p1_entrapment/`` by default):
   * ``energy_hist.png``          — distribution of best energies per arm.
   * ``trajectories.png``         — example energy curves (trapped vs. escaped).
   * ``summary.json``             — machine-readable metrics.
-  * ``report.md``                — the written report, with a clear VERDICT/FLAG.
+  * ``report.md``                — the written report, with a clear verdict.
 
 Run:  ``python -m marc.eval.ablations.noise_ablation --graphs 50``
 """
@@ -206,21 +206,20 @@ def _render_report(summary: dict, plot_files: List[str]) -> str:
 
     if helps and red - red_ci > 0:
         verdict = (
-            f"✅ **Noise reduces entrapment.** Injected noise lowers the entrapment "
+            f"**Noise reduces entrapment.** Injected noise lowers the entrapment "
             f"rate by **{red:.2f} ± {red_ci:.2f}** (95% CI excludes 0). The core RQ2 "
             f"hypothesis holds on this suite."
         )
     elif helps:
         verdict = (
-            f"🟡 **Noise helps, but the CI is wide.** Mean reduction {red:.2f} "
-            f"(± {red_ci:.2f}) — directionally positive but not yet significant. "
-            f"Increase graphs/seeds before reporting."
+            f"**Noise helps, but the CI is wide.** Mean reduction {red:.2f} "
+            f"(± {red_ci:.2f}) — directionally positive but not yet significant at "
+            f"this sample size."
         )
     else:
         verdict = (
-            f"🚨 **FLAG THE TEAM IMMEDIATELY.** Noise does **not** reduce entrapment "
-            f"(reduction {red:.2f} ± {red_ci:.2f}). Per TECHNICAL_GUIDE §15 the core "
-            f"hypothesis is in trouble — escalate before investing in the full solver."
+            f"**Noise does not reduce entrapment** (reduction {red:.2f} ± {red_ci:.2f}). "
+            f"On this suite the core RQ2 hypothesis does not hold."
         )
 
     plots_md = "\n".join(f"![{f}]({f})" for f in plot_files) or "_(plots unavailable)_"
@@ -268,9 +267,9 @@ solution on a substantial fraction of graphs, cutting entrapment to {on:.2f}. Th
 the load-bearing evidence for RQ2: **the noise is doing real work.**
 
 This ablation uses the exact energy gradient as a stand-in for the learned denoiser
-`g_theta`. When Davin's learned `solve()` lands it slots into the same `Solver`
-contract (`marc.eval.solver`); re-running this script then measures whether the
-*learned* refinement preserves the noise benefit.
+`g_theta`. The learned `solve()` slots into the same `Solver` contract
+(`marc.eval.solver`); re-running this script then measures whether the *learned*
+refinement preserves the noise benefit.
 """
 
 
@@ -307,7 +306,7 @@ def main() -> None:
     print(f"entrapment  off={off:.3f}  on={on:.3f}  reduction={red:.3f}")
     print(f"wrote {report_path}")
     if not summary["noise_helps"]:
-        print("\n🚨 FLAG: noise did NOT reduce entrapment — escalate to the team (§15).")
+        print("\nnoise did NOT reduce entrapment on this suite — RQ2 hypothesis not supported (§15).")
 
 
 if __name__ == "__main__":

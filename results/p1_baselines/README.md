@@ -1,5 +1,11 @@
 # P1 Baselines
 
+> **Historical baseline (saturated convex suite).** These P1 numbers are the classical
+> `refine` baseline on the convex suite, where solve rate saturates at 1.000 and the
+> generalization gap is 0 — at ceiling, so not an H1 signal. The current headline
+> results are the repair-ranker numbers in [paper/RESULTS.md](../../paper/RESULTS.md)
+> and [results/p_repair/README.md](../p_repair/README.md).
+
 `metrics.json` — capability + generalization metrics (TECHNICAL_GUIDE §11) for the
 current solver over two structural splits.
 
@@ -7,7 +13,7 @@ current solver over two structural splits.
 
 ```bash
 python scripts/run_p1_eval.py                 # energy-gradient refinement baseline
-python scripts/run_p1_eval.py --solver learned --k 8   # once Quang's checkpoint lands
+python scripts/run_p1_eval.py --solver learned --k 8   # with a trained checkpoint
 ```
 
 ## Current numbers (solver = `refine`)
